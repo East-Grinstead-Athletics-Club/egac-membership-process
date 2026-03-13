@@ -1,11 +1,6 @@
 // ============================================================
 // EGAC Platform — Database Schema Types
 // src/lib/db/schema.ts
-//
-// These interfaces mirror the D1 tables exactly.
-// All date fields are ISO 8601 strings (SQLite has no native date type).
-// Boolean fields are 0 | 1 integers in D1; typed as number here so
-// TypeScript consumers can use standard truthiness checks.
 // ============================================================
 
 // ------------------------------------------------------------
@@ -17,14 +12,13 @@ export interface Enquiry {
   name: string | null;
   email: string;
   phone: string | null;
-  interest: 'junior_athletics' | 'academy' | 'general' | null;
-  training_days: string; // JSON array string: '["Tuesday"]'
-  dob: string | null; // YYYY-MM-DD
+  dob: string | null;
   source: string;
-  processed: number; // 0 | 1
+  processed: number;
+  age_group_id: string | null;
   note: string | null;
-  raw_payload: string | null; // JSON string
-  events: string; // JSON array of EnquiryEvent
+  raw_payload: string | null;
+  events: string;
   invite_id: string | null;
   environment: Environment;
 }
@@ -35,11 +29,10 @@ export interface EnquiryInsert {
   name?: string | null;
   email: string;
   phone?: string | null;
-  interest?: Enquiry['interest'];
-  training_days?: string;
   dob?: string | null;
   source?: string;
   processed?: number;
+  age_group_id?: string | null;
   note?: string | null;
   raw_payload?: string | null;
   events?: string;
@@ -49,8 +42,8 @@ export interface EnquiryInsert {
 
 export interface EnquiryEvent {
   type: EnquiryEventType;
-  timestamp: string; // ISO datetime
-  [key: string]: unknown; // Additional event-specific data
+  timestamp: string;
+  [key: string]: unknown;
 }
 
 export type EnquiryEventType =
@@ -66,14 +59,14 @@ export type EnquiryEventType =
 
 export interface EnquiryFilters {
   status?: 'pending' | 'processed' | 'academy';
-  search?: string; // matches email or name
+  search?: string;
   limit?: number;
   offset?: number;
   environment?: Environment;
 }
 
 // ------------------------------------------------------------
-// Invite
+// Invite (taster booking only — not used for Academy)
 // ------------------------------------------------------------
 export interface Invite {
   id: string;
@@ -90,24 +83,40 @@ export interface Invite {
 
 export type InviteStatus = 'pending' | 'sent' | 'accepted' | 'expired';
 
-export interface InviteInsert {
+// ------------------------------------------------------------
+// Age Group
+// Single source of truth for all age group configuration.
+// booking_type drives the enquiry routing logic.
+// ------------------------------------------------------------
+export interface AgeGroup {
   id: string;
-  token: string;
-  enquiry_id: string;
+  code: string;
+  label: string;
+  booking_type: 'taster' | 'waitlist';
+  age_min_aug31: number;
+  age_max_aug31: number;
+  session_days: string; // JSON array: '["Tuesday"]'
+  session_time: string | null;
+  capacity_per_session: number | null;
+  season_capacity: number | null;
+  season_start_month: number | null;
+  season_end_month: number | null;
+  active: number;
+  sort_order: number;
   created_at: string;
-  environment: Environment;
+  updated_at: string | null;
 }
 
 // ------------------------------------------------------------
-// Booking
+// Booking (taster sessions only)
 // ------------------------------------------------------------
 export interface Booking {
   id: string;
   enquiry_id: string;
   invite_id: string | null;
-  session_date: string; // YYYY-MM-DD
-  slot: SlotCode;
-  session_time: string | null; // HH:MM
+  age_group_id: string;
+  session_date: string;
+  session_time: string | null;
   status: BookingStatus;
   attendance_note: string | null;
   created_at: string;
@@ -116,53 +125,53 @@ export interface Booking {
 }
 
 export type BookingStatus = 'confirmed' | 'cancelled' | 'attended' | 'no_show';
-export type SlotCode = 'u13' | 'u15plus';
 
-export interface BookingInsert {
+// ------------------------------------------------------------
+// Academy Season
+// ------------------------------------------------------------
+export interface AcademySeason {
   id: string;
-  enquiry_id: string;
-  invite_id?: string | null;
-  session_date: string;
-  slot: SlotCode;
-  session_time?: string | null;
-  created_at: string;
-  environment: Environment;
-}
-
-// ------------------------------------------------------------
-// Academy Invitation
-// ------------------------------------------------------------
-export interface AcademyInvitation {
-  id: string;
-  enquiry_id: string;
-  token: string;
-  created_at: string;
-  sent_at: string | null;
-  responded_at: string | null;
-  response: 'yes' | 'no' | null;
-  status: AcademyInvitationStatus;
-  environment: Environment;
-}
-
-export type AcademyInvitationStatus = 'pending' | 'sent' | 'responded' | 'failed';
-
-// ------------------------------------------------------------
-// Age Group
-// ------------------------------------------------------------
-export interface AgeGroup {
-  id: string;
-  code: SlotCode;
+  code: string;
   label: string;
-  min_age: number;
-  max_age: number | null;
-  session_day: string | null;
-  session_time: string | null; // HH:MM
-  capacity_per_session: number;
-  active: number; // 0 | 1
-  sort_order: number;
+  start_date: string;
+  end_date: string;
+  capacity: number;
+  status: AcademySeasonStatus;
+  age_group_id: string;
   created_at: string;
   updated_at: string | null;
 }
+
+export type AcademySeasonStatus = 'upcoming' | 'open' | 'closed' | 'archived';
+
+// ------------------------------------------------------------
+// Academy Waitlist
+// ------------------------------------------------------------
+export interface AcademyWaitlistEntry {
+  id: string;
+  enquiry_id: string;
+  season_id: string | null;
+  token: string;
+  position: number | null;
+  status: AcademyWaitlistStatus;
+  is_returning: number;
+  rolled_over_from_season_id: string | null;
+  invited_at: string | null;
+  responded_at: string | null;
+  response: 'yes' | 'no' | null;
+  send_attempts: number;
+  last_send_error: string | null;
+  created_at: string;
+  environment: Environment;
+}
+
+export type AcademyWaitlistStatus =
+  | 'waiting'
+  | 'invited'
+  | 'accepted'
+  | 'declined'
+  | 'ineligible'
+  | 'withdrawn';
 
 // ------------------------------------------------------------
 // Email Template
@@ -174,8 +183,8 @@ export interface EmailTemplate {
   subject: string;
   html: string;
   text_content: string | null;
-  variables: string; // JSON array of string variable names
-  active: number; // 0 | 1
+  variables: string;
+  active: number;
   created_at: string;
   updated_at: string | null;
 }
@@ -196,6 +205,7 @@ export type EmailTemplateKey =
   | 'booking_confirmation'
   | 'booking_reminder'
   | 'academy_waitlist'
+  | 'academy_invite'
   | 'membership_invite';
 
 // ------------------------------------------------------------
@@ -211,15 +221,13 @@ export interface MembershipOtp {
 }
 
 // ------------------------------------------------------------
-// System Config (KV-backed, not a D1 table)
+// System Config (KV-backed)
 // ------------------------------------------------------------
 export interface SystemConfig {
-  academy_max_age: string; // default "10"
-  weeks_ahead_booking: string; // default "8"
-  capacity_per_slot: string; // default "2"
-  site_name: string; // default "EGAC"
-  site_url: string; // e.g. "https://egac.pages.dev"
-  email_from: string; // e.g. "noreply@egac.co.uk"
+  weeks_ahead_booking: string;
+  site_name: string;
+  site_url: string;
+  email_from: string;
   venue_name: string;
   venue_address: string;
   admin_email: string;
@@ -232,7 +240,6 @@ export type SystemConfigKey = keyof SystemConfig;
 // ------------------------------------------------------------
 export type Environment = 'development' | 'staging' | 'production';
 
-// Cloudflare Worker Env bindings — extend as needed
 export interface Env {
   DB: D1Database;
   KV: KVNamespace;
@@ -245,11 +252,10 @@ export interface Env {
   NODE_ENV?: string;
 }
 
-// Booking confirmation shape passed to email
 export interface BookingConfirmation {
   enquiry: Enquiry;
   booking: Booking;
-  slotLabel: string;
+  ageGroupLabel: string;
   venueName: string;
   calendarUrl: string;
 }

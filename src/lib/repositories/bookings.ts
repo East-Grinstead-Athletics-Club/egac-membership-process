@@ -4,34 +4,30 @@
 // ============================================================
 
 import { generateId, now, one, many, run, getDB, getEnv } from '../db/client.js';
-import type { Booking, BookingStatus, SlotCode, Env } from '../db/schema.js';
-import { slotTime } from '../business/age.js';
+import type { Booking, BookingStatus, Env } from '../db/schema.js';
 
-// ------------------------------------------------------------
-// createBooking
-// ------------------------------------------------------------
 export async function createBooking(
   enquiryId: string,
   inviteId: string | null,
+  ageGroupId: string,
   sessionDate: string,
-  slot: SlotCode,
+  sessionTime: string | null,
   env: Env
 ): Promise<Booking> {
   const db = getDB(env);
   const environment = getEnv(env);
   const id = generateId('bkg');
   const createdAt = now();
-  const sessionTime = slotTime(slot);
 
   await run(
     db
       .prepare(
         `INSERT INTO bookings
-         (id, enquiry_id, invite_id, session_date, slot, session_time,
-          status, created_at, environment)
-         VALUES (?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)`
+       (id, enquiry_id, invite_id, age_group_id, session_date, session_time,
+        status, created_at, environment)
+       VALUES (?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)`
       )
-      .bind(id, enquiryId, inviteId, sessionDate, slot, sessionTime, createdAt, environment)
+      .bind(id, enquiryId, inviteId, ageGroupId, sessionDate, sessionTime, createdAt, environment)
   );
 
   const booking = await getBookingById(id, env);
@@ -39,22 +35,14 @@ export async function createBooking(
   return booking;
 }
 
-// ------------------------------------------------------------
-// getBookingById
-// ------------------------------------------------------------
 export async function getBookingById(id: string, env: Env): Promise<Booking | null> {
   const db = getDB(env);
   const environment = getEnv(env);
-
   return one<Booking>(
     db.prepare('SELECT * FROM bookings WHERE id = ? AND environment = ?').bind(id, environment)
   );
 }
 
-// ------------------------------------------------------------
-// getBookingByInviteAndDate
-// Used to check for duplicate bookings (unique invite + date).
-// ------------------------------------------------------------
 export async function getBookingByInviteAndDate(
   inviteId: string,
   sessionDate: string,
@@ -62,93 +50,60 @@ export async function getBookingByInviteAndDate(
 ): Promise<Booking | null> {
   const db = getDB(env);
   const environment = getEnv(env);
-
   return one<Booking>(
     db
       .prepare(
-        `SELECT * FROM bookings
-         WHERE invite_id = ? AND session_date = ? AND environment = ?`
+        'SELECT * FROM bookings WHERE invite_id = ? AND session_date = ? AND environment = ?'
       )
       .bind(inviteId, sessionDate, environment)
   );
 }
 
-// ------------------------------------------------------------
-// countBookingsForDateSlot
-// The capacity check — called before every booking attempt.
-// Only counts confirmed bookings (not cancelled/no_show).
-// ------------------------------------------------------------
-export async function countBookingsForDateSlot(
+export async function countBookingsForDateAndGroup(
   sessionDate: string,
-  slot: SlotCode,
+  ageGroupId: string,
   env: Env
 ): Promise<number> {
   const db = getDB(env);
   const environment = getEnv(env);
-
   const result = await one<{ count: number }>(
     db
       .prepare(
         `SELECT COUNT(*) as count FROM bookings
-         WHERE session_date = ?
-           AND slot = ?
-           AND status = 'confirmed'
-           AND environment = ?`
+       WHERE session_date = ? AND age_group_id = ? AND status = 'confirmed' AND environment = ?`
       )
-      .bind(sessionDate, slot, environment)
+      .bind(sessionDate, ageGroupId, environment)
   );
-
   return result?.count ?? 0;
 }
 
-// ------------------------------------------------------------
-// listBookingsForDate
-// Returns all bookings for a given session date.
-// Used by the admin bookings calendar view.
-// ------------------------------------------------------------
 export async function listBookingsForDate(date: string, env: Env): Promise<Booking[]> {
   const db = getDB(env);
   const environment = getEnv(env);
-
   return many<Booking>(
     db
       .prepare(
-        `SELECT * FROM bookings
-         WHERE session_date = ? AND environment = ?
-         ORDER BY slot ASC, created_at ASC`
+        'SELECT * FROM bookings WHERE session_date = ? AND environment = ? ORDER BY created_at ASC'
       )
       .bind(date, environment)
   );
 }
 
-// ------------------------------------------------------------
-// listBookingsByEnquiry
-// All bookings for a given enquiry — shown on enquiry detail page.
-// ------------------------------------------------------------
 export async function listBookingsByEnquiry(enquiryId: string, env: Env): Promise<Booking[]> {
   const db = getDB(env);
   const environment = getEnv(env);
-
   return many<Booking>(
     db
       .prepare(
-        `SELECT * FROM bookings
-         WHERE enquiry_id = ? AND environment = ?
-         ORDER BY session_date DESC`
+        'SELECT * FROM bookings WHERE enquiry_id = ? AND environment = ? ORDER BY session_date DESC'
       )
       .bind(enquiryId, environment)
   );
 }
 
-// ------------------------------------------------------------
-// listUpcomingBookings
-// Returns confirmed bookings for the next N weeks.
-// Used by the admin bookings calendar and the reminder cron job.
-// ------------------------------------------------------------
 export async function listUpcomingBookings(weeksAhead: number, env: Env): Promise<Booking[]> {
   const db = getDB(env);
   const environment = getEnv(env);
-
   const today = new Date().toISOString().split('T')[0];
   const future = new Date();
   future.setDate(future.getDate() + weeksAhead * 7);
@@ -158,20 +113,13 @@ export async function listUpcomingBookings(weeksAhead: number, env: Env): Promis
     db
       .prepare(
         `SELECT * FROM bookings
-         WHERE session_date >= ?
-           AND session_date <= ?
-           AND status = 'confirmed'
-           AND environment = ?
-         ORDER BY session_date ASC, slot ASC`
+       WHERE session_date >= ? AND session_date <= ? AND status = 'confirmed' AND environment = ?
+       ORDER BY session_date ASC`
       )
       .bind(today, futureDate, environment)
   );
 }
 
-// ------------------------------------------------------------
-// updateBookingStatus
-// Records attendance outcome. Optionally adds a note.
-// ------------------------------------------------------------
 export async function updateBookingStatus(
   id: string,
   status: BookingStatus,
@@ -180,26 +128,18 @@ export async function updateBookingStatus(
 ): Promise<Booking> {
   const db = getDB(env);
   const environment = getEnv(env);
-
   await run(
     db
       .prepare(
-        `UPDATE bookings
-         SET status = ?, attendance_note = ?, updated_at = ?
-         WHERE id = ? AND environment = ?`
+        'UPDATE bookings SET status = ?, attendance_note = ?, updated_at = ? WHERE id = ? AND environment = ?'
       )
       .bind(status, note, now(), id, environment)
   );
-
   const updated = await getBookingById(id, env);
   if (!updated) throw new Error(`Booking not found after update: ${id}`);
   return updated;
 }
 
-// ------------------------------------------------------------
-// countBookingsByStatus
-// Used for the reports dashboard.
-// ------------------------------------------------------------
 export async function countBookingsByStatus(
   status: BookingStatus,
   env: Env,
@@ -207,20 +147,16 @@ export async function countBookingsByStatus(
 ): Promise<number> {
   const db = getDB(env);
   const environment = getEnv(env);
-
   const conditions = ['status = ?', 'environment = ?'];
   const params: unknown[] = [status, environment];
-
   if (sinceDate) {
     conditions.push('session_date >= ?');
     params.push(sinceDate);
   }
-
   const result = await one<{ count: number }>(
     db
       .prepare(`SELECT COUNT(*) as count FROM bookings WHERE ${conditions.join(' AND ')}`)
       .bind(...params)
   );
-
   return result?.count ?? 0;
 }

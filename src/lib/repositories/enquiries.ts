@@ -22,9 +22,9 @@ export async function insertEnquiry(data: EnquiryInsert, env: Env): Promise<Enqu
     db
       .prepare(
         `INSERT INTO enquiries
-         (id, created_at, name, email, phone, interest, training_days,
-          dob, source, processed, note, raw_payload, events, invite_id, environment)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         (id, created_at, name, email, phone, dob, source, processed,
+          age_group_id, note, raw_payload, events, invite_id, environment)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         id,
@@ -32,11 +32,10 @@ export async function insertEnquiry(data: EnquiryInsert, env: Env): Promise<Enqu
         data.name ?? null,
         data.email,
         data.phone ?? null,
-        data.interest ?? null,
-        data.training_days ?? '[]',
         data.dob ?? null,
         data.source ?? 'website',
         data.processed ?? 0,
+        data.age_group_id ?? null,
         data.note ?? null,
         data.raw_payload ?? null,
         data.events ?? '[]',

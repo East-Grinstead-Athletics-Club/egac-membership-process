@@ -15,7 +15,7 @@
 import { sendEmailWithRetry } from './client.js';
 import { getEmailTemplateByKey } from '../repositories/templates.js';
 import { renderTemplate } from '../business/templates.js';
-import { formatDateForDisplay, slotLabel, slotTime } from '../business/age.js';
+import { formatDateForDisplay } from '../business/age.js';
 import type { Enquiry, Invite, AcademyInvitation, Booking, Env } from '../db/schema.js';
 import type { SendEmailResult } from './client.js';
 
@@ -89,14 +89,15 @@ export async function sendBookingConfirmation(
     return { success: false, error: 'Template booking_confirmation not found or inactive' };
   }
 
-  const slot = booking.slot as 'u13' | 'u15plus';
+  const sessionTime = booking.session_time ?? '';
+  const ageGroupLabel = (booking as unknown as Record<string, string>).age_group_label ?? '';
 
   try {
     const html = renderTemplate(template.html, {
       contact_name: enquiry.name || 'there',
       session_date: formatDateForDisplay(booking.session_date),
-      session_time: slotTime(slot),
-      slot_label: slotLabel(slot),
+      session_time: sessionTime,
+      age_group_label: ageGroupLabel,
       venue: venueName,
       add_to_calendar_url: calendarUrl,
     });
@@ -105,8 +106,8 @@ export async function sendBookingConfirmation(
       ? renderTemplate(template.text_content, {
           contact_name: enquiry.name || 'there',
           session_date: formatDateForDisplay(booking.session_date),
-          session_time: slotTime(slot),
-          slot_label: slotLabel(slot),
+          session_time: sessionTime,
+          age_group_label: ageGroupLabel,
           venue: venueName,
           add_to_calendar_url: calendarUrl,
         })
@@ -236,14 +237,15 @@ export async function sendBookingReminder(
     return { success: false, error: 'Template booking_reminder not found or inactive' };
   }
 
-  const slot = booking.slot as 'u13' | 'u15plus';
+  const sessionTime = booking.session_time ?? '';
+  const ageGroupLabel = (booking as unknown as Record<string, string>).age_group_label ?? '';
 
   try {
     const html = renderTemplate(template.html, {
       contact_name: enquiry.name || 'there',
       session_date: formatDateForDisplay(booking.session_date),
-      session_time: slotTime(slot),
-      slot_label: slotLabel(slot),
+      session_time: sessionTime,
+      age_group_label: ageGroupLabel,
       venue: venueName,
     });
 
@@ -251,8 +253,8 @@ export async function sendBookingReminder(
       ? renderTemplate(template.text_content, {
           contact_name: enquiry.name || 'there',
           session_date: formatDateForDisplay(booking.session_date),
-          session_time: slotTime(slot),
-          slot_label: slotLabel(slot),
+          session_time: sessionTime,
+          age_group_label: ageGroupLabel,
           venue: venueName,
         })
       : undefined;

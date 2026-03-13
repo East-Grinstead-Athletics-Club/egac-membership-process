@@ -1,70 +1,51 @@
 // ============================================================
 // EGAC Platform — Booking Business Logic
 // src/lib/business/booking.ts
-//
-// Pure validation functions for the booking flow.
-// All rules are enforced here before anything is written to D1.
 // ============================================================
 
-import {
-  slotForDobOnDate,
-  validateSessionDate,
-  slotLabel,
-  slotTime,
-  formatDateForDisplay,
-} from './age.js';
-import type { Booking, Enquiry, SlotCode } from '../db/schema.js';
+import { validateSessionDate, isAgeGroupEligible, formatDateForDisplay } from './age.js';
+import type { AgeGroupConfig } from './age.js';
+import type { Enquiry, Booking } from '../db/schema.js';
+
+export interface BookingSlotValidation {
+  valid: boolean;
+  reason?: string;
+}
+
+export interface BookingConfirmationData {
+  sessionDate: string;
+  sessionDateFormatted: string;
+  sessionTime: string;
+  ageGroupLabel: string;
+  venueName: string;
+  calendarUrl: string;
+}
 
 // ------------------------------------------------------------
-// validateBookingSlot
-// The core booking guard. Returns {valid: true} or
-// {valid: false, reason: string}.
-//
-// Rules enforced (in order):
-//   1. Session date must be a valid future Tuesday
-//   2. Slot must be valid code
-//   3. Capacity must not be exceeded
-//   4. If enquiry has a DOB, slot must match age-derived slot
+// validateBookingRequest
+// Validates a booking attempt against business rules.
+// All age group config comes from D1 — nothing hardcoded.
 // ------------------------------------------------------------
-export function validateBookingSlot(
-  enquiry: { dob: string | null },
-  sessionDate: string,
-  slot: SlotCode,
-  currentCount: number,
-  maxCapacity: number,
-  today: Date = new Date()
-): { valid: boolean; reason?: string } {
-  // 1. Valid future Tuesday
-  if (!validateSessionDate(sessionDate, today)) {
+export function validateBookingRequest(
+  sessionDateIso: string,
+  dob: string | null,
+  ageGroup: AgeGroupConfig
+): BookingSlotValidation {
+  // Must be a valid future session day for this age group
+  if (!validateSessionDate(sessionDateIso, ageGroup)) {
+    const validDays = JSON.parse(ageGroup.session_days ?? '["Tuesday"]').join(' or ');
     return {
       valid: false,
-      reason: `Session date ${sessionDate} is not a valid future Tuesday`,
+      reason: `Session must be a future ${validDays}`,
     };
   }
 
-  // 2. Valid slot code
-  if (slot !== 'u13' && slot !== 'u15plus') {
-    return {
-      valid: false,
-      reason: `Slot must be 'u13' or 'u15plus', got '${slot}'`,
-    };
-  }
-
-  // 3. Capacity check
-  if (currentCount >= maxCapacity) {
-    return {
-      valid: false,
-      reason: `The ${slotLabel(slot)} slot on ${sessionDate} is full (${maxCapacity}/${maxCapacity})`,
-    };
-  }
-
-  // 4. Age-slot match (only enforced when DOB is known)
-  if (enquiry.dob) {
-    const requiredSlot = slotForDobOnDate(enquiry.dob, sessionDate);
-    if (requiredSlot && requiredSlot !== slot) {
+  // If we have a DOB, verify the athlete is in the correct age group
+  if (dob) {
+    if (!isAgeGroupEligible(dob, sessionDateIso, ageGroup)) {
       return {
         valid: false,
-        reason: `Based on date of birth, this athlete must attend the ${slotLabel(requiredSlot)} session, not ${slotLabel(slot)}`,
+        reason: `Your child is not in the ${ageGroup.label} age group for this session date`,
       };
     }
   }
@@ -74,100 +55,81 @@ export function validateBookingSlot(
 
 // ------------------------------------------------------------
 // buildBookingConfirmation
-// Assembles the data needed to send a booking confirmation email
-// and generate a Google Calendar deep link.
+// Builds the data payload for the confirmation email and
+// the API response. Includes a Google Calendar deep-link.
 // ------------------------------------------------------------
-export interface BookingConfirmationData {
-  contact_name: string;
-  session_date: string; // YYYY-MM-DD
-  session_date_display: string; // 'Tuesday, 15 April 2026'
-  session_time: string; // '18:30'
-  slot_label: string; // 'U13 (Tuesday 18:30)'
-  venue: string;
-  add_to_calendar_url: string;
-}
-
 export function buildBookingConfirmation(
   enquiry: Pick<Enquiry, 'name' | 'email'>,
-  booking: Pick<Booking, 'session_date' | 'slot'>,
+  booking: Pick<Booking, 'session_date' | 'session_time' | 'age_group_id'>,
+  ageGroup: AgeGroupConfig,
   venueName: string,
   _siteUrl: string
 ): BookingConfirmationData {
-  const slot = booking.slot as SlotCode;
-  const time = slotTime(slot);
-  const label = slotLabel(slot);
-  const dateDisplay = formatDateForDisplay(booking.session_date);
+  const sessionTime = booking.session_time ?? ageGroup.session_time ?? '18:30';
 
-  // Google Calendar deep link
-  // Dates in YYYYMMDDTHHMMSS format (local time, no Z suffix)
-  const [year, month, day] = booking.session_date.split('-');
-  const [hour, minute] = time.split(':');
-  const startDt = `${year}${month}${day}T${hour}${minute}00`;
-  // Session is 1 hour
-  const endHour = String(parseInt(hour, 10) + 1).padStart(2, '0');
-  const endDt = `${year}${month}${day}T${endHour}${minute}00`;
-
-  const calParams = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: 'EGAC Taster Session',
-    dates: `${startDt}/${endDt}`,
-    details: `Your EGAC taster session — ${label}`,
+  const calendarUrl = buildGoogleCalendarUrl({
+    title: `EGAC Taster Session — ${ageGroup.label}`,
+    date: booking.session_date,
+    time: sessionTime,
+    durationMinutes: 60,
     location: venueName,
+    description: `EGAC taster session for ${ageGroup.label}`,
   });
 
   return {
-    contact_name: enquiry.name || 'there',
-    session_date: booking.session_date,
-    session_date_display: dateDisplay,
-    session_time: time,
-    slot_label: label,
-    venue: venueName,
-    add_to_calendar_url: `https://calendar.google.com/calendar/render?${calParams.toString()}`,
+    sessionDate: booking.session_date,
+    sessionDateFormatted: formatDateForDisplay(booking.session_date),
+    sessionTime,
+    ageGroupLabel: ageGroup.label,
+    venueName,
+    calendarUrl,
   };
 }
 
 // ------------------------------------------------------------
 // buildAvailabilityList
-// Takes raw booking counts per date/slot and returns a
-// structured availability object for the booking page UI.
+// Returns a summary of remaining capacity per session date.
 // ------------------------------------------------------------
-export interface SlotAvailability {
-  available: boolean;
-  remaining: number;
-  total: number;
-}
-
-export interface DateAvailability {
-  date: string;
-  date_display: string;
-  slots: {
-    u13: SlotAvailability;
-    u15plus: SlotAvailability;
-  };
-}
-
 export function buildAvailabilityList(
   dates: string[],
-  counts: Record<string, { u13: number; u15plus: number }>,
-  maxCapacity: number
-): DateAvailability[] {
+  bookedCountByDate: Record<string, number>,
+  capacity: number
+): Array<{ date: string; available: number; full: boolean }> {
   return dates.map((date) => {
-    const c = counts[date] ?? { u13: 0, u15plus: 0 };
-    return {
-      date,
-      date_display: formatDateForDisplay(date),
-      slots: {
-        u13: {
-          available: c.u13 < maxCapacity,
-          remaining: Math.max(0, maxCapacity - c.u13),
-          total: maxCapacity,
-        },
-        u15plus: {
-          available: c.u15plus < maxCapacity,
-          remaining: Math.max(0, maxCapacity - c.u15plus),
-          total: maxCapacity,
-        },
-      },
-    };
+    const booked = bookedCountByDate[date] ?? 0;
+    const available = Math.max(0, capacity - booked);
+    return { date, available, full: available === 0 };
   });
+}
+
+// ------------------------------------------------------------
+// buildGoogleCalendarUrl
+// ------------------------------------------------------------
+function buildGoogleCalendarUrl(opts: {
+  title: string;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  location: string;
+  description: string;
+}): string {
+  const [hours, minutes] = opts.time.split(':').map(Number);
+  const startDate = new Date(`${opts.date}T${opts.time}:00`);
+  const endDate = new Date(startDate.getTime() + opts.durationMinutes * 60 * 1000);
+
+  const fmt = (d: Date): string => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: opts.title,
+    dates: `${fmt(startDate)}/${fmt(endDate)}`,
+    location: opts.location,
+    details: opts.description,
+  });
+
+  // suppress unused variable warning — hours/minutes used implicitly via startDate
+  void hours;
+  void minutes;
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }

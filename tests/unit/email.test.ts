@@ -230,12 +230,12 @@ describe('email template variable rendering', () => {
 
   it('booking_confirmation template renders all required variables', () => {
     const template =
-      'Hi {{contact_name}}, your session on {{session_date}} at {{session_time}} ({{slot_label}}) at {{venue}}. Calendar: {{add_to_calendar_url}}';
+      'Hi {{contact_name}}, your session on {{session_date}} at {{session_time}} ({{age_group_label}}) at {{venue}}. Calendar: {{add_to_calendar_url}}';
     const rendered = renderTemplate(template, {
       contact_name: 'Jane',
       session_date: 'Tuesday 14 April 2026',
       session_time: '18:30',
-      slot_label: 'U13 (Tuesday 18:30)',
+      age_group_label: 'U13',
       venue: 'East Grinstead Leisure Centre',
       add_to_calendar_url: 'https://calendar.google.com/...',
     });
