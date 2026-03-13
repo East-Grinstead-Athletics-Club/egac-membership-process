@@ -163,3 +163,6 @@ export function validateConfigUpdate(updates: Partial<SystemConfig>): string[] {
 }
 
 export { CONFIG_DEFAULTS };
+
+// Alias used by API handlers — resolves to getSystemConfig.
+export const getConfig = getSystemConfig;

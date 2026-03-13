@@ -19,7 +19,11 @@
 //   POST /api/cron/academy-rollover
 //
 // Admin routes (require Authorization: Bearer <ADMIN_TOKEN>):
-//   Added in Phase 3 (Prompt 9+)
+//   GET  /api/admin/enquiries
+//   POST /api/admin/enquiries
+//   GET  /api/admin/enquiries/:id
+//   PATCH /api/admin/enquiries/:id
+//   POST /api/admin/invites/resend
 // ============================================================
 
 import { handleEnquiry } from './enquiry.js';
@@ -30,6 +34,9 @@ import { handleExpireInvites, runExpireInvites } from './cron/expire-invites.js'
 import { handleRetryInvites, runRetryInvites } from './cron/retry-invites.js';
 import { handleSendReminders, runSendReminders } from './cron/send-reminders.js';
 import { handleAcademyRollover, runAcademyRollover } from './cron/academy-rollover.js';
+import { handleAdminEnquiries } from './admin/enquiries.js';
+import { handleAdminEnquiryDetail } from './admin/enquiry-detail.js';
+import { handleAdminInviteResend } from './admin/invites.js';
 import { err } from './helpers.js';
 import type { Env } from '../lib/db/schema.js';
 
@@ -48,6 +55,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   if (path === '/api/cron/retry-invites') return handleRetryInvites(request, env);
   if (path === '/api/cron/send-reminders') return handleSendReminders(request, env);
   if (path === '/api/cron/academy-rollover') return handleAcademyRollover(request, env);
+
+  // ── Admin routes ───────────────────────────────────────────
+  if (path === '/api/admin/enquiries') return handleAdminEnquiries(request, env);
+  if (path === '/api/admin/invites/resend') return handleAdminInviteResend(request, env);
+  const enquiryDetailMatch = path.match(/^\/api\/admin\/enquiries\/([^/]+)$/);
+  if (enquiryDetailMatch) return handleAdminEnquiryDetail(request, env, enquiryDetailMatch[1]);
 
   // ── 404 for unknown /api/* routes ─────────────────────────
   if (path.startsWith('/api/')) {

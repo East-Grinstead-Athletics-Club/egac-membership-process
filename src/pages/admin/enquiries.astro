@@ -1,0 +1,288 @@
+---
+// src/pages/admin/enquiries.astro
+// Admin enquiries list. Shows all enquiries with filtering, search and pagination.
+// Auth: checks egac_admin_token cookie server-side.
+
+import AdminBase from '../../layouts/AdminBase.astro';
+import { checkAdminToken } from '../../lib/auth/admin.js';
+import { listEnquiries } from '../../lib/repositories/enquiries.js';
+import { getInviteById } from '../../lib/repositories/invites.js';
+import { listAgeGroups } from '../../lib/repositories/age-groups.js';
+import type { Enquiry, AgeGroup, Invite, EnquiryFilters } from '../../lib/db/schema.js';
+
+// ── Auth check ───────────────────────────────────────────────────────────────
+
+const env = Astro.locals.runtime.env;
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+if (!checkAdminToken(token, env)) {
+  return Astro.redirect('/admin/login');
+}
+
+// ── URL params ───────────────────────────────────────────────────────────────
+
+const url = new URL(Astro.request.url);
+const rawStatus = url.searchParams.get('status') ?? 'all';
+const search = url.searchParams.get('search')?.trim() ?? '';
+const rawPage = parseInt(url.searchParams.get('page') ?? '1', 10);
+const page = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+const PAGE_SIZE = 20;
+const offset = (page - 1) * PAGE_SIZE;
+
+// ── Load data ────────────────────────────────────────────────────────────────
+
+const filters: EnquiryFilters = {
+  limit: PAGE_SIZE + 1,
+  offset,
+  ...(rawStatus === 'pending' || rawStatus === 'processed' || rawStatus === 'academy'
+    ? { status: rawStatus }
+    : {}),
+  ...(search ? { search } : {}),
+};
+
+const [rows, ageGroups] = await Promise.all([listEnquiries(filters, env), listAgeGroups(env)]);
+
+const hasNextPage = rows.length > PAGE_SIZE;
+const enquiries: Enquiry[] = rows.slice(0, PAGE_SIZE);
+
+// Build age group lookup map
+const ageGroupMap = new Map<string, AgeGroup>(ageGroups.map((ag) => [ag.id, ag]));
+
+// Load invites in parallel for enquiries that have one
+const inviteMap = new Map<string, Invite>();
+await Promise.all(
+  enquiries.map(async (e) => {
+    if (!e.invite_id) return;
+    const inv = await getInviteById(e.invite_id, env);
+    if (inv) inviteMap.set(e.id, inv);
+  })
+);
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDate(iso: string): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function inviteStatusBadge(status: string | undefined): { label: string; cls: string } {
+  switch (status) {
+    case 'pending':
+      return { label: 'Pending', cls: 'bg-yellow-100 text-yellow-800' };
+    case 'sent':
+      return { label: 'Sent', cls: 'bg-blue-100 text-blue-800' };
+    case 'accepted':
+      return { label: 'Accepted', cls: 'bg-green-100 text-green-800' };
+    case 'expired':
+      return { label: 'Expired', cls: 'bg-gray-100 text-gray-600' };
+    case 'failed':
+      return { label: 'Failed', cls: 'bg-red-100 text-red-700' };
+    default:
+      return { label: 'None', cls: 'bg-gray-100 text-gray-500' };
+  }
+}
+
+// Build next/prev page URLs
+function pageUrl(p: number): string {
+  const u = new URL(Astro.request.url);
+  u.searchParams.set('page', String(p));
+  return u.pathname + u.search;
+}
+
+function tabUrl(s: string): string {
+  const u = new URL(Astro.request.url);
+  u.searchParams.set('status', s);
+  u.searchParams.delete('page');
+  if (search) u.searchParams.set('search', search);
+  return u.pathname + u.search;
+}
+
+const tabs: { id: string; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'pending', label: 'Pending' },
+  { id: 'processed', label: 'Processed' },
+  { id: 'academy', label: 'Academy' },
+];
+---
+
+<AdminBase title="Enquiries" activeNav="enquiries">
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-gray-900">Enquiries</h1>
+    </div>
+
+    <!-- Status tabs -->
+    <div class="border-b border-gray-200">
+      <nav class="-mb-px flex gap-1" aria-label="Enquiry status filter">
+        {
+          tabs.map((tab) => (
+            <a
+              href={tabUrl(tab.id)}
+              class={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                rawStatus === tab.id || (tab.id === 'all' && rawStatus === 'all')
+                  ? 'border-blue-600 text-blue-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {tab.label}
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+
+    <!-- Search form -->
+    <form method="GET" class="flex gap-2">
+      <input type="hidden" name="status" value={rawStatus} />
+      <input
+        type="search"
+        name="search"
+        value={search}
+        placeholder="Search by name or email…"
+        class="flex-1 max-w-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+      <button
+        type="submit"
+        class="px-4 py-2 bg-blue-800 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+      >
+        Search
+      </button>
+      {
+        search && (
+          <a
+            href={tabUrl(rawStatus)}
+            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors"
+          >
+            Clear
+          </a>
+        )
+      }
+    </form>
+
+    <!-- Table -->
+    {
+      enquiries.length === 0 ? (
+        <div class="text-center py-16 text-gray-400 text-sm">No enquiries found.</div>
+      ) : (
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    DOB
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Age Group
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Invite
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th class="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-100">
+                {enquiries.map((enq) => {
+                  const invite = inviteMap.get(enq.id);
+                  const ageGroup = enq.age_group_id ? ageGroupMap.get(enq.age_group_id) : null;
+                  const badge = inviteStatusBadge(invite?.status);
+                  return (
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {formatDate(enq.created_at)}
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 font-medium">
+                        {enq.name || <span class="text-gray-400">—</span>}
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-700">{enq.email}</td>
+                      <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {enq.dob ? formatDate(enq.dob) : <span class="text-gray-400">—</span>}
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-600">
+                        {ageGroup ? (
+                          <span class="text-xs">
+                            {ageGroup.label}
+                            <span class="ml-1 text-gray-400">({ageGroup.booking_type})</span>
+                          </span>
+                        ) : (
+                          <span class="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td class="px-4 py-3">
+                        <span
+                          class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${badge.cls}`}
+                        >
+                          {badge.label}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3">
+                        <span
+                          class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${enq.processed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
+                        >
+                          {enq.processed ? 'Processed' : 'Pending'}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-right">
+                        <a
+                          href={`/admin/enquiries/${enq.id}`}
+                          class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          View →
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )
+    }
+
+    <!-- Pagination -->
+    {
+      (page > 1 || hasNextPage) && (
+        <div class="flex items-center justify-between text-sm">
+          <div>
+            {page > 1 ? (
+              <a
+                href={pageUrl(page - 1)}
+                class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+              >
+                ← Previous
+              </a>
+            ) : (
+              <span class="px-3 py-1.5 text-gray-400">← Previous</span>
+            )}
+          </div>
+          <span class="text-gray-500">Page {page}</span>
+          <div>
+            {hasNextPage ? (
+              <a
+                href={pageUrl(page + 1)}
+                class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+              >
+                Next →
+              </a>
+            ) : (
+              <span class="px-3 py-1.5 text-gray-400">Next →</span>
+            )}
+          </div>
+        </div>
+      )
+    }
+  </div>
+</AdminBase>

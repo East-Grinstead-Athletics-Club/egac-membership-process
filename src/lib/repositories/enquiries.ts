@@ -103,8 +103,8 @@ export async function listEnquiries(filters: EnquiryFilters, env: Env): Promise<
   } else if (filters.status === 'academy') {
     conditions.push(
       `EXISTS (
-        SELECT 1 FROM academy_invitations ai
-        WHERE ai.enquiry_id = e.id AND ai.environment = ?
+        SELECT 1 FROM academy_waitlist aw
+        WHERE aw.enquiry_id = e.id AND aw.environment = ?
       )`
     );
     params.push(environment);

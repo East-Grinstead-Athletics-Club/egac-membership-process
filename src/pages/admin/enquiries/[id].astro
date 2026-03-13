@@ -1,0 +1,363 @@
+---
+// src/pages/admin/enquiries/[id].astro
+// Admin enquiry detail page. Shows full enquiry info, event timeline,
+// bookings, and actions (edit note, resend invite).
+// Auth: checks egac_admin_token cookie server-side.
+
+import AdminBase from '../../../layouts/AdminBase.astro';
+import { checkAdminToken } from '../../../lib/auth/admin.js';
+import { getEnquiryById } from '../../../lib/repositories/enquiries.js';
+import { getInviteById } from '../../../lib/repositories/invites.js';
+import { listBookingsByEnquiry } from '../../../lib/repositories/bookings.js';
+import type { Enquiry, Invite, Booking, EnquiryEvent } from '../../../lib/db/schema.js';
+
+// ── Auth check ───────────────────────────────────────────────────────────────
+
+const env = Astro.locals.runtime.env;
+const adminToken = Astro.cookies.get('egac_admin_token')?.value ?? '';
+if (!checkAdminToken(adminToken, env)) {
+  return Astro.redirect('/admin/login');
+}
+
+// ── Load data ────────────────────────────────────────────────────────────────
+
+const { id } = Astro.params;
+const enquiry: Enquiry | null = id ? await getEnquiryById(id, env) : null;
+
+let events: EnquiryEvent[] = [];
+let invite: Invite | null = null;
+let bookings: Booking[] = [];
+
+if (enquiry) {
+  // Parse events log (newest first)
+  try {
+    events = (JSON.parse(enquiry.events || '[]') as EnquiryEvent[]).sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  } catch {
+    events = [];
+  }
+
+  // Load invite and bookings in parallel
+  [invite, bookings] = await Promise.all([
+    enquiry.invite_id ? getInviteById(enquiry.invite_id, env) : Promise.resolve(null),
+    listBookingsByEnquiry(enquiry.id, env),
+  ]);
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function eventLabel(type: string): string {
+  const map: Record<string, string> = {
+    academy_waitlist_added: 'Added to academy waitlist',
+    academy_response_received: 'Academy response received',
+    booking_invite_sent: 'Booking invite sent',
+    booking_created: 'Booking created',
+    invite_expired: 'Invite expired',
+    invite_resent: 'Invite resent',
+    attendance_recorded: 'Attendance recorded',
+    membership_invite_sent: 'Membership invite sent',
+    reminder_sent: 'Reminder sent',
+  };
+  return map[type] ?? type;
+}
+
+function inviteStatusCls(status: string): string {
+  switch (status) {
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'sent':
+      return 'bg-blue-100 text-blue-800';
+    case 'accepted':
+      return 'bg-green-100 text-green-800';
+    case 'expired':
+      return 'bg-gray-100 text-gray-600';
+    case 'failed':
+      return 'bg-red-100 text-red-700';
+    default:
+      return 'bg-gray-100 text-gray-500';
+  }
+}
+
+const bookingUrl = invite ? `/book/${invite.token}` : null;
+---
+
+<AdminBase
+  title={enquiry ? `Enquiry — ${enquiry.name || enquiry.email}` : 'Enquiry'}
+  activeNav="enquiries"
+>
+  <div class="space-y-8">
+    <!-- Back link -->
+    <a href="/admin/enquiries" class="text-sm text-blue-600 hover:text-blue-800"
+      >← Back to enquiries</a
+    >
+
+    {
+      !enquiry ? (
+        <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+          Enquiry not found.
+        </div>
+      ) : (
+        <>
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+              <h1 class="font-semibold text-gray-900 text-lg">{enquiry.name || enquiry.email}</h1>
+              <span
+                class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${enquiry.processed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-700'}`}
+              >
+                {enquiry.processed ? 'Processed' : 'Pending'}
+              </span>
+            </div>
+            <dl class="px-6 py-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 text-sm">
+              <div>
+                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</dt>
+                <dd class="mt-1 text-gray-900">{enquiry.email}</dd>
+              </div>
+              {enquiry.phone && (
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</dt>
+                  <dd class="mt-1 text-gray-900">{enquiry.phone}</dd>
+                </div>
+              )}
+              <div>
+                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">DOB</dt>
+                <dd class="mt-1 text-gray-900">{formatDate(enquiry.dob)}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Source</dt>
+                <dd class="mt-1 text-gray-900 capitalize">{enquiry.source}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Created</dt>
+                <dd class="mt-1 text-gray-900">{formatDate(enquiry.created_at)}</dd>
+              </div>
+              {invite && (
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Invite</dt>
+                  <dd class="mt-1">
+                    <span
+                      class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${inviteStatusCls(invite.status)}`}
+                    >
+                      {invite.status}
+                    </span>
+                    {bookingUrl && (
+                      <a
+                        href={bookingUrl}
+                        target="_blank"
+                        rel="noopener"
+                        class="ml-2 text-xs text-blue-600 hover:underline"
+                      >
+                        Open invite page
+                      </a>
+                    )}
+                  </dd>
+                </div>
+              )}
+            </dl>
+            {enquiry.note && (
+              <div class="px-6 pb-4">
+                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Note</dt>
+                <dd
+                  id="note-display"
+                  class="text-sm text-gray-700 bg-gray-50 rounded p-3 whitespace-pre-wrap"
+                >
+                  {enquiry.note}
+                </dd>
+              </div>
+            )}
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6 space-y-6">
+            <h2 class="font-semibold text-gray-900">Actions</h2>
+
+            <div>
+              <label for="note-input" class="block text-sm font-medium text-gray-700 mb-1">
+                Admin Note
+              </label>
+              <textarea
+                id="note-input"
+                rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Add a note about this enquiry…"
+              >
+                {enquiry.note || ''}
+              </textarea>
+              <button
+                id="save-note-btn"
+                class="mt-2 px-4 py-2 bg-blue-800 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+              >
+                Save note
+              </button>
+              <span id="note-status" class="ml-3 text-sm text-gray-500 hidden" />
+            </div>
+
+            <div class="border-t border-gray-100 pt-6">
+              <p class="text-sm text-gray-600 mb-3">
+                Send (or resend) a booking invite email to this enquiry. An existing pending or sent
+                invite will be reused; otherwise a new one is created.
+              </p>
+              <button
+                id="resend-invite-btn"
+                class="px-4 py-2 bg-green-700 text-white rounded-md text-sm hover:bg-green-600 transition-colors"
+              >
+                Send booking invite
+              </button>
+              <span id="resend-status" class="ml-3 text-sm text-gray-500 hidden" />
+            </div>
+          </div>
+
+          {bookings.length > 0 && (
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="font-semibold text-gray-900">Bookings ({bookings.length})</h2>
+              </div>
+              <ul class="divide-y divide-gray-100">
+                {bookings.map((b) => (
+                  <li class="px-6 py-3 flex items-center justify-between text-sm">
+                    <span class="text-gray-900 font-medium">{formatDate(b.session_date)}</span>
+                    <span
+                      class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        b.status === 'confirmed'
+                          ? 'bg-green-100 text-green-700'
+                          : b.status === 'cancelled'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {b.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h2 class="font-semibold text-gray-900">Event Timeline ({events.length})</h2>
+            </div>
+            {events.length === 0 ? (
+              <p class="px-6 py-4 text-sm text-gray-400">No events recorded.</p>
+            ) : (
+              <ol class="divide-y divide-gray-100">
+                {events.map((ev) => (
+                  <li class="px-6 py-3 flex items-start gap-4 text-sm">
+                    <span class="text-gray-400 whitespace-nowrap text-xs pt-0.5">
+                      {formatDateTime(ev.timestamp)}
+                    </span>
+                    <span class="text-gray-700">{eventLabel(ev.type as string)}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </>
+      )
+    }
+  </div>
+</AdminBase>
+
+<script define:vars={{ adminToken, enquiryId: id }}>
+  // ── Save note ──────────────────────────────────────────────
+
+  const saveBtn = document.getElementById('save-note-btn');
+  const noteInput = document.getElementById('note-input');
+  const noteStatus = document.getElementById('note-status');
+
+  if (saveBtn && noteInput && noteStatus && enquiryId) {
+    saveBtn.addEventListener('click', async () => {
+      const note = noteInput.value.trim() || null;
+      saveBtn.disabled = true;
+      noteStatus.textContent = 'Saving…';
+      noteStatus.classList.remove('hidden', 'text-red-600');
+      noteStatus.classList.add('text-gray-500');
+
+      try {
+        const resp = await fetch(`/api/admin/enquiries/${enquiryId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({ note }),
+        });
+        if (resp.ok) {
+          noteStatus.textContent = 'Saved.';
+        } else {
+          noteStatus.textContent = 'Save failed.';
+          noteStatus.classList.add('text-red-600');
+        }
+      } catch {
+        noteStatus.textContent = 'Network error.';
+        noteStatus.classList.add('text-red-600');
+      } finally {
+        saveBtn.disabled = false;
+        noteStatus.classList.remove('hidden');
+        setTimeout(() => noteStatus.classList.add('hidden'), 3000);
+      }
+    });
+  }
+
+  // ── Resend invite ──────────────────────────────────────────
+
+  const resendBtn = document.getElementById('resend-invite-btn');
+  const resendStatus = document.getElementById('resend-status');
+
+  if (resendBtn && resendStatus && enquiryId) {
+    resendBtn.addEventListener('click', async () => {
+      resendBtn.disabled = true;
+      resendStatus.textContent = 'Sending…';
+      resendStatus.classList.remove('hidden', 'text-red-600');
+      resendStatus.classList.add('text-gray-500');
+
+      try {
+        const resp = await fetch('/api/admin/invites/resend', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({ enquiry_id: enquiryId }),
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          resendStatus.textContent = data.data?.reused
+            ? 'Invite resent (reused existing).'
+            : 'New invite sent.';
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          resendStatus.textContent = data.error ?? 'Send failed.';
+          resendStatus.classList.add('text-red-600');
+          resendBtn.disabled = false;
+        }
+      } catch {
+        resendStatus.textContent = 'Network error.';
+        resendStatus.classList.add('text-red-600');
+        resendBtn.disabled = false;
+      } finally {
+        resendStatus.classList.remove('hidden');
+      }
+    });
+  }
+</script>

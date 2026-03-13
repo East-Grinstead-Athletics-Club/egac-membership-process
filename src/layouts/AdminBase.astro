@@ -1,0 +1,69 @@
+---
+// src/layouts/AdminBase.astro
+// Base layout for all admin pages.
+
+interface Props {
+  title: string;
+  activeNav?: 'enquiries' | 'bookings' | 'templates' | 'config';
+}
+
+const { title, activeNav } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} — EGAC Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-gray-100 text-gray-900 antialiased">
+    <header class="bg-blue-900 text-white shadow">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <a href="/admin/enquiries" class="font-bold text-lg tracking-tight hover:text-blue-200">
+            EGAC Admin
+          </a>
+          <span class="text-blue-400 text-sm hidden sm:inline">East Grinstead Athletics Club</span>
+        </div>
+        <nav class="flex items-center gap-1 text-sm">
+          <a
+            href="/admin/enquiries"
+            class={`px-3 py-1.5 rounded transition-colors ${activeNav === 'enquiries' ? 'bg-blue-700 text-white' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+          >
+            Enquiries
+          </a>
+          <a
+            href="/admin/login"
+            id="logout-link"
+            class="ml-2 px-3 py-1.5 rounded text-blue-300 hover:bg-blue-800 hover:text-white transition-colors text-sm"
+          >
+            Log out
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <footer class="mt-16 border-t border-gray-200 py-4 text-center text-xs text-gray-400">
+      EGAC Admin &mdash; &copy; {new Date().getFullYear()} East Grinstead Athletics Club
+    </footer>
+
+    <script>
+      // Clear admin cookie on logout
+      const logoutLink = document.getElementById('logout-link');
+      if (logoutLink) {
+        logoutLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.cookie = 'egac_admin_token=; path=/admin; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          window.location.href = '/admin/login';
+        });
+      }
+    </script>
+  </body>
+</html>
