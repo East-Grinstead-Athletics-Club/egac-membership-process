@@ -1,0 +1,436 @@
+/* EGAC — East Grinstead Athletics Club */
+/* Aesthetic: Athletic precision meets English club warmth. */
+
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+:root {
+  --navy: #0f1f3d;
+  --navy-mid: #1a3260;
+  --navy-light: #e8edf5;
+  --amber: #e8a020;
+  --amber-light: #fdf3dc;
+  --white: #ffffff;
+  --off-white: #f8f7f5;
+  --muted: #6b7280;
+  --border: #d1d9e6;
+  --red: #c0392b;
+  --green: #1a6b3a;
+  --green-light: #e6f4ec;
+
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-body: 'Barlow', sans-serif;
+
+  --radius: 4px;
+  --radius-lg: 8px;
+  --shadow: 0 2px 8px rgba(15, 31, 61, 0.08);
+  --shadow-lg: 0 8px 32px rgba(15, 31, 61, 0.14);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--navy);
+  background: var(--off-white);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Layout ---- */
+.site-header {
+  background: var(--navy);
+  color: var(--white);
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  border-bottom: 3px solid var(--amber);
+}
+
+.site-logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--white);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.site-logo span.accent {
+  color: var(--amber);
+}
+
+.site-tagline {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+
+.site-main {
+  flex: 1;
+  padding: 2.5rem 1.5rem;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.site-footer {
+  background: var(--navy);
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  font-size: 0.8rem;
+  padding: 1.25rem;
+  margin-top: auto;
+  letter-spacing: 0.02em;
+}
+
+/* ---- Page headings ---- */
+.page-eyebrow {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 0.4rem;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.4rem;
+  line-height: 1.1;
+  color: var(--navy);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.75rem;
+}
+
+.page-subtitle {
+  font-size: 1rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+/* ---- Cards ---- */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.card + .card {
+  margin-top: 1.25rem;
+}
+
+/* ---- Info rows ---- */
+.info-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.info-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.info-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--navy);
+}
+
+/* ---- Forms ---- */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--navy);
+  margin-bottom: 0.4rem;
+}
+
+.form-label .optional {
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 0.3rem;
+}
+
+.form-input {
+  display: block;
+  width: 100%;
+  padding: 0.7rem 0.875rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--navy);
+  background: var(--white);
+  transition: border-color 0.15s;
+  appearance: none;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--navy-mid);
+  box-shadow: 0 0 0 3px rgba(26, 50, 96, 0.1);
+}
+
+.form-hint {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.75rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--navy);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background: var(--navy-mid);
+}
+
+.btn-amber {
+  background: var(--amber);
+  color: var(--navy);
+}
+
+.btn-amber:hover {
+  background: #d4901a;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--navy);
+  border: 2px solid var(--navy);
+}
+
+.btn-outline:hover {
+  background: var(--navy-light);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border: 2px solid var(--red);
+}
+
+.btn-danger:hover {
+  background: #fdf0ef;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---- Alerts ---- */
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  border-left: 4px solid;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.alert-success {
+  background: var(--green-light);
+  border-color: var(--green);
+  color: #145230;
+}
+
+.alert-warning {
+  background: var(--amber-light);
+  border-color: var(--amber);
+  color: #7a5000;
+}
+
+.alert-error {
+  background: #fdf0ef;
+  border-color: var(--red);
+  color: #7a1a12;
+}
+
+.alert-info {
+  background: var(--navy-light);
+  border-color: var(--navy-mid);
+  color: var(--navy);
+}
+
+/* ---- Session picker ---- */
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.session-option {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.12s;
+  background: var(--white);
+  text-align: left;
+  width: 100%;
+  font-family: var(--font-body);
+}
+
+.session-option:hover:not(:disabled) {
+  border-color: var(--navy-mid);
+  background: var(--navy-light);
+}
+
+.session-option.selected {
+  border-color: var(--navy);
+  background: var(--navy-light);
+  box-shadow: 0 0 0 1px var(--navy);
+}
+
+.session-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--off-white);
+}
+
+.session-date {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--navy);
+  flex: 1;
+}
+
+.session-time {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.1rem;
+}
+
+.session-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 2px;
+}
+
+.badge-available {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.badge-full {
+  background: #fdf0ef;
+  color: var(--red);
+}
+
+/* ---- Confirmation ---- */
+.confirm-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.confirm-icon-success {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.confirm-icon-info {
+  background: var(--navy-light);
+  color: var(--navy-mid);
+}
+
+/* ---- Misc ---- */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+.action-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .page-title { font-size: 1.9rem; }
+  .site-tagline { display: none; }
+  .action-pair { grid-template-columns: 1fr; }
+  .info-row { flex-direction: column; gap: 0.75rem; }
+}

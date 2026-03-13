@@ -11,11 +11,10 @@
 //   3. Append event to the enquiry log
 //   4. Return confirmation
 // ============================================================
-
 import { ok, err, parseBody } from './helpers.js';
 import {
-  getAcademyInvitationByToken,
-  processAcademyResponse,
+  getWaitlistEntryByToken,
+  recordWaitlistResponse,
 } from '../lib/repositories/academy.js';
 import { appendEnquiryEvent } from '../lib/repositories/enquiries.js';
 import type { Env } from '../lib/db/schema.js';
@@ -30,15 +29,14 @@ export async function handleAcademyRespond(request: Request, env: Env): Promise<
   if (!body) return err('Request body is required', 400, 'INVALID_JSON');
 
   const { token, response } = body;
-
-  if (!token) return err('Token is required', 422, 'MISSING_TOKEN');
+  if (!token)    return err('Token is required',    422, 'MISSING_TOKEN');
   if (!response) return err('Response is required', 422, 'MISSING_RESPONSE');
   if (response !== 'yes' && response !== 'no') {
     return err('Response must be yes or no', 422, 'INVALID_RESPONSE');
   }
 
-  // Look up invitation
-  const invitation = await getAcademyInvitationByToken(token, env);
+  // Look up waitlist entry
+  const invitation = await getWaitlistEntryByToken(token, env);
   if (!invitation) return err('Invitation not found', 404, 'INVITATION_NOT_FOUND');
 
   // Idempotency — already responded
@@ -50,7 +48,7 @@ export async function handleAcademyRespond(request: Request, env: Env): Promise<
   }
 
   // Record the response
-  await processAcademyResponse(token, response, env);
+  await recordWaitlistResponse(token, response, env);
 
   // Log to enquiry event trail
   await appendEnquiryEvent(

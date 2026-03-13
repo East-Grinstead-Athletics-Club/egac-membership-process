@@ -33,9 +33,8 @@ vi.mock('../../src/lib/repositories/bookings.js', () => ({
 vi.mock('../../src/lib/repositories/academy.js', () => ({
   addToWaitlist: vi.fn(),
   markWaitlistInviteSent: vi.fn(),
-  getAcademyInvitationByToken: vi.fn(),
-  markAcademyInvitationSent: vi.fn(),
-  processAcademyResponse: vi.fn(),
+  getWaitlistEntryByToken: vi.fn(),
+  recordWaitlistResponse: vi.fn(),
 }));
 
 vi.mock('../../src/lib/repositories/age-groups.js', () => ({
@@ -142,7 +141,7 @@ const mockInvite = {
   enquiry_id: 'enq_001',
   status: 'sent' as const,
   send_attempts: 1,
-  created_at: new Date().toISOString(), // fresh invite, not expired
+  created_at: new Date().toISOString(),
   sent_at: new Date().toISOString(),
   accepted_at: null,
   last_send_error: null,
@@ -232,7 +231,7 @@ describe('POST /api/enquiry', () => {
   });
 
   it('returns 422 when email is missing', async () => {
-    const req = postRequest('/api/enquiry', { name: 'No Email' }); // missing email → 422
+    const req = postRequest('/api/enquiry', { name: 'No Email' });
     const { status, body } = await parseResponse<{ ok: boolean; error: string }>(
       await handleEnquiry(req, makeEnv())
     );
@@ -277,15 +276,11 @@ describe('POST /api/enquiry', () => {
 
     expect(status).toBe(200);
     expect(body.ok).toBe(true);
-    // insertEnquiry should NOT be called — no duplicate insert
     expect(enquiryRepo.insertEnquiry).not.toHaveBeenCalled();
   });
 
   it('adds to academy waitlist for under-10 enquiry', async () => {
-    const academyEnquiry = {
-      ...mockEnquiry,
-      dob: '2018-01-01', // 8 years old — U11 Academy age group (waitlist)
-    };
+    const academyEnquiry = { ...mockEnquiry, dob: '2018-01-01' };
     const mockWaitlistAgeGroup = {
       ...mockAgeGroup,
       id: 'ag_u11',
@@ -361,11 +356,9 @@ describe('POST /api/enquiry', () => {
 // ============================================================
 
 describe('POST /api/booking', () => {
-  // A Tuesday 12 weeks from now — guaranteed to be in the future
   const futureDate = (() => {
     const d = new Date();
-    d.setDate(d.getDate() + 84); // ~12 weeks
-    // Snap to next Tuesday
+    d.setDate(d.getDate() + 84);
     while (d.getDay() !== 2) d.setDate(d.getDate() + 1);
     return d.toISOString().split('T')[0];
   })();
@@ -387,10 +380,7 @@ describe('POST /api/booking', () => {
   });
 
   it('returns 200 on valid booking', async () => {
-    const req = postRequest('/api/booking', {
-      token: 'abc123token',
-      date: futureDate,
-    });
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
 
     const { status, body } = await parseResponse<{ ok: boolean; data: { booking_id: string } }>(
       await handleBooking(req, makeEnv())
@@ -403,57 +393,37 @@ describe('POST /api/booking', () => {
 
   it('returns 404 if token not found', async () => {
     vi.mocked(inviteRepo.getInviteByToken).mockResolvedValue(null);
-
-    const req = postRequest('/api/booking', { token: 'bad_token', date: futureDate, slot: 'u13' });
+    const req = postRequest('/api/booking', { token: 'bad_token', date: futureDate });
     const { status } = await parseResponse(await handleBooking(req, makeEnv()));
-
     expect(status).toBe(404);
   });
 
   it('returns 409 if invite already accepted', async () => {
-    vi.mocked(inviteRepo.getInviteByToken).mockResolvedValue({
-      ...mockInvite,
-      status: 'accepted',
-    });
-
-    const req = postRequest('/api/booking', {
-      token: 'abc123token',
-      date: futureDate,
-    });
+    vi.mocked(inviteRepo.getInviteByToken).mockResolvedValue({ ...mockInvite, status: 'accepted' });
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
     const { status, body } = await parseResponse<{ ok: boolean; code: string }>(
       await handleBooking(req, makeEnv())
     );
-
     expect(status).toBe(409);
     expect(body.code).toBe('INVITE_USED');
   });
 
   it('returns 409 if slot is at capacity', async () => {
     vi.mocked(bookingRepo.countBookingsForDateAndGroup).mockResolvedValue(2);
-
-    const req = postRequest('/api/booking', {
-      token: 'abc123token',
-      date: futureDate,
-    });
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
     const { status, body } = await parseResponse<{ ok: boolean; code: string }>(
       await handleBooking(req, makeEnv())
     );
-
     expect(status).toBe(409);
     expect(body.code).toBe('SLOT_FULL');
   });
 
   it('returns 409 if duplicate booking for same invite and date', async () => {
     vi.mocked(bookingRepo.getBookingByInviteAndDate).mockResolvedValue(mockBooking);
-
-    const req = postRequest('/api/booking', {
-      token: 'abc123token',
-      date: futureDate,
-    });
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
     const { status, body } = await parseResponse<{ ok: boolean; code: string }>(
       await handleBooking(req, makeEnv())
     );
-
     expect(status).toBe(409);
     expect(body.code).toBe('DUPLICATE_BOOKING');
   });
@@ -472,31 +442,18 @@ describe('POST /api/booking', () => {
   });
 
   it('returns 410 if invite is expired', async () => {
-    vi.mocked(inviteRepo.getInviteByToken).mockResolvedValue({
-      ...mockInvite,
-      status: 'expired',
-    });
-
-    const req = postRequest('/api/booking', {
-      token: 'abc123token',
-      date: futureDate,
-    });
+    vi.mocked(inviteRepo.getInviteByToken).mockResolvedValue({ ...mockInvite, status: 'expired' });
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
     const { status, body } = await parseResponse<{ ok: boolean; code: string }>(
       await handleBooking(req, makeEnv())
     );
-
     expect(status).toBe(410);
     expect(body.code).toBe('INVITE_EXPIRED');
   });
 
   it('marks invite accepted after successful booking', async () => {
-    const req = postRequest('/api/booking', {
-      token: 'abc123token',
-      date: futureDate,
-    });
-
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
     await handleBooking(req, makeEnv());
-
     expect(inviteRepo.markInviteAccepted).toHaveBeenCalledWith('inv_001', expect.anything());
   });
 });
@@ -506,25 +463,31 @@ describe('POST /api/booking', () => {
 // ============================================================
 
 describe('POST /api/academy/respond', () => {
-  const mockAcademyInvitation = {
-    id: 'aci_001',
+  const mockWaitlistEntry = {
+    id: 'awl_001',
     enquiry_id: 'enq_001',
+    season_id: null,
     token: 'academy_token_xyz',
-    created_at: new Date().toISOString(),
-    sent_at: new Date().toISOString(),
+    position: null,
+    status: 'invited' as const,
+    is_returning: 0,
+    rolled_over_from_season_id: null,
+    invited_at: new Date().toISOString(),
     responded_at: null,
     response: null as 'yes' | 'no' | null,
-    status: 'sent' as const,
+    send_attempts: 1,
+    last_send_error: null,
+    created_at: new Date().toISOString(),
     environment: 'development' as const,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(academyRepo.getAcademyInvitationByToken).mockResolvedValue(mockAcademyInvitation);
-    vi.mocked(academyRepo.processAcademyResponse).mockResolvedValue({
-      ...mockAcademyInvitation,
+    vi.mocked(academyRepo.getWaitlistEntryByToken).mockResolvedValue(mockWaitlistEntry);
+    vi.mocked(academyRepo.recordWaitlistResponse).mockResolvedValue({
+      ...mockWaitlistEntry,
       response: 'yes',
-      status: 'responded',
+      status: 'responded' as const,
       responded_at: new Date().toISOString(),
     });
     vi.mocked(enquiryRepo.appendEnquiryEvent).mockResolvedValue(undefined);
@@ -560,7 +523,7 @@ describe('POST /api/academy/respond', () => {
   });
 
   it('returns 404 if token not found', async () => {
-    vi.mocked(academyRepo.getAcademyInvitationByToken).mockResolvedValue(null);
+    vi.mocked(academyRepo.getWaitlistEntryByToken).mockResolvedValue(null);
 
     const req = postRequest('/api/academy/respond', {
       token: 'bad_token',
@@ -582,9 +545,9 @@ describe('POST /api/academy/respond', () => {
   });
 
   it('is idempotent — already-responded returns 200 gracefully', async () => {
-    vi.mocked(academyRepo.getAcademyInvitationByToken).mockResolvedValue({
-      ...mockAcademyInvitation,
-      status: 'responded',
+    vi.mocked(academyRepo.getWaitlistEntryByToken).mockResolvedValue({
+      ...mockWaitlistEntry,
+      status: 'responded' as const,
       response: 'yes',
       responded_at: new Date().toISOString(),
     });
@@ -601,8 +564,7 @@ describe('POST /api/academy/respond', () => {
 
     expect(status).toBe(200);
     expect(body.data.already_responded).toBe(true);
-    // processAcademyResponse should NOT be called again
-    expect(academyRepo.processAcademyResponse).not.toHaveBeenCalled();
+    expect(academyRepo.recordWaitlistResponse).not.toHaveBeenCalled();
   });
 
   it('appends event to enquiry trail', async () => {

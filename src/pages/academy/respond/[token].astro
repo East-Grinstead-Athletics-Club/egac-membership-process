@@ -1,0 +1,284 @@
+---
+// src/pages/academy/respond/[token].astro
+// Academy waitlist accept/decline page — personalised link.
+// Uses corrected function names: getWaitlistEntryByToken / recordWaitlistResponse.
+
+import Layout from '../../../layouts/Layout.astro';
+import { getWaitlistEntryByToken, recordWaitlistResponse, getAcademySeasonById } from '../../../lib/repositories/academy';
+import { getEnquiryById } from '../../../lib/repositories/enquiries';
+import { sendAcademyWaitlist } from '../../../lib/email/templates';
+import type { Env } from '../../../lib/db/schema';
+
+const env = Astro.locals.runtime?.env as Env;
+const { token } = Astro.params;
+
+// ---- State ----
+type PageError = 'not_found' | 'already_responded' | null;
+let pageError: PageError = null;
+let responseResult: { decision: 'accepted' | 'declined'; error?: string } | null = null;
+
+// ---- Load waitlist entry ----
+const entry = token ? await getWaitlistEntryByToken(token, env) : null;
+
+if (!entry) {
+  pageError = 'not_found';
+} else if (entry.status === 'accepted' || entry.status === 'declined') {
+  pageError = 'already_responded';
+}
+
+// ---- Enrich ----
+const season  = entry ? await getAcademySeasonById(entry.season_id, env)  : null;
+const enquiry = entry ? await getEnquiryById(entry.enquiry_id, env)       : null;
+
+const childName    = enquiry?.child_name ?? '';
+const parentEmail  = enquiry?.email      ?? '';
+const seasonLabel  = season?.label       ?? 'Academy Programme';
+const seasonStart  = season?.start_date  ?? '';
+const seasonEnd    = season?.end_date    ?? '';
+const isReturning  = entry?.is_returning ?? false;
+const currentStatus = entry?.status      ?? '';
+
+// ---- Handle POST ----
+if (Astro.request.method === 'POST' && !pageError && entry) {
+  const formData = await Astro.request.formData();
+  const decision = formData.get('decision')?.toString();
+
+  if (decision === 'accepted' || decision === 'declined') {
+    try {
+      await recordWaitlistResponse(token!, decision, env);
+      responseResult = { decision };
+      try { await sendAcademyWaitlist(entry.enquiry_id, decision, env); } catch { /* non-fatal */ }
+    } catch {
+      responseResult = { decision: decision as 'accepted' | 'declined', error: 'Could not record your response. Please try again.' };
+    }
+  }
+}
+
+function formatDate(iso: string) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+---
+
+<Layout title="Academy Place — Your Response">
+
+  {/* ── Not found ── */}
+  {pageError === 'not_found' && (
+    <div class="card" style="margin-top:2rem;text-align:center">
+      <p class="page-eyebrow">Invalid link</p>
+      <h1 class="page-title" style="font-size:1.8rem">Link not recognised</h1>
+      <p class="page-subtitle">
+        This link doesn't exist or may have been copied incorrectly.
+        Please check your email and try again.
+      </p>
+      <a href="/" class="btn btn-outline">Back to home</a>
+    </div>
+  )}
+
+  {/* ── Already responded ── */}
+  {pageError === 'already_responded' && entry && (
+    <div class="card" style="margin-top:2rem">
+      <div class={`confirm-icon ${currentStatus === 'accepted' ? 'confirm-icon-success' : 'confirm-icon-info'}`}>
+        {currentStatus === 'accepted' ? (
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+        ) : (
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        )}
+      </div>
+      <p class="page-eyebrow">Already responded</p>
+      <h1 class="page-title" style="font-size:1.8rem">
+        {currentStatus === 'accepted' ? 'Place accepted' : 'Place declined'}
+      </h1>
+      <p class="page-subtitle">
+        {currentStatus === 'accepted'
+          ? `We look forward to seeing ${childName} at the ${seasonLabel}!`
+          : `Thank you for letting us know. We'll offer the place to the next family on the waitlist.`
+        }
+      </p>
+      {currentStatus === 'accepted' && (
+        <div class="alert alert-info">
+          We'll be in touch with full programme details closer to the start date.
+        </div>
+      )}
+    </div>
+  )}
+
+  {/* ── Response confirmed ── */}
+  {!pageError && responseResult && !responseResult.error && entry && (
+    <div class="card" style="margin-top:2rem">
+      <div class={`confirm-icon ${responseResult.decision === 'accepted' ? 'confirm-icon-success' : 'confirm-icon-info'}`}>
+        {responseResult.decision === 'accepted' ? (
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+        ) : (
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        )}
+      </div>
+
+      {responseResult.decision === 'accepted' ? (
+        <>
+          <p class="page-eyebrow">Place confirmed</p>
+          <h1 class="page-title" style="font-size:1.9rem">Welcome to the Academy!</h1>
+          <p style="color:var(--muted);margin-bottom:1.5rem">
+            <strong>{childName}</strong>'s place in the <strong>{seasonLabel}</strong> is confirmed.
+            We've sent a confirmation to <strong>{parentEmail}</strong>.
+          </p>
+
+          <div class="info-row">
+            <div class="info-item">
+              <span class="info-label">Athlete</span>
+              <span class="info-value">{childName}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Programme</span>
+              <span class="info-value">{seasonLabel}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Starts</span>
+              <span class="info-value">{formatDate(seasonStart)}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Ends</span>
+              <span class="info-value">{formatDate(seasonEnd)}</span>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="alert alert-success">
+            <strong>What's next?</strong><br/>
+            We'll email full details about schedule, kit, and venue closer to the start date.
+            Sessions run <strong>Saturday mornings and Tuesday evenings</strong> throughout April–August.
+          </div>
+        </>
+      ) : (
+        <>
+          <p class="page-eyebrow">Response recorded</p>
+          <h1 class="page-title" style="font-size:1.9rem">Thanks for letting us know</h1>
+          <p class="page-subtitle">
+            We've noted that <strong>{childName}</strong> won't be joining the {seasonLabel}.
+            The place will be offered to the next family on the waitlist.
+          </p>
+          <div class="alert alert-info">
+            If your circumstances change, please enquire again next season — we'd love to have your
+            child with us in future.
+          </div>
+          <a href="/" class="btn btn-outline" style="margin-top:1.5rem">Back to home</a>
+        </>
+      )}
+    </div>
+  )}
+
+  {/* ── Response error ── */}
+  {!pageError && responseResult?.error && (
+    <div class="alert alert-error" style="margin-bottom:1.25rem">{responseResult.error}</div>
+  )}
+
+  {/* ── Response form ── */}
+  {!pageError && !responseResult?.decision && entry && (
+    <>
+      <p class="page-eyebrow">U11 Academy</p>
+      <h1 class="page-title">Academy place offer</h1>
+      <p class="page-subtitle">
+        A place is available in the <strong>{seasonLabel}</strong> for <strong>{childName}</strong>.
+        Please accept or decline below.
+      </p>
+
+      <div class="card">
+        {isReturning && (
+          <div class="alert alert-success" style="margin-bottom:1.5rem">
+            <strong>Returning athlete</strong> — {childName} attended the Academy last season
+            and has been offered a priority place.
+          </div>
+        )}
+
+        <div class="info-row" style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">
+          <div class="info-item">
+            <span class="info-label">Athlete</span>
+            <span class="info-value">{childName}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Programme</span>
+            <span class="info-value">{seasonLabel}</span>
+          </div>
+          {seasonStart && (
+            <div class="info-item">
+              <span class="info-label">Dates</span>
+              <span class="info-value">{formatDate(seasonStart)} – {formatDate(seasonEnd)}</span>
+            </div>
+          )}
+        </div>
+
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.875rem;line-height:1.6">
+          The Academy runs <strong>Saturday mornings and Tuesday evenings</strong> throughout the
+          programme. Both sessions form part of the same cohort — we ask all athletes to attend
+          both days where possible.
+        </p>
+
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
+          <strong>Capacity is limited to 40 athletes per season.</strong> If you decline, your
+          place will be offered to the next family on the waitlist and cannot be reclaimed.
+        </p>
+
+        <hr class="divider" />
+
+        <p style="font-size:0.78rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">
+          Your response
+        </p>
+
+        <div class="action-pair">
+          <form method="POST">
+            <input type="hidden" name="decision" value="accepted" />
+            <button type="submit" class="btn btn-amber btn-block" id="accept-btn"
+              style="font-size:1rem;padding:0.9rem">
+              ✓&nbsp; Accept place
+            </button>
+          </form>
+          <form method="POST" id="decline-form">
+            <input type="hidden" name="decision" value="declined" />
+            <button type="button" class="btn btn-danger btn-block" id="decline-btn"
+              style="font-size:1rem;padding:0.9rem">
+              ✕&nbsp; Decline place
+            </button>
+          </form>
+        </div>
+
+        <p style="font-size:0.78rem;color:var(--muted);margin-top:1rem;text-align:center">
+          Please respond as soon as possible so we can offer the place to another family if needed.
+        </p>
+      </div>
+    </>
+  )}
+
+</Layout>
+
+<script>
+  const declineBtn  = document.getElementById('decline-btn')  as HTMLButtonElement | null;
+  const declineForm = document.getElementById('decline-form') as HTMLFormElement   | null;
+  const acceptBtn   = document.getElementById('accept-btn')   as HTMLButtonElement | null;
+
+  declineBtn?.addEventListener('click', () => {
+    const ok = window.confirm(
+      'Are you sure you want to decline? This cannot be undone — the place will be offered to another family.'
+    );
+    if (ok && declineForm) {
+      declineBtn.disabled    = true;
+      declineBtn.textContent = 'Declining…';
+      declineForm.submit();
+    }
+  });
+
+  acceptBtn?.closest('form')?.addEventListener('submit', () => {
+    if (acceptBtn) {
+      acceptBtn.disabled    = true;
+      acceptBtn.textContent = 'Confirming…';
+    }
+  });
+</script>
