@@ -10,7 +10,6 @@ pages_build_output_dir = "dist"
 # Cloudflare account + API token for production
 # Use environment variable for token
 # ----------------------------------------------------------------
-account_id = "c13cb0489f508c3ce9794ffcb6887668"
 # Auth: set CLOUDFLARE_API_TOKEN in your environment (wrangler reads this automatically)
 
 # ----------------------------------------------------------------
