@@ -1,242 +1,233 @@
 ---
 // src/pages/index.astro
-// Public enquiry form. POSTs to /api/enquiry server-side.
-// Works without JS (progressive enhancement).
+// Public enquiry form — the main entry point for new athletes.
+// Submits to POST /api/enquiry via fetch (JS) with plain form POST fallback.
 
-import Layout from '../layouts/Layout.astro';
-
-type ResultType = 'taster' | 'waitlist' | 'duplicate' | null;
-let result: { type: ResultType; error?: string } = { type: null };
-
-if (Astro.request.method === 'POST') {
-  try {
-    const formData = await Astro.request.formData();
-
-    const body = {
-      parent_name:   formData.get('parent_name')?.toString().trim()   ?? '',
-      child_name:    formData.get('child_name')?.toString().trim()    ?? '',
-      email:         formData.get('email')?.toString().trim()         ?? '',
-      phone:         formData.get('phone')?.toString().trim()         || null,
-      date_of_birth: formData.get('date_of_birth')?.toString().trim() || null,
-    };
-
-    const response = await fetch(new URL('/api/enquiry', Astro.url), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json() as { routing?: string; error?: string };
-
-    if (response.status === 409) {
-      result = { type: 'duplicate' };
-    } else if (response.ok) {
-      result = { type: (data.routing as 'taster' | 'waitlist') ?? 'taster' };
-    } else {
-      result = { type: null, error: data.error ?? 'Something went wrong. Please try again.' };
-    }
-  } catch {
-    result = { type: null, error: 'Could not submit your enquiry. Please try again.' };
-  }
-}
-
-const showForm = result.type === null;
+import Base from '../layouts/Base.astro';
 ---
 
-<Layout title="Join EGAC" description="Enquire about taster sessions or the U11 Academy at East Grinstead Athletics Club.">
+<Base
+  title="Join EGAC"
+  description="Register your child's interest in East Grinstead Athletics Club taster sessions or the U11 Academy programme."
+>
+  <div id="form-section">
+    <h1 class="text-2xl font-bold text-blue-900 mb-1">Get in touch</h1>
+    <p class="text-gray-600 mb-8">
+      Register your interest and we'll be in touch with next steps — either a taster session
+      booking link or information about our Academy programme.
+    </p>
 
-  {/* ── Taster success ── */}
-  {result.type === 'taster' && (
-    <div class="card" style="margin-top:2rem">
-      <div class="confirm-icon confirm-icon-success">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
-      </div>
-      <p class="page-eyebrow">Enquiry received</p>
-      <h1 class="page-title" style="font-size:1.9rem">You're on the list!</h1>
-      <p class="page-subtitle">
-        Thanks for getting in touch. We'll review your enquiry and send you a booking link for a
-        taster session within the next few days. Keep an eye on your inbox — including your junk folder.
-      </p>
-      <div class="alert alert-info">
-        <strong>What happens next?</strong><br/>
-        You'll receive a personalised link to choose a Tuesday evening session. Places are limited
-        to 2 per age group each week, so please book promptly when you receive it.
-      </div>
+    <!-- Error summary (shown on validation failure) -->
+    <div
+      id="error-summary"
+      class="hidden bg-red-50 border border-red-300 rounded-lg p-4 mb-6"
+      role="alert"
+      aria-live="assertive"
+    >
+      <p class="font-semibold text-red-800 mb-1">Please fix the following:</p>
+      <ul id="error-list" class="list-disc list-inside text-red-700 text-sm space-y-1"></ul>
     </div>
-  )}
 
-  {/* ── Academy waitlist success ── */}
-  {result.type === 'waitlist' && (
-    <div class="card" style="margin-top:2rem">
-      <div class="confirm-icon confirm-icon-success">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
+    <form
+      id="enquiry-form"
+      method="POST"
+      action="/api/enquiry"
+      novalidate
+      class="space-y-5"
+    >
+      <!-- Full name -->
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+          Full name <span class="text-red-500" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          required
+          autocomplete="name"
+          aria-describedby="name-error"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+          placeholder="Parent or guardian name"
+        />
+        <p id="name-error" class="hidden mt-1 text-xs text-red-600" role="alert"></p>
       </div>
-      <p class="page-eyebrow">Academy enquiry received</p>
-      <h1 class="page-title" style="font-size:1.9rem">Added to the Academy waitlist</h1>
-      <p class="page-subtitle">
-        We've added your child to the U11 Academy waitlist for the next programme (April–August).
-        We'll be in touch when places become available.
-      </p>
-      <div class="alert alert-warning">
-        <strong>U11 Academy places are limited to 40 per season.</strong><br/>
-        Returning athletes are prioritised, then the waitlist in order of enquiry. No action is
-        needed from you — we'll email when we're ready to offer places.
+
+      <!-- Email -->
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+          Email address <span class="text-red-500" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autocomplete="email"
+          aria-describedby="email-error"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+          placeholder="you@example.com"
+        />
+        <p id="email-error" class="hidden mt-1 text-xs text-red-600" role="alert"></p>
       </div>
+
+      <!-- Phone -->
+      <div>
+        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
+          Phone number
+          <span class="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          autocomplete="tel"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+          placeholder="07700 900000"
+        />
+      </div>
+
+      <!-- Date of birth -->
+      <div>
+        <label for="dob" class="block text-sm font-medium text-gray-700 mb-1">
+          Child's date of birth
+          <span class="text-gray-400 font-normal">(optional — helps us place your child in the right group)</span>
+        </label>
+        <input
+          id="dob"
+          name="dob"
+          type="date"
+          autocomplete="bday"
+          aria-describedby="dob-error"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+        />
+        <p id="dob-error" class="hidden mt-1 text-xs text-red-600" role="alert"></p>
+      </div>
+
+      <div class="pt-2">
+        <button
+          id="submit-btn"
+          type="submit"
+          class="w-full rounded-lg bg-blue-800 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        >
+          Send enquiry
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Confirmation (shown after successful submission) -->
+  <div id="confirmation" class="hidden text-center py-8">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
+      <svg class="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
     </div>
-  )}
-
-  {/* ── Duplicate ── */}
-  {result.type === 'duplicate' && (
-    <div class="card" style="margin-top:2rem">
-      <div class="confirm-icon confirm-icon-info">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-      </div>
-      <p class="page-eyebrow">Already registered</p>
-      <h1 class="page-title" style="font-size:1.9rem">We've already got your details</h1>
-      <p class="page-subtitle">
-        That email address has already been used to submit an enquiry. If you haven't heard from us,
-        please check your junk folder or contact us directly.
-      </p>
-    </div>
-  )}
-
-  {/* ── Server error ── */}
-  {result.error && (
-    <div class="alert alert-error" style="margin-bottom:1.5rem">{result.error}</div>
-  )}
-
-  {/* ── Enquiry form ── */}
-  {showForm && (
-    <>
-      <p class="page-eyebrow">East Grinstead Athletics Club</p>
-      <h1 class="page-title">Get involved</h1>
-      <p class="page-subtitle">
-        Fill in the form below and we'll get back to you with the right next step — a taster session
-        invite or, for younger athletes, information about our Academy programme.
-      </p>
-
-      <div class="card">
-        <form method="POST" novalidate>
-
-          <p style="font-size:0.78rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:0.875rem">
-            Parent / Guardian
-          </p>
-
-          <div class="form-group">
-            <label class="form-label" for="parent_name">Your name</label>
-            <input class="form-input" type="text" id="parent_name" name="parent_name"
-              autocomplete="name" required placeholder="e.g. Sarah Ahmed" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="email">Email address</label>
-            <input class="form-input" type="email" id="email" name="email"
-              autocomplete="email" required placeholder="you@example.com" />
-            <p class="form-hint">We'll send your booking link to this address.</p>
-          </div>
-
-          <div class="form-group" style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">
-            <label class="form-label" for="phone">
-              Phone number <span class="optional">(optional)</span>
-            </label>
-            <input class="form-input" type="tel" id="phone" name="phone"
-              autocomplete="tel" placeholder="07700 900000" />
-          </div>
-
-          <p style="font-size:0.78rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:0.875rem">
-            Young Athlete
-          </p>
-
-          <div class="form-group">
-            <label class="form-label" for="child_name">Athlete's name</label>
-            <input class="form-input" type="text" id="child_name" name="child_name"
-              autocomplete="off" required placeholder="e.g. Zara Ahmed" />
-          </div>
-
-          <div class="form-group" style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">
-            <label class="form-label" for="date_of_birth">
-              Date of birth <span class="optional">(recommended)</span>
-            </label>
-            <input class="form-input" type="date" id="date_of_birth" name="date_of_birth"
-              autocomplete="bday" max={new Date().toISOString().split('T')[0]} />
-            <p class="form-hint">
-              Helps us place your child in the right age group. UK Athletics uses age on 31 August.
-            </p>
-          </div>
-
-          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1.25rem;line-height:1.55">
-            By submitting this form you agree that EGAC may contact you about training and events.
-            We won't share your details with third parties.
-          </p>
-
-          <button type="submit" class="btn btn-primary btn-block" style="font-size:1.1rem;padding:1rem">
-            Send enquiry &rarr;
-          </button>
-        </form>
-      </div>
-
-      <div class="card" style="margin-top:1.25rem;background:var(--navy-light);border-color:transparent;box-shadow:none">
-        <p style="font-size:0.78rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:0.875rem">
-          Age groups &amp; sessions
-        </p>
-        <div style="display:grid;gap:0.7rem">
-          {[
-            { code: 'U11 Academy', detail: 'Ages 9–10 on 31 Aug · Sat mornings + Tue evenings · April–August · Waitlist only' },
-            { code: 'U13',         detail: 'Ages 11–12 on 31 Aug · Tuesday evenings, 18:30 · Taster session to start' },
-            { code: 'U15',         detail: 'Ages 13–14 on 31 Aug · Tuesday evenings, 18:30 · Taster session to start' },
-            { code: 'U17',         detail: 'Ages 15–16 on 31 Aug · Tuesday evenings, 19:30 · Taster session to start' },
-            { code: 'U20',         detail: 'Ages 17–19 on 31 Aug · Tuesday evenings, 19:30 · Taster session to start' },
-          ].map(g => (
-            <div style="display:flex;gap:0.75rem;align-items:baseline">
-              <span style="font-family:var(--font-display);font-weight:700;font-size:0.9rem;color:var(--navy);min-width:90px">{g.code}</span>
-              <span style="font-size:0.82rem;color:var(--muted);line-height:1.4">{g.detail}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  )}
-
-</Layout>
+    <h2 class="text-xl font-bold text-gray-900 mb-2">Enquiry received</h2>
+    <p id="confirmation-message" class="text-gray-600 max-w-sm mx-auto"></p>
+    <p class="mt-4 text-sm text-gray-400">
+      Can't find our email? Check your spam folder or contact us at
+      <a href="mailto:info@eastgrinsteadac.org.uk" class="text-blue-700 underline">
+        info@eastgrinsteadac.org.uk
+      </a>.
+    </p>
+  </div>
+</Base>
 
 <script>
-  // Progressive enhancement: client-side validation + submit loading state
-  const form = document.querySelector<HTMLFormElement>('form');
-  const submitBtn = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+  const form = document.getElementById('enquiry-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const formSection = document.getElementById('form-section') as HTMLElement;
+  const confirmation = document.getElementById('confirmation') as HTMLElement;
+  const confirmationMessage = document.getElementById('confirmation-message') as HTMLElement;
+  const errorSummary = document.getElementById('error-summary') as HTMLElement;
+  const errorList = document.getElementById('error-list') as HTMLElement;
 
-  form?.addEventListener('submit', (e) => {
-    const required = ['parent_name', 'child_name', 'email'] as const;
-    let valid = true;
-
-    required.forEach(name => {
-      const input = form.elements.namedItem(name) as HTMLInputElement | null;
-      if (input && !input.value.trim()) {
-        input.style.borderColor = 'var(--red)';
-        valid = false;
-      }
+  function clearErrors() {
+    errorSummary.classList.add('hidden');
+    errorList.innerHTML = '';
+    document.querySelectorAll('[id$="-error"]').forEach((el) => {
+      el.classList.add('hidden');
+      el.textContent = '';
     });
+    document.querySelectorAll('input').forEach((el) => {
+      el.classList.remove('border-red-500');
+    });
+  }
 
-    const email = form.elements.namedItem('email') as HTMLInputElement | null;
-    if (email?.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-      email.style.borderColor = 'var(--red)';
-      valid = false;
+  function showFieldError(fieldId: string, message: string) {
+    const field = document.getElementById(fieldId) as HTMLInputElement;
+    const errorEl = document.getElementById(`${fieldId}-error`);
+    if (field) field.classList.add('border-red-500');
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.classList.remove('hidden');
     }
+  }
 
-    if (!valid) { e.preventDefault(); return; }
+  function showSummaryErrors(messages: string[]) {
+    errorSummary.classList.remove('hidden');
+    errorList.innerHTML = messages.map((m) => `<li>${m}</li>`).join('');
+    errorSummary.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const firstField = document.querySelector('input.border-red-500') as HTMLElement;
+    if (firstField) firstField.focus();
+  }
 
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending…';
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErrors();
+
+    const data = new FormData(form);
+    const name = (data.get('name') as string).trim();
+    const email = (data.get('email') as string).trim();
+    const phone = (data.get('phone') as string).trim();
+    const dob = (data.get('dob') as string).trim();
+
+    // Client-side validation
+    const errors: string[] = [];
+    if (!name) { showFieldError('name', 'Full name is required'); errors.push('Full name is required'); }
+    if (!email) { showFieldError('email', 'Email address is required'); errors.push('Email address is required'); }
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showFieldError('email', 'Please enter a valid email address'); errors.push('Please enter a valid email address'); }
+
+    if (errors.length > 0) { showSummaryErrors(errors); return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+
+    try {
+      const response = await fetch('/api/enquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone: phone || undefined, dob: dob || undefined }),
+      });
+
+      const json = await response.json() as { message?: string; code?: string };
+
+      if (response.ok || response.status === 409) {
+        // 409 = duplicate — treat as success so we don't reveal registration status
+        const isWaitlist = json.message?.toLowerCase().includes('waitlist') ||
+                           json.message?.toLowerCase().includes('academy');
+        confirmationMessage.textContent = isWaitlist
+          ? "We've added your child to the Academy waitlist. We'll be in touch before the season starts."
+          : "Thanks — check your email for a link to book your first session. It should arrive within a few minutes.";
+        formSection.classList.add('hidden');
+        confirmation.classList.remove('hidden');
+      } else if (response.status === 422) {
+        // Validation error from server
+        const message = json.message ?? 'Please check your details and try again.';
+        showFieldError('email', message);
+        showSummaryErrors([message]);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send enquiry';
+      } else {
+        showSummaryErrors(['Something went wrong. Please try again or contact us directly.']);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send enquiry';
+      }
+    } catch {
+      showSummaryErrors(['Unable to send — please check your connection and try again.']);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send enquiry';
     }
-  });
-
-  document.querySelectorAll<HTMLInputElement>('.form-input').forEach(input => {
-    input.addEventListener('input', () => { input.style.borderColor = ''; });
   });
 </script>

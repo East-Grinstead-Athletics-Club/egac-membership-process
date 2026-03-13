@@ -1,0 +1,42 @@
+---
+// src/layouts/Base.astro
+// Base layout for all public-facing pages.
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} — EGAC</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
+    <header class="bg-white border-b border-gray-200">
+      <div class="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
+        <a href="/" class="text-blue-800 font-bold text-lg tracking-tight hover:text-blue-700">
+          EGAC
+        </a>
+        <span class="text-gray-300">|</span>
+        <span class="text-gray-500 text-sm">East Grinstead Athletics Club</span>
+      </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-4 py-10">
+      <slot />
+    </main>
+
+    <footer class="mt-16 border-t border-gray-200 py-6 text-center text-xs text-gray-400">
+      &copy; {new Date().getFullYear()} East Grinstead Athletics Club
+    </footer>
+  </body>
+</html>

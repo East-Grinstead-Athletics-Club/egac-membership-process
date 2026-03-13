@@ -1,284 +1,213 @@
 ---
 // src/pages/academy/respond/[token].astro
-// Academy waitlist accept/decline page — personalised link.
-// Uses corrected function names: getWaitlistEntryByToken / recordWaitlistResponse.
+// Academy waitlist response page.
+// Parents click their emailed link to accept or decline a place.
 
-import Layout from '../../../layouts/Layout.astro';
-import { getWaitlistEntryByToken, recordWaitlistResponse, getAcademySeasonById } from '../../../lib/repositories/academy';
-import { getEnquiryById } from '../../../lib/repositories/enquiries';
-import { sendAcademyWaitlist } from '../../../lib/email/templates';
-import type { Env } from '../../../lib/db/schema';
+import Base from '../../../layouts/Base.astro';
+import { getWaitlistEntryByToken } from '../../../lib/repositories/academy.js';
+import { getEnquiryById } from '../../../lib/repositories/enquiries.js';
+import { getSystemConfig } from '../../../lib/config.js';
 
-const env = Astro.locals.runtime?.env as Env;
+// ── Server-side data loading ────────────────────────────────────────────────
+
 const { token } = Astro.params;
+const env = Astro.locals.runtime.env;
 
-// ---- State ----
-type PageError = 'not_found' | 'already_responded' | null;
-let pageError: PageError = null;
-let responseResult: { decision: 'accepted' | 'declined'; error?: string } | null = null;
+let enquiryName = '';
+let adminEmail = 'info@eastgrinsteadac.org.uk';
+let alreadyResponded = false;
+let previousResponse: 'yes' | 'no' | null = null;
+let invalid = false;
 
-// ---- Load waitlist entry ----
-const entry = token ? await getWaitlistEntryByToken(token, env) : null;
+if (!token) {
+  invalid = true;
+} else {
+  try {
+    const config = await getSystemConfig(env);
+    adminEmail = config.admin_email || adminEmail;
 
-if (!entry) {
-  pageError = 'not_found';
-} else if (entry.status === 'accepted' || entry.status === 'declined') {
-  pageError = 'already_responded';
-}
+    const entry = await getWaitlistEntryByToken(token, env);
 
-// ---- Enrich ----
-const season  = entry ? await getAcademySeasonById(entry.season_id, env)  : null;
-const enquiry = entry ? await getEnquiryById(entry.enquiry_id, env)       : null;
-
-const childName    = enquiry?.child_name ?? '';
-const parentEmail  = enquiry?.email      ?? '';
-const seasonLabel  = season?.label       ?? 'Academy Programme';
-const seasonStart  = season?.start_date  ?? '';
-const seasonEnd    = season?.end_date    ?? '';
-const isReturning  = entry?.is_returning ?? false;
-const currentStatus = entry?.status      ?? '';
-
-// ---- Handle POST ----
-if (Astro.request.method === 'POST' && !pageError && entry) {
-  const formData = await Astro.request.formData();
-  const decision = formData.get('decision')?.toString();
-
-  if (decision === 'accepted' || decision === 'declined') {
-    try {
-      await recordWaitlistResponse(token!, decision, env);
-      responseResult = { decision };
-      try { await sendAcademyWaitlist(entry.enquiry_id, decision, env); } catch { /* non-fatal */ }
-    } catch {
-      responseResult = { decision: decision as 'accepted' | 'declined', error: 'Could not record your response. Please try again.' };
+    if (!entry) {
+      invalid = true;
+    } else if (entry.response !== null) {
+      // Already responded
+      alreadyResponded = true;
+      previousResponse = entry.response;
+      const enquiry = await getEnquiryById(entry.enquiry_id, env);
+      enquiryName = enquiry?.name ?? '';
+    } else {
+      // Not yet responded — load enquiry details
+      const enquiry = await getEnquiryById(entry.enquiry_id, env);
+      enquiryName = enquiry?.name ?? '';
     }
+  } catch (err) {
+    console.error(JSON.stringify({ level: 'error', event: 'academy_respond_page_error', error: String(err) }));
+    invalid = true;
   }
-}
-
-function formatDate(iso: string) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 ---
 
-<Layout title="Academy Place — Your Response">
+<Base
+  title="Academy waitlist response"
+  description="Confirm your child's interest in the EGAC U11 Academy programme."
+>
 
-  {/* ── Not found ── */}
-  {pageError === 'not_found' && (
-    <div class="card" style="margin-top:2rem;text-align:center">
-      <p class="page-eyebrow">Invalid link</p>
-      <h1 class="page-title" style="font-size:1.8rem">Link not recognised</h1>
-      <p class="page-subtitle">
-        This link doesn't exist or may have been copied incorrectly.
-        Please check your email and try again.
+  {invalid && (
+    <div class="text-center py-10">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mb-4">
+        <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </div>
+      <h1 class="text-xl font-bold text-gray-900 mb-2">Link not recognised</h1>
+      <p class="text-gray-600 max-w-sm mx-auto">
+        This link isn't valid. If you received an email from us and think this is a mistake, please get in touch.
       </p>
-      <a href="/" class="btn btn-outline">Back to home</a>
+      <p class="mt-4">
+        <a href={`mailto:${adminEmail}`} class="text-blue-700 underline text-sm">{adminEmail}</a>
+      </p>
     </div>
   )}
 
-  {/* ── Already responded ── */}
-  {pageError === 'already_responded' && entry && (
-    <div class="card" style="margin-top:2rem">
-      <div class={`confirm-icon ${currentStatus === 'accepted' ? 'confirm-icon-success' : 'confirm-icon-info'}`}>
-        {currentStatus === 'accepted' ? (
-          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
-        ) : (
-          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        )}
+  {alreadyResponded && (
+    <div class="text-center py-10">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 mb-4">
+        <svg class="w-7 h-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
       </div>
-      <p class="page-eyebrow">Already responded</p>
-      <h1 class="page-title" style="font-size:1.8rem">
-        {currentStatus === 'accepted' ? 'Place accepted' : 'Place declined'}
-      </h1>
-      <p class="page-subtitle">
-        {currentStatus === 'accepted'
-          ? `We look forward to seeing ${childName} at the ${seasonLabel}!`
-          : `Thank you for letting us know. We'll offer the place to the next family on the waitlist.`
+      <h1 class="text-xl font-bold text-gray-900 mb-2">Already responded</h1>
+      <p class="text-gray-600 max-w-sm mx-auto">
+        {previousResponse === 'yes'
+          ? `We already have your interest noted${enquiryName ? ` for ${enquiryName}` : ''}. We'll be in touch when a place becomes available.`
+          : `We've already recorded that you'd like to be removed from the list${enquiryName ? ` for ${enquiryName}` : ''}. No further action needed.`
         }
       </p>
-      {currentStatus === 'accepted' && (
-        <div class="alert alert-info">
-          We'll be in touch with full programme details closer to the start date.
-        </div>
-      )}
+      <p class="mt-4 text-sm text-gray-500">
+        Changed your mind? Contact us at
+        <a href={`mailto:${adminEmail}`} class="text-blue-700 underline">{adminEmail}</a>.
+      </p>
     </div>
   )}
 
-  {/* ── Response confirmed ── */}
-  {!pageError && responseResult && !responseResult.error && entry && (
-    <div class="card" style="margin-top:2rem">
-      <div class={`confirm-icon ${responseResult.decision === 'accepted' ? 'confirm-icon-success' : 'confirm-icon-info'}`}>
-        {responseResult.decision === 'accepted' ? (
-          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
-        ) : (
-          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        )}
-      </div>
-
-      {responseResult.decision === 'accepted' ? (
-        <>
-          <p class="page-eyebrow">Place confirmed</p>
-          <h1 class="page-title" style="font-size:1.9rem">Welcome to the Academy!</h1>
-          <p style="color:var(--muted);margin-bottom:1.5rem">
-            <strong>{childName}</strong>'s place in the <strong>{seasonLabel}</strong> is confirmed.
-            We've sent a confirmation to <strong>{parentEmail}</strong>.
-          </p>
-
-          <div class="info-row">
-            <div class="info-item">
-              <span class="info-label">Athlete</span>
-              <span class="info-value">{childName}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Programme</span>
-              <span class="info-value">{seasonLabel}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Starts</span>
-              <span class="info-value">{formatDate(seasonStart)}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Ends</span>
-              <span class="info-value">{formatDate(seasonEnd)}</span>
-            </div>
-          </div>
-
-          <hr class="divider" />
-
-          <div class="alert alert-success">
-            <strong>What's next?</strong><br/>
-            We'll email full details about schedule, kit, and venue closer to the start date.
-            Sessions run <strong>Saturday mornings and Tuesday evenings</strong> throughout April–August.
-          </div>
-        </>
-      ) : (
-        <>
-          <p class="page-eyebrow">Response recorded</p>
-          <h1 class="page-title" style="font-size:1.9rem">Thanks for letting us know</h1>
-          <p class="page-subtitle">
-            We've noted that <strong>{childName}</strong> won't be joining the {seasonLabel}.
-            The place will be offered to the next family on the waitlist.
-          </p>
-          <div class="alert alert-info">
-            If your circumstances change, please enquire again next season — we'd love to have your
-            child with us in future.
-          </div>
-          <a href="/" class="btn btn-outline" style="margin-top:1.5rem">Back to home</a>
-        </>
-      )}
-    </div>
-  )}
-
-  {/* ── Response error ── */}
-  {!pageError && responseResult?.error && (
-    <div class="alert alert-error" style="margin-bottom:1.25rem">{responseResult.error}</div>
-  )}
-
-  {/* ── Response form ── */}
-  {!pageError && !responseResult?.decision && entry && (
-    <>
-      <p class="page-eyebrow">U11 Academy</p>
-      <h1 class="page-title">Academy place offer</h1>
-      <p class="page-subtitle">
-        A place is available in the <strong>{seasonLabel}</strong> for <strong>{childName}</strong>.
-        Please accept or decline below.
+  {!invalid && !alreadyResponded && (
+    <div>
+      <h1 class="text-2xl font-bold text-blue-900 mb-1">EGAC U11 Academy</h1>
+      <p class="text-gray-600 mb-8">
+        {enquiryName
+          ? `Hi — we'd like to know if you're still interested in a place in the EGAC Academy programme for ${enquiryName}.`
+          : "We'd like to know if you're still interested in a place in the EGAC Academy programme."
+        }
+        The Academy runs April through August on Saturday mornings and Tuesday evenings, with 40 places available.
       </p>
 
-      <div class="card">
-        {isReturning && (
-          <div class="alert alert-success" style="margin-bottom:1.5rem">
-            <strong>Returning athlete</strong> — {childName} attended the Academy last season
-            and has been offered a priority place.
-          </div>
-        )}
+      <!-- Error message -->
+      <div
+        id="respond-error"
+        class="hidden bg-red-50 border border-red-300 rounded-lg p-4 mb-6 text-sm text-red-700"
+        role="alert"
+        aria-live="assertive"
+      ></div>
 
-        <div class="info-row" style="margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)">
-          <div class="info-item">
-            <span class="info-label">Athlete</span>
-            <span class="info-value">{childName}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Programme</span>
-            <span class="info-value">{seasonLabel}</span>
-          </div>
-          {seasonStart && (
-            <div class="info-item">
-              <span class="info-label">Dates</span>
-              <span class="info-value">{formatDate(seasonStart)} – {formatDate(seasonEnd)}</span>
-            </div>
-          )}
-        </div>
+      <!-- Response buttons -->
+      <div id="response-buttons" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <button
+          id="btn-yes"
+          type="button"
+          data-response="yes"
+          class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-green-400 bg-green-50 p-6 text-center hover:bg-green-100 hover:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+        >
+          <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span class="font-semibold text-green-800 text-lg">Yes, we're interested</span>
+          <span class="text-xs text-green-700">Keep us on the waitlist</span>
+        </button>
 
-        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.875rem;line-height:1.6">
-          The Academy runs <strong>Saturday mornings and Tuesday evenings</strong> throughout the
-          programme. Both sessions form part of the same cohort — we ask all athletes to attend
-          both days where possible.
-        </p>
-
-        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6">
-          <strong>Capacity is limited to 40 athletes per season.</strong> If you decline, your
-          place will be offered to the next family on the waitlist and cannot be reclaimed.
-        </p>
-
-        <hr class="divider" />
-
-        <p style="font-size:0.78rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">
-          Your response
-        </p>
-
-        <div class="action-pair">
-          <form method="POST">
-            <input type="hidden" name="decision" value="accepted" />
-            <button type="submit" class="btn btn-amber btn-block" id="accept-btn"
-              style="font-size:1rem;padding:0.9rem">
-              ✓&nbsp; Accept place
-            </button>
-          </form>
-          <form method="POST" id="decline-form">
-            <input type="hidden" name="decision" value="declined" />
-            <button type="button" class="btn btn-danger btn-block" id="decline-btn"
-              style="font-size:1rem;padding:0.9rem">
-              ✕&nbsp; Decline place
-            </button>
-          </form>
-        </div>
-
-        <p style="font-size:0.78rem;color:var(--muted);margin-top:1rem;text-align:center">
-          Please respond as soon as possible so we can offer the place to another family if needed.
-        </p>
+        <button
+          id="btn-no"
+          type="button"
+          data-response="no"
+          class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-50 p-6 text-center hover:bg-gray-100 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors"
+        >
+          <svg class="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span class="font-semibold text-gray-700 text-lg">No thank you</span>
+          <span class="text-xs text-gray-500">Remove us from the list</span>
+        </button>
       </div>
-    </>
+
+      <!-- Thank-you state (shown after response) -->
+      <div id="thank-you" class="hidden text-center py-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
+          <svg class="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Thank you</h2>
+        <p id="thank-you-message" class="text-gray-600 max-w-sm mx-auto"></p>
+      </div>
+    </div>
   )}
+</Base>
 
-</Layout>
+<script define:vars={{ token }}>
+  const btnYes = document.getElementById('btn-yes');
+  const btnNo = document.getElementById('btn-no');
+  const responseButtons = document.getElementById('response-buttons');
+  const thankYou = document.getElementById('thank-you');
+  const thankYouMessage = document.getElementById('thank-you-message');
+  const errorEl = document.getElementById('respond-error');
 
-<script>
-  const declineBtn  = document.getElementById('decline-btn')  as HTMLButtonElement | null;
-  const declineForm = document.getElementById('decline-form') as HTMLFormElement   | null;
-  const acceptBtn   = document.getElementById('accept-btn')   as HTMLButtonElement | null;
+  async function respond(response) {
+    if (!errorEl || !responseButtons || !thankYou || !thankYouMessage) return;
 
-  declineBtn?.addEventListener('click', () => {
-    const ok = window.confirm(
-      'Are you sure you want to decline? This cannot be undone — the place will be offered to another family.'
-    );
-    if (ok && declineForm) {
-      declineBtn.disabled    = true;
-      declineBtn.textContent = 'Declining…';
-      declineForm.submit();
+    errorEl.classList.add('hidden');
+    btnYes.disabled = true;
+    btnNo.disabled = true;
+    btnYes.classList.add('opacity-60');
+    btnNo.classList.add('opacity-60');
+
+    try {
+      const res = await fetch('/api/academy/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, response }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        thankYouMessage.textContent = response === 'yes'
+          ? "We've noted your interest — we'll be in touch when a place becomes available."
+          : "No problem — we've removed you from the list. Thanks for letting us know.";
+        responseButtons.classList.add('hidden');
+        thankYou.classList.remove('hidden');
+      } else if (res.status === 409) {
+        // Already responded (race condition)
+        thankYouMessage.textContent = json.message ?? "We already have your response on file.";
+        responseButtons.classList.add('hidden');
+        thankYou.classList.remove('hidden');
+      } else {
+        errorEl.textContent = json.message ?? 'Something went wrong. Please try again or contact us.';
+        errorEl.classList.remove('hidden');
+        btnYes.disabled = false;
+        btnNo.disabled = false;
+        btnYes.classList.remove('opacity-60');
+        btnNo.classList.remove('opacity-60');
+      }
+    } catch {
+      errorEl.textContent = 'Unable to save your response — please check your connection and try again.';
+      errorEl.classList.remove('hidden');
+      btnYes.disabled = false;
+      btnNo.disabled = false;
+      btnYes.classList.remove('opacity-60');
+      btnNo.classList.remove('opacity-60');
     }
-  });
+  }
 
-  acceptBtn?.closest('form')?.addEventListener('submit', () => {
-    if (acceptBtn) {
-      acceptBtn.disabled    = true;
-      acceptBtn.textContent = 'Confirming…';
-    }
-  });
+  btnYes?.addEventListener('click', () => respond('yes'));
+  btnNo?.addEventListener('click', () => respond('no'));
 </script>
