@@ -1,0 +1,82 @@
+name = "egac"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# ----------------------------------------------------------------
+# Environment variables (non-secret)
+# Secrets (RESEND_API_KEY, ADMIN_TOKEN, CRON_SECRET) must be set via:
+#   wrangler secret put RESEND_API_KEY
+#   wrangler secret put ADMIN_TOKEN
+#   wrangler secret put CRON_SECRET
+# ----------------------------------------------------------------
+[vars]
+APP_ENV = "production"
+EMAIL_FROM = "noreply@egac.co.uk"
+
+# ----------------------------------------------------------------
+# D1 Database
+# Production database: egac
+# Run migrations:
+#   wrangler d1 execute egac --file=db/migrations/0001_initial_schema.sql
+#   wrangler d1 execute egac --file=db/seed.sql
+# ----------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "egac"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# ----------------------------------------------------------------
+# KV Namespace
+# Used for: system config cache, rate limiting, availability cache
+# Create with: wrangler kv:namespace create "EGAC_KV"
+# Then replace the id below with the output ID.
+# ----------------------------------------------------------------
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+# ----------------------------------------------------------------
+# Cron Triggers
+# Three jobs:
+#   Midnight daily     → expire stale invites
+#   Tue 18:00          → session-day reminder send
+#   Every 30 minutes   → retry failed invite sends
+# The Worker entry point maps these to the correct API handlers.
+# ----------------------------------------------------------------
+[triggers]
+crons = [
+  "0 0 * * *",    # Daily midnight: expire invites
+  "0 18 * * 2",   # Tuesday 18:00: booking reminders
+  "*/30 * * * *"  # Every 30 min: retry pending invite sends
+]
+
+# ----------------------------------------------------------------
+# Staging environment overrides
+# Deploy staging with: wrangler pages deploy --env staging
+# ----------------------------------------------------------------
+[env.staging]
+name = "egac-staging"
+
+[env.staging.vars]
+APP_ENV = "staging"
+EMAIL_FROM = "noreply-staging@egac.co.uk"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "egac-staging"
+database_id = "REPLACE_WITH_YOUR_STAGING_D1_DATABASE_ID"
+
+[[env.staging.kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_YOUR_STAGING_KV_NAMESPACE_ID"
+
+# ----------------------------------------------------------------
+# Development environment overrides
+# wrangler dev uses local D1 and KV automatically.
+# ----------------------------------------------------------------
+[env.development]
+name = "egac-dev"
+
+[env.development.vars]
+APP_ENV = "development"
+EMAIL_FROM = "dev@localhost"
