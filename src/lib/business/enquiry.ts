@@ -6,11 +6,7 @@
 // No database access — all I/O happens in the repository layer.
 // ============================================================
 
-import {
-  isAcademyEligible,
-  ACADEMY_INTAKE_DATE,
-  DEFAULT_ACADEMY_MAX_AGE,
-} from './age.js';
+import { isAcademyEligible, ACADEMY_INTAKE_DATE, DEFAULT_ACADEMY_MAX_AGE } from './age.js';
 import type { EnquiryInsert } from '../db/schema.js';
 import { generateId, now } from '../db/client.js';
 
@@ -21,7 +17,7 @@ export interface EnquiryFormData {
   contact_name: string;
   contact_email: string;
   phone?: string;
-  dob?: string;                          // YYYY-MM-DD
+  dob?: string; // YYYY-MM-DD
   interest?: 'junior_athletics' | 'academy' | 'general';
   training_days?: string[];
   source?: string;
@@ -68,7 +64,9 @@ export function validateEnquiryData(data: unknown): void {
     const today = new Date();
     const age = today.getFullYear() - date.getFullYear();
     if (age < 4 || age > 100) {
-      throw new Error('dob does not represent a plausible age (must be between 4 and 100 years ago)');
+      throw new Error(
+        'dob does not represent a plausible age (must be between 4 and 100 years ago)'
+      );
     }
   }
 
@@ -114,7 +112,7 @@ export function buildEnquiryPayload(
     source: data.source || 'website',
     processed: 0,
     note: null,
-    raw_payload: null,   // caller can set this after building
+    raw_payload: null, // caller can set this after building
     events: '[]',
     invite_id: null,
     environment,

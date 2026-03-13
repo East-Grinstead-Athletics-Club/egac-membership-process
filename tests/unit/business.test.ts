@@ -11,7 +11,6 @@ import { describe, it, expect } from 'vitest';
 import {
   computeAgeOnDate,
   slotForAge,
-  slotForDobOnDate,
   isAcademyEligible,
   getNextNTuesdayDates,
   validateSessionDate,
@@ -21,16 +20,9 @@ import {
   DEFAULT_ACADEMY_MAX_AGE,
 } from '../../src/lib/business/age.js';
 
-import {
-  validateEnquiryData,
-  buildEnquiryPayload,
-  routeEnquiry,
-} from '../../src/lib/business/enquiry.js';
+import { validateEnquiryData, routeEnquiry } from '../../src/lib/business/enquiry.js';
 
-import {
-  validateBookingSlot,
-  buildAvailabilityList,
-} from '../../src/lib/business/booking.js';
+import { validateBookingSlot, buildAvailabilityList } from '../../src/lib/business/booking.js';
 
 import {
   isTokenExpired,
@@ -112,7 +104,7 @@ describe('slotForAge', () => {
 
   it('respects custom ageBoundary param', () => {
     expect(slotForAge(12, 12)).toBe('u15plus'); // 12 is not < 12
-    expect(slotForAge(11, 12)).toBe('u13');      // 11 < 12
+    expect(slotForAge(11, 12)).toBe('u13'); // 11 < 12
   });
 
   it('DEFAULT_AGE_BOUNDARY_FOR_U15 is 13', () => {
@@ -236,8 +228,8 @@ describe('validateBookingSlot', () => {
       { dob: '2014-01-01' }, // age 12 on that date → u13
       validTuesday,
       'u13',
-      1,   // currentCount
-      2,   // maxCapacity
+      1, // currentCount
+      2, // maxCapacity
       monday
     );
     expect(result.valid).toBe(true);
@@ -248,7 +240,7 @@ describe('validateBookingSlot', () => {
       { dob: null },
       validTuesday,
       'u13',
-      2,   // currentCount = maxCapacity
+      2, // currentCount = maxCapacity
       2,
       monday
     );
@@ -261,7 +253,7 @@ describe('validateBookingSlot', () => {
       { dob: null },
       validTuesday,
       'u15plus',
-      3,   // already over
+      3, // already over
       2,
       monday
     );
@@ -283,14 +275,7 @@ describe('validateBookingSlot', () => {
   });
 
   it('no DOB — slot not enforced by age', () => {
-    const result = validateBookingSlot(
-      { dob: null },
-      validTuesday,
-      'u15plus',
-      0,
-      2,
-      monday
-    );
+    const result = validateBookingSlot({ dob: null }, validTuesday, 'u15plus', 0, 2, monday);
     expect(result.valid).toBe(true);
   });
 
@@ -396,10 +381,10 @@ describe('tokenAgeInHours', () => {
 
 describe('renderTemplate', () => {
   it('replaces all variables correctly', () => {
-    const result = renderTemplate(
-      'Hello {{contact_name}}, your session is on {{session_date}}.',
-      { contact_name: 'Jane', session_date: 'Tuesday 14 April' }
-    );
+    const result = renderTemplate('Hello {{contact_name}}, your session is on {{session_date}}.', {
+      contact_name: 'Jane',
+      session_date: 'Tuesday 14 April',
+    });
     expect(result).toBe('Hello Jane, your session is on Tuesday 14 April.');
   });
 
@@ -421,10 +406,7 @@ describe('renderTemplate', () => {
   });
 
   it('replaces multiple occurrences of the same variable', () => {
-    const result = renderTemplate(
-      '{{name}} said hello. {{name}} waved.',
-      { name: 'Alice' }
-    );
+    const result = renderTemplate('{{name}} said hello. {{name}} waved.', { name: 'Alice' });
     expect(result).toBe('Alice said hello. Alice waved.');
   });
 
@@ -434,34 +416,28 @@ describe('renderTemplate', () => {
   });
 
   it('throws listing ALL missing variables, not just the first', () => {
-    expect(() =>
-      renderTemplate('{{a}} {{b}} {{c}}', {})
-    ).toThrow(/a/);
+    expect(() => renderTemplate('{{a}} {{b}} {{c}}', {})).toThrow(/a/);
   });
 });
 
 describe('validateTemplateVariables', () => {
   it('returns empty array when all vars are allowed', () => {
-    const unknown = validateTemplateVariables(
-      'Hello {{contact_name}}',
-      ['contact_name', 'booking_url']
-    );
+    const unknown = validateTemplateVariables('Hello {{contact_name}}', [
+      'contact_name',
+      'booking_url',
+    ]);
     expect(unknown).toHaveLength(0);
   });
 
   it('returns unknown variable names', () => {
-    const unknown = validateTemplateVariables(
-      'Hello {{contact_name}} and {{mystery_field}}',
-      ['contact_name']
-    );
+    const unknown = validateTemplateVariables('Hello {{contact_name}} and {{mystery_field}}', [
+      'contact_name',
+    ]);
     expect(unknown).toContain('mystery_field');
   });
 
   it('deduplicates unknown variables', () => {
-    const unknown = validateTemplateVariables(
-      '{{x}} and {{x}} again',
-      []
-    );
+    const unknown = validateTemplateVariables('{{x}} and {{x}} again', []);
     expect(unknown).toHaveLength(1);
     expect(unknown[0]).toBe('x');
   });
@@ -519,39 +495,31 @@ describe('validateEnquiryData', () => {
   });
 
   it('throws when contact_name is missing', () => {
-    expect(() =>
-      validateEnquiryData({ contact_email: 'jane@example.com' })
-    ).toThrow(/contact_name/);
+    expect(() => validateEnquiryData({ contact_email: 'jane@example.com' })).toThrow(
+      /contact_name/
+    );
   });
 
   it('throws when contact_email is missing', () => {
-    expect(() =>
-      validateEnquiryData({ contact_name: 'Jane' })
-    ).toThrow(/contact_email/);
+    expect(() => validateEnquiryData({ contact_name: 'Jane' })).toThrow(/contact_email/);
   });
 
   it('throws for invalid email format', () => {
-    expect(() =>
-      validateEnquiryData({ ...valid, contact_email: 'not-an-email' })
-    ).toThrow(/email/i);
+    expect(() => validateEnquiryData({ ...valid, contact_email: 'not-an-email' })).toThrow(
+      /email/i
+    );
   });
 
   it('throws for invalid dob format', () => {
-    expect(() =>
-      validateEnquiryData({ ...valid, dob: 'yesterday' })
-    ).toThrow(/dob/i);
+    expect(() => validateEnquiryData({ ...valid, dob: 'yesterday' })).toThrow(/dob/i);
   });
 
   it('throws for implausible dob (200 years ago)', () => {
-    expect(() =>
-      validateEnquiryData({ ...valid, dob: '1800-01-01' })
-    ).toThrow(/dob/i);
+    expect(() => validateEnquiryData({ ...valid, dob: '1800-01-01' })).toThrow(/dob/i);
   });
 
   it('throws for invalid interest value', () => {
-    expect(() =>
-      validateEnquiryData({ ...valid, interest: 'badminton' })
-    ).toThrow(/interest/i);
+    expect(() => validateEnquiryData({ ...valid, interest: 'badminton' })).toThrow(/interest/i);
   });
 
   it('accepts all valid interest values', () => {

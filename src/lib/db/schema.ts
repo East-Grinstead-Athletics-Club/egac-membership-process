@@ -18,13 +18,13 @@ export interface Enquiry {
   email: string;
   phone: string | null;
   interest: 'junior_athletics' | 'academy' | 'general' | null;
-  training_days: string;       // JSON array string: '["Tuesday"]'
-  dob: string | null;          // YYYY-MM-DD
+  training_days: string; // JSON array string: '["Tuesday"]'
+  dob: string | null; // YYYY-MM-DD
   source: string;
-  processed: number;           // 0 | 1
+  processed: number; // 0 | 1
   note: string | null;
-  raw_payload: string | null;  // JSON string
-  events: string;              // JSON array of EnquiryEvent
+  raw_payload: string | null; // JSON string
+  events: string; // JSON array of EnquiryEvent
   invite_id: string | null;
   environment: Environment;
 }
@@ -49,8 +49,8 @@ export interface EnquiryInsert {
 
 export interface EnquiryEvent {
   type: EnquiryEventType;
-  timestamp: string;           // ISO datetime
-  [key: string]: unknown;      // Additional event-specific data
+  timestamp: string; // ISO datetime
+  [key: string]: unknown; // Additional event-specific data
 }
 
 export type EnquiryEventType =
@@ -66,7 +66,7 @@ export type EnquiryEventType =
 
 export interface EnquiryFilters {
   status?: 'pending' | 'processed' | 'academy';
-  search?: string;             // matches email or name
+  search?: string; // matches email or name
   limit?: number;
   offset?: number;
   environment?: Environment;
@@ -105,7 +105,7 @@ export interface Booking {
   id: string;
   enquiry_id: string;
   invite_id: string | null;
-  session_date: string;        // YYYY-MM-DD
+  session_date: string; // YYYY-MM-DD
   slot: SlotCode;
   session_time: string | null; // HH:MM
   status: BookingStatus;
@@ -156,9 +156,9 @@ export interface AgeGroup {
   min_age: number;
   max_age: number | null;
   session_day: string | null;
-  session_time: string | null;  // HH:MM
+  session_time: string | null; // HH:MM
   capacity_per_session: number;
-  active: number;               // 0 | 1
+  active: number; // 0 | 1
   sort_order: number;
   created_at: string;
   updated_at: string | null;
@@ -174,8 +174,8 @@ export interface EmailTemplate {
   subject: string;
   html: string;
   text_content: string | null;
-  variables: string;            // JSON array of string variable names
-  active: number;               // 0 | 1
+  variables: string; // JSON array of string variable names
+  active: number; // 0 | 1
   created_at: string;
   updated_at: string | null;
 }
@@ -214,12 +214,12 @@ export interface MembershipOtp {
 // System Config (KV-backed, not a D1 table)
 // ------------------------------------------------------------
 export interface SystemConfig {
-  academy_max_age: string;        // default "10"
-  weeks_ahead_booking: string;    // default "8"
-  capacity_per_slot: string;      // default "2"
-  site_name: string;              // default "EGAC"
-  site_url: string;               // e.g. "https://egac.pages.dev"
-  email_from: string;             // e.g. "noreply@egac.co.uk"
+  academy_max_age: string; // default "10"
+  weeks_ahead_booking: string; // default "8"
+  capacity_per_slot: string; // default "2"
+  site_name: string; // default "EGAC"
+  site_url: string; // e.g. "https://egac.pages.dev"
+  email_from: string; // e.g. "noreply@egac.co.uk"
   venue_name: string;
   venue_address: string;
   admin_email: string;

@@ -13,14 +13,8 @@
 // are tested against miniflare in integration tests.
 // ============================================================
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  generateId,
-  generateToken,
-  now,
-  getDB,
-  getEnv,
-} from '../../src/lib/db/client.js';
+import { describe, it, expect, vi } from 'vitest';
+import { generateId, generateToken, now, getDB, getEnv } from '../../src/lib/db/client.js';
 import {
   getSystemConfig,
   setSystemConfig,
@@ -39,8 +33,12 @@ import type { Env, SystemConfig } from '../../src/lib/db/schema.js';
 function makeKv(store: Record<string, string> = {}): KVNamespace {
   return {
     get: vi.fn(async (key: string) => store[key] ?? null),
-    put: vi.fn(async (key: string, value: string) => { store[key] = value; }),
-    delete: vi.fn(async (key: string) => { delete store[key]; }),
+    put: vi.fn(async (key: string, value: string) => {
+      store[key] = value;
+    }),
+    delete: vi.fn(async (key: string) => {
+      delete store[key];
+    }),
     list: vi.fn(async () => ({ keys: [], list_complete: true, cursor: '' })),
     getWithMetadata: vi.fn(async () => ({ value: null, metadata: null })),
   } as unknown as KVNamespace;

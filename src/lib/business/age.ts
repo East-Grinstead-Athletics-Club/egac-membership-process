@@ -100,10 +100,7 @@ export function isAcademyEligible(
 // Starts from tomorrow (never returns today even if today is Tuesday).
 // Used to populate the booking date picker.
 // ------------------------------------------------------------
-export function getNextNTuesdayDates(
-  n: number,
-  fromDate: Date = new Date()
-): string[] {
+export function getNextNTuesdayDates(n: number, fromDate: Date = new Date()): string[] {
   const dates: string[] = [];
   const cursor = new Date(fromDate);
 
@@ -127,10 +124,7 @@ export function getNextNTuesdayDates(
 //   2. A Tuesday
 //   3. In the future (strictly after today)
 // ------------------------------------------------------------
-export function validateSessionDate(
-  dateIso: string,
-  today: Date = new Date()
-): boolean {
+export function validateSessionDate(dateIso: string, today: Date = new Date()): boolean {
   const date = new Date(dateIso);
   if (isNaN(date.getTime())) return false;
 

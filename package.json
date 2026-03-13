@@ -11,13 +11,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src tests --ext .ts,.astro --max-warnings 0",
+    "lint": "eslint src tests --ext .ts,.astro --max-warnings 0 --no-eslintrc -c .eslintrc.cjs",
     "format": "prettier --write src tests",
     "format:check": "prettier --check src tests",
+    "type-check": "tsc --noEmit",
     "migrate:local": "wrangler d1 execute egac --local --file=db/migrations/0001_initial_schema.sql",
     "migrate:seed": "wrangler d1 execute egac --local --file=db/seed.sql",
-    "migrate:staging": "wrangler d1 execute egac-staging --env staging --file=db/migrations/0001_initial_schema.sql",
-    "type-check": "tsc --noEmit"
+    "migrate:staging": "wrangler d1 execute egac-staging --env staging --file=db/migrations/0001_initial_schema.sql"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^10.0.0",
@@ -29,7 +29,8 @@
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitest/coverage-v8": "^2.0.0",
-    "eslint": "^8.57.0",
+    "eslint": "^8.57.1",
+    "eslint-config-recommended": "^4.1.0",
     "eslint-plugin-astro": "^1.2.0",
     "miniflare": "^3.20240821.0",
     "prettier": "^3.3.0",

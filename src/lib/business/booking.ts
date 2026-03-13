@@ -12,7 +12,6 @@ import {
   slotLabel,
   slotTime,
   formatDateForDisplay,
-  toIsoDateString,
 } from './age.js';
 import type { Booking, Enquiry, SlotCode } from '../db/schema.js';
 
@@ -35,7 +34,6 @@ export function validateBookingSlot(
   maxCapacity: number,
   today: Date = new Date()
 ): { valid: boolean; reason?: string } {
-
   // 1. Valid future Tuesday
   if (!validateSessionDate(sessionDate, today)) {
     return {
@@ -81,10 +79,10 @@ export function validateBookingSlot(
 // ------------------------------------------------------------
 export interface BookingConfirmationData {
   contact_name: string;
-  session_date: string;         // YYYY-MM-DD
+  session_date: string; // YYYY-MM-DD
   session_date_display: string; // 'Tuesday, 15 April 2026'
-  session_time: string;         // '18:30'
-  slot_label: string;           // 'U13 (Tuesday 18:30)'
+  session_time: string; // '18:30'
+  slot_label: string; // 'U13 (Tuesday 18:30)'
   venue: string;
   add_to_calendar_url: string;
 }
@@ -93,7 +91,7 @@ export function buildBookingConfirmation(
   enquiry: Pick<Enquiry, 'name' | 'email'>,
   booking: Pick<Booking, 'session_date' | 'slot'>,
   venueName: string,
-  siteUrl: string
+  _siteUrl: string
 ): BookingConfirmationData {
   const slot = booking.slot as SlotCode;
   const time = slotTime(slot);

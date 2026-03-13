@@ -21,9 +21,7 @@ import type { Env, Environment } from './schema.js';
 // ------------------------------------------------------------
 export function getDB(env: Env): D1Database {
   if (!env.DB) {
-    throw new Error(
-      'D1 binding "DB" not found. Check wrangler.toml [[d1_databases]] config.'
-    );
+    throw new Error('D1 binding "DB" not found. Check wrangler.toml [[d1_databases]] config.');
   }
   return env.DB;
 }
@@ -41,9 +39,7 @@ export function getEnv(env: Env): Environment {
  * Returns a single row or null.
  * Throws if the statement errors.
  */
-export async function one<T>(
-  stmt: D1PreparedStatement
-): Promise<T | null> {
+export async function one<T>(stmt: D1PreparedStatement): Promise<T | null> {
   const result = await stmt.first<T>();
   return result ?? null;
 }
@@ -51,9 +47,7 @@ export async function one<T>(
 /**
  * Returns all matching rows (never null — empty array if none).
  */
-export async function many<T>(
-  stmt: D1PreparedStatement
-): Promise<T[]> {
+export async function many<T>(stmt: D1PreparedStatement): Promise<T[]> {
   const { results } = await stmt.all<T>();
   return results ?? [];
 }
@@ -62,9 +56,7 @@ export async function many<T>(
  * Executes a write statement (INSERT, UPDATE, DELETE).
  * Returns the D1Result for callers that need meta (changes, last_row_id).
  */
-export async function run(
-  stmt: D1PreparedStatement
-): Promise<D1Result> {
+export async function run(stmt: D1PreparedStatement): Promise<D1Result> {
   return stmt.run();
 }
 
@@ -77,7 +69,7 @@ export async function run(
 export interface QueryOptions {
   limit?: number;
   offset?: number;
-  orderBy?: string;        // e.g. 'created_at DESC'
+  orderBy?: string; // e.g. 'created_at DESC'
 }
 
 /**

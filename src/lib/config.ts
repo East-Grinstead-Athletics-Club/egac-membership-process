@@ -18,15 +18,15 @@ import type { Env, SystemConfig, SystemConfigKey } from './db/schema.js';
 // admin has touched the config panel.
 // ------------------------------------------------------------
 const CONFIG_DEFAULTS: SystemConfig = {
-  academy_max_age:     '10',
+  academy_max_age: '10',
   weeks_ahead_booking: '8',
-  capacity_per_slot:   '2',
-  site_name:           'East Grinstead Athletics Club',
-  site_url:            'https://egac.pages.dev',
-  email_from:          'noreply@egac.co.uk',
-  venue_name:          'East Grinstead Leisure Centre',
-  venue_address:       'King Street, East Grinstead, RH19 3DJ',
-  admin_email:         '',
+  capacity_per_slot: '2',
+  site_name: 'East Grinstead Athletics Club',
+  site_url: 'https://egac.pages.dev',
+  email_from: 'noreply@egac.co.uk',
+  venue_name: 'East Grinstead Leisure Centre',
+  venue_address: 'King Street, East Grinstead, RH19 3DJ',
+  admin_email: '',
 };
 
 // Cache key and TTL constants
@@ -57,10 +57,7 @@ export async function getSystemConfig(env: Env): Promise<SystemConfig> {
 // Reads a single config key. Cheaper than fetching the whole
 // object when only one value is needed.
 // ------------------------------------------------------------
-export async function getConfigValue(
-  key: SystemConfigKey,
-  env: Env
-): Promise<string> {
+export async function getConfigValue(key: SystemConfigKey, env: Env): Promise<string> {
   const config = await getSystemConfig(env);
   return config[key] ?? CONFIG_DEFAULTS[key] ?? '';
 }
@@ -124,9 +121,7 @@ export function getCapacityPerSlot(config: SystemConfig): number {
 // Called before saving to catch bad values early.
 // Returns an array of error strings (empty = valid).
 // ------------------------------------------------------------
-export function validateConfigUpdate(
-  updates: Partial<SystemConfig>
-): string[] {
+export function validateConfigUpdate(updates: Partial<SystemConfig>): string[] {
   const errors: string[] = [];
 
   if (updates.capacity_per_slot !== undefined) {

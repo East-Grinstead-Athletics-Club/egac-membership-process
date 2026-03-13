@@ -44,10 +44,7 @@ export function isTokenExpired(
 // ------------------------------------------------------------
 export const INVITE_TTL_DAYS = 14;
 
-export function isInviteExpired(
-  createdAt: string,
-  now: Date = new Date()
-): boolean {
+export function isInviteExpired(createdAt: string, now: Date = new Date()): boolean {
   return isTokenExpired(createdAt, INVITE_TTL_DAYS, now);
 }
 
@@ -57,10 +54,7 @@ export function isInviteExpired(
 // ------------------------------------------------------------
 export const MEMBERSHIP_OTP_TTL_DAYS = 7;
 
-export function isMembershipOtpExpired(
-  createdAt: string,
-  now: Date = new Date()
-): boolean {
+export function isMembershipOtpExpired(createdAt: string, now: Date = new Date()): boolean {
   return isTokenExpired(createdAt, MEMBERSHIP_OTP_TTL_DAYS, now);
 }
 
@@ -69,10 +63,7 @@ export function isMembershipOtpExpired(
 // Returns how many hours old a token is.
 // Used by the cron retry job (only retry invites > 1 hour old).
 // ------------------------------------------------------------
-export function tokenAgeInHours(
-  createdAt: string,
-  now: Date = new Date()
-): number {
+export function tokenAgeInHours(createdAt: string, now: Date = new Date()): number {
   const created = new Date(createdAt);
   if (isNaN(created.getTime())) return Infinity;
   return (now.getTime() - created.getTime()) / (1000 * 60 * 60);

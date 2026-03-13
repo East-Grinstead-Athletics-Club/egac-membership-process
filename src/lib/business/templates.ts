@@ -18,10 +18,7 @@
 //     (permissive on input, strict on output)
 //   - Variable names are case-sensitive
 // ------------------------------------------------------------
-export function renderTemplate(
-  template: string,
-  vars: Record<string, string>
-): string {
+export function renderTemplate(template: string, vars: Record<string, string>): string {
   // Find all {{variable}} tokens in the template
   const tokenRegex = /\{\{([^}]+)\}\}/g;
   const found = new Set<string>();
@@ -53,10 +50,7 @@ export function renderTemplate(
 // Used in the admin template editor to warn about unknown vars
 // before saving.
 // ------------------------------------------------------------
-export function validateTemplateVariables(
-  html: string,
-  allowedVars: string[]
-): string[] {
+export function validateTemplateVariables(html: string, allowedVars: string[]): string[] {
   const tokenRegex = /\{\{([^}]+)\}\}/g;
   const unknown: string[] = [];
   let match: RegExpExecArray | null;
@@ -112,8 +106,6 @@ export const SAMPLE_TEMPLATE_VARS: Record<string, string> = {
 // Merges custom overrides with the defaults.
 // Used when an admin previews a template with their own values.
 // ------------------------------------------------------------
-export function buildSampleVars(
-  overrides: Record<string, string> = {}
-): Record<string, string> {
+export function buildSampleVars(overrides: Record<string, string> = {}): Record<string, string> {
   return { ...SAMPLE_TEMPLATE_VARS, ...overrides };
 }
