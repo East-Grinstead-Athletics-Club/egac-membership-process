@@ -37,7 +37,7 @@ export async function handleAcademyRespond(request: Request, env: Env): Promise<
   if (!invitation) return err('Invitation not found', 404, 'INVITATION_NOT_FOUND');
 
   // Idempotency — already responded
-  if (invitation.status === 'responded') {
+  if (invitation.status === 'accepted' || invitation.status === 'declined') {
     return ok({
       message: `Your response (${invitation.response}) has already been recorded. Thank you.`,
       already_responded: true,

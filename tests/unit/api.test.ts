@@ -128,8 +128,7 @@ const mockEnquiry = {
   environment: 'development' as const,
   created_at: '2026-01-01T00:00:00.000Z',
   phone: null,
-  interest: null,
-  training_days: '[]',
+  age_group_id: null,
   source: 'website',
   note: null,
   raw_payload: null,
@@ -487,7 +486,7 @@ describe('POST /api/academy/respond', () => {
     vi.mocked(academyRepo.recordWaitlistResponse).mockResolvedValue({
       ...mockWaitlistEntry,
       response: 'yes',
-      status: 'responded' as const,
+      status: 'accepted' as const,
       responded_at: new Date().toISOString(),
     });
     vi.mocked(enquiryRepo.appendEnquiryEvent).mockResolvedValue(undefined);
@@ -547,7 +546,7 @@ describe('POST /api/academy/respond', () => {
   it('is idempotent — already-responded returns 200 gracefully', async () => {
     vi.mocked(academyRepo.getWaitlistEntryByToken).mockResolvedValue({
       ...mockWaitlistEntry,
-      status: 'responded' as const,
+      status: 'accepted' as const,
       response: 'yes',
       responded_at: new Date().toISOString(),
     });
