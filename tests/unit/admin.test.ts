@@ -360,8 +360,11 @@ describe('GET /api/admin/enquiries/:id', () => {
         invite_id: 'inv_test01',
         age_group_id: 'ag_01',
         session_date: '2025-02-04',
+        session_time: null,
         status: 'confirmed',
+        attendance_note: null,
         created_at: '2025-01-16T09:05:00.000Z',
+        updated_at: null,
         environment: 'development',
       },
     ];
