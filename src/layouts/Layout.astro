@@ -10,33 +10,34 @@ const {
   description = 'Join East Grinstead Athletics Club — enquire about taster sessions or the U11 Academy programme.',
 } = Astro.props;
 ---
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content={description} />
-  <title>{title} — EGAC</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="/styles/global.css" />
-</head>
-<body>
-  <header class="site-header">
-    <a href="/" class="site-logo">
-      <span class="accent">EGAC</span>
-      <span style="font-weight:400;opacity:0.5;font-size:1rem;margin:0 0.25rem">|</span>
-      East Grinstead Athletics Club
-    </a>
-    <span class="site-tagline">Est. 1951</span>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} — EGAC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="/styles/global.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a href="/" class="site-logo">
+        <span class="accent">EGAC</span>
+        <span style="font-weight:400;opacity:0.5;font-size:1rem;margin:0 0.25rem">|</span>
+        East Grinstead Athletics Club
+      </a>
+      <span class="site-tagline">Est. 1951</span>
+    </header>
 
-  <main class="site-main">
-    <slot />
-  </main>
+    <main class="site-main">
+      <slot />
+    </main>
 
-  <footer class="site-footer">
-    &copy; {new Date().getFullYear()} East Grinstead Athletics Club &middot; Registered Athletics Club
-  </footer>
-</body>
+    <footer class="site-footer">
+      &copy; {new Date().getFullYear()} East Grinstead Athletics Club &middot; Registered Athletics Club
+    </footer>
+  </body>
 </html>

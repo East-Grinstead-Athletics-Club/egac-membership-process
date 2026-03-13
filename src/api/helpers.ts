@@ -63,6 +63,15 @@ export function corsPreflightResponse(): Response {
 }
 
 // ------------------------------------------------------------
+// checkCronAuth
+// Validates the Authorization: Bearer <CRON_SECRET> header.
+// ------------------------------------------------------------
+export function checkCronAuth(request: Request, env: { CRON_SECRET: string }): boolean {
+  const auth = request.headers.get('Authorization') ?? '';
+  return env.CRON_SECRET.length > 0 && auth === `Bearer ${env.CRON_SECRET}`;
+}
+
+// ------------------------------------------------------------
 // parseBody
 // Safely parses JSON request body.
 // Returns null if body is empty or not valid JSON.

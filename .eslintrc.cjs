@@ -42,4 +42,14 @@ module.exports = {
     '.astro/',
     '*.js',           // Ignore compiled output
   ],
+  overrides: [
+    {
+      files: ['*.astro'],
+      parser: 'astro-eslint-parser',
+      parserOptions: {
+        parser: '@typescript-eslint/parser',
+        extraFileExtensions: ['.astro'],
+      },
+    },
+  ],
 };

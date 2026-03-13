@@ -267,3 +267,53 @@ export async function updateSeasonStatus(
       .bind(status, now(), id)
   );
 }
+
+// ── Rollover helpers ─────────────────────────────────────────
+
+// Returns the earliest upcoming season (status = 'upcoming').
+export async function getUpcomingAcademySeason(env: Env): Promise<AcademySeason | null> {
+  const db = getDB(env);
+  return one<AcademySeason>(
+    db.prepare(
+      "SELECT * FROM academy_seasons WHERE status = 'upcoming' ORDER BY start_date ASC LIMIT 1"
+    )
+  );
+}
+
+// Moves a waitlist entry to a new season (or back to the unassigned pool).
+// Sets rolled_over_from_season_id and resets status to 'waiting'.
+export async function rolloverWaitlistEntry(
+  id: string,
+  newSeasonId: string | null,
+  oldSeasonId: string,
+  isReturning: boolean,
+  env: Env
+): Promise<void> {
+  const db = getDB(env);
+  const environment = getEnv(env);
+  await run(
+    db
+      .prepare(
+        `UPDATE academy_waitlist
+         SET season_id = ?, rolled_over_from_season_id = ?,
+             is_returning = ?, status = 'waiting', position = NULL
+         WHERE id = ? AND environment = ?`
+      )
+      .bind(newSeasonId, oldSeasonId, isReturning ? 1 : 0, id, environment)
+  );
+}
+
+// Returns true if this enquiry has ever been accepted in any academy season.
+export async function hasAcceptedEntryForEnquiry(enquiryId: string, env: Env): Promise<boolean> {
+  const db = getDB(env);
+  const environment = getEnv(env);
+  const result = await one<{ count: number }>(
+    db
+      .prepare(
+        `SELECT COUNT(*) as count FROM academy_waitlist
+         WHERE enquiry_id = ? AND status = 'accepted' AND environment = ?`
+      )
+      .bind(enquiryId, environment)
+  );
+  return (result?.count ?? 0) > 0;
+}

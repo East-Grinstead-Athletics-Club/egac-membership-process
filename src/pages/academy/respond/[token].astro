@@ -42,7 +42,9 @@ if (!token) {
       enquiryName = enquiry?.name ?? '';
     }
   } catch (err) {
-    console.error(JSON.stringify({ level: 'error', event: 'academy_respond_page_error', error: String(err) }));
+    console.error(
+      JSON.stringify({ level: 'error', event: 'academy_respond_page_error', error: String(err) })
+    );
     invalid = true;
   }
 }
@@ -52,105 +54,167 @@ if (!token) {
   title="Academy waitlist response"
   description="Confirm your child's interest in the EGAC U11 Academy programme."
 >
-
-  {invalid && (
-    <div class="text-center py-10">
-      <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mb-4">
-        <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </div>
-      <h1 class="text-xl font-bold text-gray-900 mb-2">Link not recognised</h1>
-      <p class="text-gray-600 max-w-sm mx-auto">
-        This link isn't valid. If you received an email from us and think this is a mistake, please get in touch.
-      </p>
-      <p class="mt-4">
-        <a href={`mailto:${adminEmail}`} class="text-blue-700 underline text-sm">{adminEmail}</a>
-      </p>
-    </div>
-  )}
-
-  {alreadyResponded && (
-    <div class="text-center py-10">
-      <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 mb-4">
-        <svg class="w-7 h-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <h1 class="text-xl font-bold text-gray-900 mb-2">Already responded</h1>
-      <p class="text-gray-600 max-w-sm mx-auto">
-        {previousResponse === 'yes'
-          ? `We already have your interest noted${enquiryName ? ` for ${enquiryName}` : ''}. We'll be in touch when a place becomes available.`
-          : `We've already recorded that you'd like to be removed from the list${enquiryName ? ` for ${enquiryName}` : ''}. No further action needed.`
-        }
-      </p>
-      <p class="mt-4 text-sm text-gray-500">
-        Changed your mind? Contact us at
-        <a href={`mailto:${adminEmail}`} class="text-blue-700 underline">{adminEmail}</a>.
-      </p>
-    </div>
-  )}
-
-  {!invalid && !alreadyResponded && (
-    <div>
-      <h1 class="text-2xl font-bold text-blue-900 mb-1">EGAC U11 Academy</h1>
-      <p class="text-gray-600 mb-8">
-        {enquiryName
-          ? `Hi — we'd like to know if you're still interested in a place in the EGAC Academy programme for ${enquiryName}.`
-          : "We'd like to know if you're still interested in a place in the EGAC Academy programme."
-        }
-        The Academy runs April through August on Saturday mornings and Tuesday evenings, with 40 places available.
-      </p>
-
-      <!-- Error message -->
-      <div
-        id="respond-error"
-        class="hidden bg-red-50 border border-red-300 rounded-lg p-4 mb-6 text-sm text-red-700"
-        role="alert"
-        aria-live="assertive"
-      ></div>
-
-      <!-- Response buttons -->
-      <div id="response-buttons" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <button
-          id="btn-yes"
-          type="button"
-          data-response="yes"
-          class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-green-400 bg-green-50 p-6 text-center hover:bg-green-100 hover:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-        >
-          <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-          <span class="font-semibold text-green-800 text-lg">Yes, we're interested</span>
-          <span class="text-xs text-green-700">Keep us on the waitlist</span>
-        </button>
-
-        <button
-          id="btn-no"
-          type="button"
-          data-response="no"
-          class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-50 p-6 text-center hover:bg-gray-100 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors"
-        >
-          <svg class="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span class="font-semibold text-gray-700 text-lg">No thank you</span>
-          <span class="text-xs text-gray-500">Remove us from the list</span>
-        </button>
-      </div>
-
-      <!-- Thank-you state (shown after response) -->
-      <div id="thank-you" class="hidden text-center py-8">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
-          <svg class="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+  {
+    invalid && (
+      <div class="text-center py-10">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mb-4">
+          <svg
+            class="w-7 h-7 text-red-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Thank you</h2>
-        <p id="thank-you-message" class="text-gray-600 max-w-sm mx-auto"></p>
+        <h1 class="text-xl font-bold text-gray-900 mb-2">Link not recognised</h1>
+        <p class="text-gray-600 max-w-sm mx-auto">
+          This link isn't valid. If you received an email from us and think this is a mistake,
+          please get in touch.
+        </p>
+        <p class="mt-4">
+          <a href={`mailto:${adminEmail}`} class="text-blue-700 underline text-sm">
+            {adminEmail}
+          </a>
+        </p>
       </div>
-    </div>
-  )}
+    )
+  }
+
+  {
+    alreadyResponded && (
+      <div class="text-center py-10">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 mb-4">
+          <svg
+            class="w-7 h-7 text-blue-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h1 class="text-xl font-bold text-gray-900 mb-2">Already responded</h1>
+        <p class="text-gray-600 max-w-sm mx-auto">
+          {previousResponse === 'yes'
+            ? `We already have your interest noted${enquiryName ? ` for ${enquiryName}` : ''}. We'll be in touch when a place becomes available.`
+            : `We've already recorded that you'd like to be removed from the list${enquiryName ? ` for ${enquiryName}` : ''}. No further action needed.`}
+        </p>
+        <p class="mt-4 text-sm text-gray-500">
+          Changed your mind? Contact us at
+          <a href={`mailto:${adminEmail}`} class="text-blue-700 underline">
+            {adminEmail}
+          </a>
+          .
+        </p>
+      </div>
+    )
+  }
+
+  {
+    !invalid && !alreadyResponded && (
+      <div>
+        <h1 class="text-2xl font-bold text-blue-900 mb-1">EGAC U11 Academy</h1>
+        <p class="text-gray-600 mb-8">
+          {enquiryName
+            ? `Hi — we'd like to know if you're still interested in a place in the EGAC Academy programme for ${enquiryName}.`
+            : "We'd like to know if you're still interested in a place in the EGAC Academy programme."}
+          The Academy runs April through August on Saturday mornings and Tuesday evenings, with 40
+          places available.
+        </p>
+
+        <div
+          id="respond-error"
+          class="hidden bg-red-50 border border-red-300 rounded-lg p-4 mb-6 text-sm text-red-700"
+          role="alert"
+          aria-live="assertive"
+        />
+
+        <div id="response-buttons" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <button
+            id="btn-yes"
+            type="button"
+            data-response="yes"
+            class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-green-400 bg-green-50 p-6 text-center hover:bg-green-100 hover:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+          >
+            <svg
+              class="w-8 h-8 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <span class="font-semibold text-green-800 text-lg">Yes, we're interested</span>
+            <span class="text-xs text-green-700">Keep us on the waitlist</span>
+          </button>
+
+          <button
+            id="btn-no"
+            type="button"
+            data-response="no"
+            class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-gray-50 p-6 text-center hover:bg-gray-100 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors"
+          >
+            <svg
+              class="w-8 h-8 text-gray-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            <span class="font-semibold text-gray-700 text-lg">No thank you</span>
+            <span class="text-xs text-gray-500">Remove us from the list</span>
+          </button>
+        </div>
+
+        <div id="thank-you" class="hidden text-center py-8">
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
+            <svg
+              class="w-7 h-7 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">Thank you</h2>
+          <p id="thank-you-message" class="text-gray-600 max-w-sm mx-auto" />
+        </div>
+      </div>
+    )
+  }
 </Base>
 
 <script define:vars={{ token }}>
@@ -180,18 +244,20 @@ if (!token) {
       const json = await res.json();
 
       if (res.ok) {
-        thankYouMessage.textContent = response === 'yes'
-          ? "We've noted your interest — we'll be in touch when a place becomes available."
-          : "No problem — we've removed you from the list. Thanks for letting us know.";
+        thankYouMessage.textContent =
+          response === 'yes'
+            ? "We've noted your interest — we'll be in touch when a place becomes available."
+            : "No problem — we've removed you from the list. Thanks for letting us know.";
         responseButtons.classList.add('hidden');
         thankYou.classList.remove('hidden');
       } else if (res.status === 409) {
         // Already responded (race condition)
-        thankYouMessage.textContent = json.message ?? "We already have your response on file.";
+        thankYouMessage.textContent = json.message ?? 'We already have your response on file.';
         responseButtons.classList.add('hidden');
         thankYou.classList.remove('hidden');
       } else {
-        errorEl.textContent = json.message ?? 'Something went wrong. Please try again or contact us.';
+        errorEl.textContent =
+          json.message ?? 'Something went wrong. Please try again or contact us.';
         errorEl.classList.remove('hidden');
         btnYes.disabled = false;
         btnNo.disabled = false;
@@ -199,7 +265,8 @@ if (!token) {
         btnNo.classList.remove('opacity-60');
       }
     } catch {
-      errorEl.textContent = 'Unable to save your response — please check your connection and try again.';
+      errorEl.textContent =
+        'Unable to save your response — please check your connection and try again.';
       errorEl.classList.remove('hidden');
       btnYes.disabled = false;
       btnNo.disabled = false;

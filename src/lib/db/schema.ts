@@ -81,7 +81,7 @@ export interface Invite {
   environment: Environment;
 }
 
-export type InviteStatus = 'pending' | 'sent' | 'accepted' | 'expired';
+export type InviteStatus = 'pending' | 'sent' | 'accepted' | 'expired' | 'failed';
 
 // ------------------------------------------------------------
 // Age Group

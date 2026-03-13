@@ -12,10 +12,7 @@
 //   4. Return confirmation
 // ============================================================
 import { ok, err, parseBody } from './helpers.js';
-import {
-  getWaitlistEntryByToken,
-  recordWaitlistResponse,
-} from '../lib/repositories/academy.js';
+import { getWaitlistEntryByToken, recordWaitlistResponse } from '../lib/repositories/academy.js';
 import { appendEnquiryEvent } from '../lib/repositories/enquiries.js';
 import type { Env } from '../lib/db/schema.js';
 
@@ -29,7 +26,7 @@ export async function handleAcademyRespond(request: Request, env: Env): Promise<
   if (!body) return err('Request body is required', 400, 'INVALID_JSON');
 
   const { token, response } = body;
-  if (!token)    return err('Token is required',    422, 'MISSING_TOKEN');
+  if (!token) return err('Token is required', 422, 'MISSING_TOKEN');
   if (!response) return err('Response is required', 422, 'MISSING_RESPONSE');
   if (response !== 'yes' && response !== 'no') {
     return err('Response must be yes or no', 422, 'INVALID_RESPONSE');

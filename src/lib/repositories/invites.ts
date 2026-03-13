@@ -130,6 +130,21 @@ export async function markInviteExpired(id: string, env: Env): Promise<void> {
 }
 
 // ------------------------------------------------------------
+// markInviteFailed
+// Called by the retry cron when send_attempts reaches MAX_ATTEMPTS.
+// ------------------------------------------------------------
+export async function markInviteFailed(id: string, env: Env): Promise<void> {
+  const db = getDB(env);
+  const environment = getEnv(env);
+
+  await run(
+    db
+      .prepare(`UPDATE invites SET status = 'failed' WHERE id = ? AND environment = ?`)
+      .bind(id, environment)
+  );
+}
+
+// ------------------------------------------------------------
 // incrementSendAttempts
 // Called by the retry cron job on each send attempt (success or fail).
 // ------------------------------------------------------------

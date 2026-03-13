@@ -12,6 +12,12 @@
 //   POST /api/academy/respond
 //   GET  /api/health
 //
+// Cron routes (require Authorization: Bearer <CRON_SECRET>):
+//   POST /api/cron/expire-invites
+//   POST /api/cron/retry-invites
+//   POST /api/cron/send-reminders
+//   POST /api/cron/academy-rollover
+//
 // Admin routes (require Authorization: Bearer <ADMIN_TOKEN>):
 //   Added in Phase 3 (Prompt 9+)
 // ============================================================
@@ -20,6 +26,10 @@ import { handleEnquiry } from './enquiry.js';
 import { handleBooking } from './booking.js';
 import { handleAcademyRespond } from './academy.js';
 import { handleHealth } from './health.js';
+import { handleExpireInvites, runExpireInvites } from './cron/expire-invites.js';
+import { handleRetryInvites, runRetryInvites } from './cron/retry-invites.js';
+import { handleSendReminders, runSendReminders } from './cron/send-reminders.js';
+import { handleAcademyRollover, runAcademyRollover } from './cron/academy-rollover.js';
 import { err } from './helpers.js';
 import type { Env } from '../lib/db/schema.js';
 
@@ -32,6 +42,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   if (path === '/api/booking') return handleBooking(request, env);
   if (path === '/api/academy/respond') return handleAcademyRespond(request, env);
   if (path === '/api/health') return handleHealth(request, env);
+
+  // ── Cron routes ────────────────────────────────────────────
+  if (path === '/api/cron/expire-invites') return handleExpireInvites(request, env);
+  if (path === '/api/cron/retry-invites') return handleRetryInvites(request, env);
+  if (path === '/api/cron/send-reminders') return handleSendReminders(request, env);
+  if (path === '/api/cron/academy-rollover') return handleAcademyRollover(request, env);
 
   // ── 404 for unknown /api/* routes ─────────────────────────
   if (path.startsWith('/api/')) {
@@ -50,5 +66,23 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     return handleRequest(request, env);
+  },
+
+  // Dispatches scheduled cron events to the correct handler.
+  // Cron expressions are defined in wrangler.toml [triggers].
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const cron = _event.cron;
+
+    if (cron === '*/30 * * * *') {
+      ctx.waitUntil(runRetryInvites(env));
+    } else if (cron === '0 9 * * *') {
+      ctx.waitUntil(runExpireInvites(env));
+    } else if (cron === '0 18 * * 2') {
+      ctx.waitUntil(runSendReminders(env));
+    } else if (cron === '0 9 1 * *') {
+      ctx.waitUntil(runAcademyRollover(env));
+    } else {
+      console.warn(JSON.stringify({ level: 'warn', event: 'unknown_cron', cron }));
+    }
   },
 };

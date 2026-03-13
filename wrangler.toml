@@ -37,17 +37,20 @@ id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 
 # ----------------------------------------------------------------
 # Cron Triggers
-# Three jobs:
-#   Midnight daily     → expire stale invites
+# Four jobs:
+#   Daily 09:00        → expire stale invites
 #   Tue 18:00          → session-day reminder send
 #   Every 30 minutes   → retry failed invite sends
-# The Worker entry point maps these to the correct API handlers.
+#   1st of month 09:00 → academy season rollover
+# The Worker scheduled() handler dispatches each cron expression
+# to the correct run* function in src/api/cron/*.ts.
 # ----------------------------------------------------------------
 [triggers]
 crons = [
-  "0 0 * * *",    # Daily midnight: expire invites
-  "0 18 * * 2",   # Tuesday 18:00: booking reminders
-  "*/30 * * * *"  # Every 30 min: retry pending invite sends
+  "0 9 * * *",    # Daily 09:00 UTC: expire stale invites
+  "0 18 * * 2",   # Tuesday 18:00 UTC: booking reminders
+  "*/30 * * * *", # Every 30 min: retry pending invite sends
+  "0 9 1 * *"     # 1st of month 09:00 UTC: academy season rollover
 ]
 
 # ----------------------------------------------------------------
