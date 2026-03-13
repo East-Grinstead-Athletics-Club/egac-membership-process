@@ -40,10 +40,11 @@ id = "28ecc4df31b44e5e92cc4730c1870829"
 
 # ----------------------------------------------------------------
 # Cron Triggers
-# Configured in the Cloudflare Pages dashboard under:
-# Settings → Functions → Cron Triggers
-#   0 9 * * *    Daily 09:00 UTC: expire stale invites
-#   0 18 * * 2   Tue 18:00 UTC: booking reminders
-#   */30 * * * * Every 30 min: retry pending invite sends
-#   0 9 1 * *   1st of month 09:00 UTC: academy season rollover
 # ----------------------------------------------------------------
+[triggers]
+crons = [
+  "0 9 * * *",
+  "0 18 * * 2",
+  "*/30 * * * *",
+  "0 9 1 * *"
+]
