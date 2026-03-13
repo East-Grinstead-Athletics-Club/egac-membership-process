@@ -1,6 +1,17 @@
+# ----------------------------------------------------------------
+# Project: eastgrinsteadac.co.uk
+# Pages build output
+# ----------------------------------------------------------------
 name = "egac"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "dist"
+
+# ----------------------------------------------------------------
+# Cloudflare account + API token for production
+# Use environment variable for token
+# ----------------------------------------------------------------
+account_id = "c13cb0489f508c3ce9794ffcb6887668"
+# Auth: set CLOUDFLARE_API_TOKEN in your environment (wrangler reads this automatically)
 
 # ----------------------------------------------------------------
 # Environment variables (non-secret)
@@ -11,14 +22,10 @@ pages_build_output_dir = "dist"
 # ----------------------------------------------------------------
 [vars]
 APP_ENV = "production"
-EMAIL_FROM = "noreply@egac.co.uk"
+EMAIL_FROM = "noreply@eastgrinsteadac.co.uk"
 
 # ----------------------------------------------------------------
 # D1 Database
-# Production database: egac
-# Run migrations:
-#   wrangler d1 execute egac --file=db/migrations/0001_initial_schema.sql
-#   wrangler d1 execute egac --file=db/seed.sql
 # ----------------------------------------------------------------
 [[d1_databases]]
 binding = "DB"
@@ -27,9 +34,6 @@ database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 # ----------------------------------------------------------------
 # KV Namespace
-# Used for: system config cache, rate limiting, availability cache
-# Create with: wrangler kv:namespace create "EGAC_KV"
-# Then replace the id below with the output ID.
 # ----------------------------------------------------------------
 [[kv_namespaces]]
 binding = "KV"
@@ -37,49 +41,10 @@ id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
 
 # ----------------------------------------------------------------
 # Cron Triggers
-# Four jobs:
-#   Daily 09:00        → expire stale invites
-#   Tue 18:00          → session-day reminder send
-#   Every 30 minutes   → retry failed invite sends
-#   1st of month 09:00 → academy season rollover
-# The Worker scheduled() handler dispatches each cron expression
-# to the correct run* function in src/api/cron/*.ts.
+# Configured in the Cloudflare Pages dashboard under:
+# Settings → Functions → Cron Triggers
+#   0 9 * * *    Daily 09:00 UTC: expire stale invites
+#   0 18 * * 2   Tue 18:00 UTC: booking reminders
+#   */30 * * * * Every 30 min: retry pending invite sends
+#   0 9 1 * *   1st of month 09:00 UTC: academy season rollover
 # ----------------------------------------------------------------
-[triggers]
-crons = [
-  "0 9 * * *",    # Daily 09:00 UTC: expire stale invites
-  "0 18 * * 2",   # Tuesday 18:00 UTC: booking reminders
-  "*/30 * * * *", # Every 30 min: retry pending invite sends
-  "0 9 1 * *"     # 1st of month 09:00 UTC: academy season rollover
-]
-
-# ----------------------------------------------------------------
-# Staging environment overrides
-# Deploy staging with: wrangler pages deploy --env staging
-# ----------------------------------------------------------------
-[env.staging]
-name = "egac-staging"
-
-[env.staging.vars]
-APP_ENV = "staging"
-EMAIL_FROM = "noreply-staging@egac.co.uk"
-
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "egac-staging"
-database_id = "REPLACE_WITH_YOUR_STAGING_D1_DATABASE_ID"
-
-[[env.staging.kv_namespaces]]
-binding = "KV"
-id = "REPLACE_WITH_YOUR_STAGING_KV_NAMESPACE_ID"
-
-# ----------------------------------------------------------------
-# Development environment overrides
-# wrangler dev uses local D1 and KV automatically.
-# ----------------------------------------------------------------
-[env.development]
-name = "egac-dev"
-
-[env.development.vars]
-APP_ENV = "development"
-EMAIL_FROM = "dev@localhost"
