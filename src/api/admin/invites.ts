@@ -19,7 +19,7 @@ import {
 } from '../../lib/repositories/invites.js';
 import { sendBookingInvite } from '../../lib/email/templates.js';
 import { getNextNTuesdayDates } from '../../lib/business/age.js';
-import { getConfig } from '../../lib/config.js';
+import { getSystemConfig as getConfig } from '../../lib/config.js';
 import type { Env } from '../../lib/db/schema.js';
 
 // ------------------------------------------------------------
