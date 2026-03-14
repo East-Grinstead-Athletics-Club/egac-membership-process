@@ -9,7 +9,7 @@ import { listUpcomingBookings } from '../../lib/repositories/bookings.js';
 import { getEnquiryById } from '../../lib/repositories/enquiries.js';
 import { listAgeGroups } from '../../lib/repositories/age-groups.js';
 import { getNextNTuesdayDates, formatDateForDisplay } from '../../lib/business/age.js';
-import type { Booking, AgeGroup, Enquiry } from '../../lib/db/schema.js';
+import type { Booking, AgeGroup } from '../../lib/db/schema.js';
 
 // ── Auth ──────────────────────────────────────────────────────
 const env = Astro.locals.runtime.env;

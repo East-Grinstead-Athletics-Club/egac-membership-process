@@ -16,7 +16,6 @@ import {
   getEmailTemplateByKey,
 } from '../../lib/repositories/templates.js';
 import {
-  validateTemplateVariables,
   extractTemplateVariables,
 } from '../../lib/business/templates.js';
 import { generateId, now } from '../../lib/db/client.js';

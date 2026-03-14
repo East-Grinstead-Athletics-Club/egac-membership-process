@@ -7,7 +7,6 @@ import AdminBase from '../../layouts/AdminBase.astro';
 import { checkAdminToken } from '../../lib/auth/admin.js';
 import { countBookingsByStatus, listUpcomingBookings } from '../../lib/repositories/bookings.js';
 import { listAgeGroups } from '../../lib/repositories/age-groups.js';
-import { listUnassignedWaitlist } from '../../lib/repositories/academy.js';
 import { getNextNTuesdayDates, formatDateForDisplay } from '../../lib/business/age.js';
 import { getDB, getEnv } from '../../lib/db/client.js';
 
@@ -51,7 +50,7 @@ const [
   enquiriesThisMonth,
   enquiriesLastMonth,
   bookingsTotal,
-  bookingsThisMonth,
+  _bookingsThisMonth,
   attendedThisMonth,
   noShowThisMonth,
   attendedTotal,
