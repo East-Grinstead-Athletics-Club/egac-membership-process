@@ -43,7 +43,7 @@ vi.mock('../../src/lib/email/templates.js', () => ({
 }));
 
 vi.mock('../../src/lib/config.js', () => ({
-  getConfig: vi.fn(),
+  getSystemConfig: vi.fn(),
 }));
 
 vi.mock('../../src/lib/business/age.js', () => ({
@@ -58,7 +58,7 @@ import * as enquiryRepo from '../../src/lib/repositories/enquiries.js';
 import * as inviteRepo from '../../src/lib/repositories/invites.js';
 import * as bookingRepo from '../../src/lib/repositories/bookings.js';
 import * as emailTemplates from '../../src/lib/email/templates.js';
-import { getConfig } from '../../src/lib/config.js';
+import { getSystemConfig } from '../../src/lib/config.js';
 
 import type { Env, Enquiry, Invite, Booking } from '../../src/lib/db/schema.js';
 
