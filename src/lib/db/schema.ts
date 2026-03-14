@@ -81,7 +81,7 @@ export interface Invite {
   environment: Environment;
 }
 
-export type InviteStatus = 'pending' | 'sent' | 'accepted' | 'expired' | 'failed';
+export type InviteStatus = 'pending' | 'sent' | 'accepted' | 'expired';
 
 // ------------------------------------------------------------
 // Age Group
@@ -231,6 +231,8 @@ export interface SystemConfig {
   venue_name: string;
   venue_address: string;
   admin_email: string;
+  academy_max_age: string;
+  capacity_per_slot: string;
 }
 
 export type SystemConfigKey = keyof SystemConfig;

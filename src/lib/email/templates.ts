@@ -16,7 +16,7 @@ import { sendEmailWithRetry } from './client.js';
 import { getEmailTemplateByKey } from '../repositories/templates.js';
 import { renderTemplate } from '../business/templates.js';
 import { formatDateForDisplay } from '../business/age.js';
-import type { Enquiry, Invite, AcademyInvitation, Booking, Env } from '../db/schema.js';
+import type { Enquiry, Invite, AcademyWaitlistEntry, Booking, Env } from '../db/schema.js';
 import type { SendEmailResult } from './client.js';
 
 // ------------------------------------------------------------
@@ -135,7 +135,7 @@ export async function sendBookingConfirmation(
 // ------------------------------------------------------------
 export async function sendAcademyWaitlist(
   enquiry: Enquiry,
-  invitation: AcademyInvitation,
+  invitation: AcademyWaitlistEntry,
   env: Env
 ): Promise<SendEmailResult> {
   const template = await getEmailTemplateByKey('academy_waitlist', env);

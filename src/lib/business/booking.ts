@@ -59,7 +59,7 @@ export function validateBookingRequest(
 // the API response. Includes a Google Calendar deep-link.
 // ------------------------------------------------------------
 export function buildBookingConfirmation(
-  enquiry: Pick<Enquiry, 'name' | 'email'>,
+  _enquiry: Pick<Enquiry, 'name' | 'email'>,
   booking: Pick<Booking, 'session_date' | 'session_time' | 'age_group_id'>,
   ageGroup: AgeGroupConfig,
   venueName: string,

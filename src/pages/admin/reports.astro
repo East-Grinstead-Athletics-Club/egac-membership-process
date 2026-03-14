@@ -1,0 +1,338 @@
+---
+// src/pages/admin/reports.astro
+// Admin reports dashboard — metric cards, monthly trend,
+// booking funnel, and academy pipeline. Pure CSS/SVG charts.
+
+import AdminBase from '../../layouts/AdminBase.astro';
+import { checkAdminToken } from '../../lib/auth/admin.js';
+import { countBookingsByStatus, listUpcomingBookings } from '../../lib/repositories/bookings.js';
+import { listAgeGroups } from '../../lib/repositories/age-groups.js';
+import { listUnassignedWaitlist } from '../../lib/repositories/academy.js';
+import { getNextNTuesdayDates, formatDateForDisplay } from '../../lib/business/age.js';
+import { getDB, getEnv } from '../../lib/db/client.js';
+
+// ── Auth ──────────────────────────────────────────────────────
+const env = Astro.locals.runtime.env;
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+if (!checkAdminToken(token, env)) return Astro.redirect('/admin/login');
+
+// ── Data helpers ──────────────────────────────────────────────
+const db = getDB(env);
+const environment = getEnv(env);
+const now = new Date();
+
+const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  .toISOString()
+  .split('T')[0];
+const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+
+async function countEnquiries(since?: string, until?: string): Promise<number> {
+  let sql = 'SELECT COUNT(*) as n FROM enquiries WHERE environment = ?';
+  const params: unknown[] = [environment];
+  if (since) {
+    sql += ' AND created_at >= ?';
+    params.push(since);
+  }
+  if (until) {
+    sql += ' AND created_at <= ?';
+    params.push(until + 'T23:59:59Z');
+  }
+  const row = await db
+    .prepare(sql)
+    .bind(...params)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+// ── Load all stats ────────────────────────────────────────────
+const [
+  enquiriesTotal,
+  enquiriesThisMonth,
+  enquiriesLastMonth,
+  bookingsTotal,
+  bookingsThisMonth,
+  attendedThisMonth,
+  noShowThisMonth,
+  attendedTotal,
+] = await Promise.all([
+  countEnquiries(),
+  countEnquiries(thisMonthStart),
+  countEnquiries(lastMonthStart, lastMonthEnd),
+  countBookingsByStatus('confirmed', env),
+  countBookingsByStatus('confirmed', env, thisMonthStart),
+  countBookingsByStatus('attended', env, thisMonthStart),
+  countBookingsByStatus('no_show', env, thisMonthStart),
+  countBookingsByStatus('attended', env),
+]);
+
+const totalDecided = attendedThisMonth + noShowThisMonth;
+const attendanceRate =
+  totalDecided > 0 ? Math.round((attendedThisMonth / totalDecided) * 100) : null;
+
+const [academyTotal, academyYes, academyNo] = await Promise.all([
+  db
+    .prepare('SELECT COUNT(*) as n FROM academy_waitlist WHERE environment = ?')
+    .bind(environment)
+    .first<{ n: number }>(),
+  db
+    .prepare(
+      `SELECT COUNT(*) as n FROM academy_waitlist WHERE response = 'yes' AND environment = ?`
+    )
+    .bind(environment)
+    .first<{ n: number }>(),
+  db
+    .prepare(`SELECT COUNT(*) as n FROM academy_waitlist WHERE response = 'no' AND environment = ?`)
+    .bind(environment)
+    .first<{ n: number }>(),
+]);
+
+const academyPending = (academyTotal?.n ?? 0) - (academyYes?.n ?? 0) - (academyNo?.n ?? 0);
+
+// Monthly trend (last 6 months)
+const monthlyTrend: { label: string; count: number }[] = [];
+for (let i = 5; i >= 0; i--) {
+  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  const start = d.toISOString().split('T')[0];
+  const end = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+  const count = await countEnquiries(start, end);
+  monthlyTrend.push({
+    label: d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
+    count,
+  });
+}
+const maxMonthly = Math.max(...monthlyTrend.map((m) => m.count), 1);
+
+// Funnel
+const invitesSent =
+  (
+    await db
+      .prepare(
+        `SELECT COUNT(*) as n FROM invites WHERE status IN ('sent','accepted') AND environment = ?`
+      )
+      .bind(environment)
+      .first<{ n: number }>()
+  )?.n ?? 0;
+
+const funnelSteps = [
+  { label: 'Enquiries', value: enquiriesTotal },
+  { label: 'Invites sent', value: invitesSent },
+  { label: 'Booked', value: bookingsTotal },
+  { label: 'Attended', value: attendedTotal },
+];
+const funnelMax = Math.max(funnelSteps[0].value, 1);
+
+// Upcoming sessions
+const ageGroups = await listAgeGroups(env);
+const tasterGroups = ageGroups.filter((ag) => ag.booking_type === 'taster' && ag.active);
+const upcomingBookings = await listUpcomingBookings(4, env);
+const nextTuesdays = getNextNTuesdayDates(4);
+const upcomingSessions = nextTuesdays.map((date) => ({
+  date,
+  display: formatDateForDisplay(date),
+  slots: tasterGroups.map((ag) => ({
+    label: ag.label,
+    booked: upcomingBookings.filter((b) => b.session_date === date && b.age_group_id === ag.id)
+      .length,
+    capacity: ag.capacity_per_session ?? 2,
+  })),
+}));
+
+// Month-on-month trend label
+const trend =
+  enquiriesLastMonth > 0
+    ? Math.round(((enquiriesThisMonth - enquiriesLastMonth) / enquiriesLastMonth) * 100)
+    : null;
+---
+
+<AdminBase title="Reports" activeNav="bookings">
+  <div class="space-y-8">
+    <h1 class="text-2xl font-bold text-gray-900">Reports</h1>
+
+    <!-- Metric cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Total enquiries -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total enquiries</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{enquiriesTotal}</p>
+      </div>
+
+      <!-- This month -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">This month</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{enquiriesThisMonth}</p>
+        {
+          trend !== null && (
+            <p class={`mt-1 text-xs font-medium ${trend >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}% vs last month
+            </p>
+          )
+        }
+      </div>
+
+      <!-- Attendance rate -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Attendance rate</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">
+          {attendanceRate !== null ? `${attendanceRate}%` : '—'}
+        </p>
+        <p class="mt-1 text-xs text-gray-400">this month</p>
+      </div>
+
+      <!-- Academy pipeline -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Academy waitlist</p>
+        <p class="mt-2 text-3xl font-bold text-gray-900">{academyTotal?.n ?? 0}</p>
+        <p class="mt-1 text-xs text-gray-400">
+          {academyYes?.n ?? 0} yes · {academyPending} pending
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Monthly enquiry trend -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Enquiries — last 6 months</h2>
+        <div class="space-y-2">
+          {
+            monthlyTrend.map((m) => (
+              <div class="flex items-center gap-3 text-sm">
+                <span class="w-20 text-right text-xs text-gray-500 shrink-0">{m.label}</span>
+                <div class="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                  <div
+                    class="h-4 rounded-full bg-blue-600 transition-all"
+                    style={`width: ${Math.round((m.count / maxMonthly) * 100)}%`}
+                  />
+                </div>
+                <span class="w-6 text-xs text-gray-700 font-medium shrink-0">{m.count}</span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- Booking funnel -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Booking funnel</h2>
+        <div class="space-y-3">
+          {
+            funnelSteps.map((step, i) => {
+              const pct = Math.round((step.value / funnelMax) * 100);
+              const colours = ['bg-blue-600', 'bg-blue-400', 'bg-green-500', 'bg-teal-500'];
+              return (
+                <div>
+                  <div class="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>{step.label}</span>
+                    <span class="font-medium text-gray-700">
+                      {step.value}
+                      {i > 0 && funnelSteps[0].value > 0 && (
+                        <span class="text-gray-400 ml-1">
+                          ({Math.round((step.value / funnelSteps[0].value) * 100)}%)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div class="w-full bg-gray-100 rounded-full h-3">
+                    <div class={`h-3 rounded-full ${colours[i]}`} style={`width: ${pct}%`} />
+                  </div>
+                </div>
+              );
+            })
+          }
+        </div>
+      </div>
+
+      <!-- Academy pipeline bar -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Academy pipeline</h2>
+        {
+          (academyTotal?.n ?? 0) === 0 ? (
+            <p class="text-sm text-gray-400 italic">No academy waitlist entries.</p>
+          ) : (
+            <>
+              <div class="flex rounded-full overflow-hidden h-6 mb-3">
+                {(academyYes?.n ?? 0) > 0 && (
+                  <div
+                    class="bg-green-500 flex items-center justify-center text-white text-xs font-medium"
+                    style={`width: ${Math.round(((academyYes?.n ?? 0) / (academyTotal?.n ?? 1)) * 100)}%`}
+                  >
+                    {academyYes?.n}
+                  </div>
+                )}
+                {(academyNo?.n ?? 0) > 0 && (
+                  <div
+                    class="bg-red-400 flex items-center justify-center text-white text-xs font-medium"
+                    style={`width: ${Math.round(((academyNo?.n ?? 0) / (academyTotal?.n ?? 1)) * 100)}%`}
+                  >
+                    {academyNo?.n}
+                  </div>
+                )}
+                {academyPending > 0 && (
+                  <div
+                    class="bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-medium"
+                    style={`width: ${Math.round((academyPending / (academyTotal?.n ?? 1)) * 100)}%`}
+                  >
+                    {academyPending}
+                  </div>
+                )}
+              </div>
+              <div class="flex gap-4 text-xs text-gray-600">
+                <span class="flex items-center gap-1">
+                  <span class="w-3 h-3 rounded-full bg-green-500 inline-block" />
+                  Yes ({academyYes?.n ?? 0})
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="w-3 h-3 rounded-full bg-red-400 inline-block" />
+                  No ({academyNo?.n ?? 0})
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="w-3 h-3 rounded-full bg-gray-300 inline-block" />
+                  Pending ({academyPending})
+                </span>
+              </div>
+            </>
+          )
+        }
+      </div>
+
+      <!-- Upcoming sessions -->
+      <div class="bg-white rounded-lg shadow p-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Upcoming sessions</h2>
+        {
+          upcomingSessions.length === 0 ? (
+            <p class="text-sm text-gray-400 italic">No upcoming sessions.</p>
+          ) : (
+            <div class="space-y-3">
+              {upcomingSessions.map((session) => (
+                <div>
+                  <p class="text-xs font-medium text-gray-600 mb-1">{session.display}</p>
+                  <div class="flex gap-3">
+                    {session.slots.map((slot) => {
+                      const pct = Math.min(100, Math.round((slot.booked / slot.capacity) * 100));
+                      return (
+                        <div class="flex-1 min-w-0">
+                          <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span class="truncate">{slot.label}</span>
+                            <span>
+                              {slot.booked}/{slot.capacity}
+                            </span>
+                          </div>
+                          <div class="w-full bg-gray-100 rounded-full h-2">
+                            <div
+                              class={`h-2 rounded-full ${pct >= 100 ? 'bg-red-500' : 'bg-blue-500'}`}
+                              style={`width: ${pct}%`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</AdminBase>

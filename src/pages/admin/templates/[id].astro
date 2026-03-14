@@ -1,0 +1,334 @@
+---
+// src/pages/admin/templates/[id].astro
+// Admin template editor — textarea editor with live preview
+// iframe, subject line field, variable reference, and test send.
+
+import AdminBase from '../../../layouts/AdminBase.astro';
+import { checkAdminToken } from '../../../lib/auth/admin.js';
+import { getEmailTemplateById } from '../../../lib/repositories/templates.js';
+import { extractTemplateVariables } from '../../../lib/business/templates.js';
+
+// ── Auth ──────────────────────────────────────────────────────
+const env = Astro.locals.runtime.env;
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+if (!checkAdminToken(token, env)) return Astro.redirect('/admin/login');
+
+// ── Load template ─────────────────────────────────────────────
+const { id } = Astro.params;
+const template = id ? await getEmailTemplateById(id, env) : null;
+
+if (!template) {
+  return Astro.redirect('/admin/templates');
+}
+
+const detectedVars = extractTemplateVariables(template.html);
+let allowedVars: string[] = [];
+try {
+  allowedVars = JSON.parse(template.variables || '[]') as string[];
+} catch {
+  allowedVars = [];
+}
+const allVars = [...new Set([...allowedVars, ...detectedVars])];
+
+const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ?? '';
+---
+
+<AdminBase title={`Edit — ${template.name}`} activeNav="templates">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/admin/templates" class="text-sm text-blue-600 hover:text-blue-800">
+          ← Templates
+        </a>
+        <span class="text-gray-300">/</span>
+        <h1 class="text-lg font-bold text-gray-900">{template.name}</h1>
+        <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">{template.key}</code>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="save-indicator" class="text-xs text-gray-400 hidden">Unsaved changes</span>
+        <button
+          id="save-btn"
+          class="px-4 py-2 bg-blue-800 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="hidden fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white max-w-sm"
+    >
+    </div>
+
+    <!-- Subject line -->
+    <div>
+      <label for="subject-input" class="block text-sm font-medium text-gray-700 mb-1">
+        Subject line
+      </label>
+      <input
+        id="subject-input"
+        type="text"
+        value={template.subject}
+        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
+
+    <!-- Editor + Preview -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <!-- HTML editor -->
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <label for="html-editor" class="block text-sm font-medium text-gray-700">HTML</label>
+          <span class="text-xs text-gray-400"
+            >Edit, then click Save or tab out to refresh preview</span
+          >
+        </div>
+        <textarea
+          id="html-editor"
+          rows="24"
+          spellcheck="false"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
+          >{template.html}</textarea
+        >
+      </div>
+
+      <!-- Preview iframe -->
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <span class="block text-sm font-medium text-gray-700">Preview</span>
+          <button id="refresh-preview-btn" class="text-xs text-blue-600 hover:text-blue-800">
+            ↻ Refresh
+          </button>
+        </div>
+        <iframe
+          id="preview-frame"
+          class="w-full rounded-md border border-gray-200 bg-white"
+          style="height: 520px;"
+          title="Email preview"></iframe>
+        <p id="preview-status" class="text-xs text-gray-400 hidden"></p>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="flex flex-wrap items-start justify-between gap-6 pt-2 border-t border-gray-200">
+      <!-- Variables reference -->
+      <div>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          Available variables
+        </p>
+        {
+          allVars.length === 0 ? (
+            <p class="text-xs text-gray-400 italic">No variables detected.</p>
+          ) : (
+            <div class="flex flex-wrap gap-2">
+              {allVars.map((v) => (
+                <button
+                  class="insert-var font-mono text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                  data-var={v}
+                  title={`Click to insert {{${v}}}`}
+                >
+                  {`{{${v}}}`}
+                </button>
+              ))}
+            </div>
+          )
+        }
+      </div>
+
+      <!-- Test send -->
+      <div class="flex items-center gap-3">
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            Send test email
+          </p>
+          <p class="text-xs text-gray-400">Sends to: {adminEmail || 'ADMIN_EMAIL not set'}</p>
+        </div>
+        <button
+          id="test-send-btn"
+          class="px-4 py-2 border border-blue-700 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors disabled:opacity-60"
+          disabled={!adminEmail}
+        >
+          Send test
+        </button>
+        <span id="test-send-status" class="text-sm text-gray-500 hidden"></span>
+      </div>
+    </div>
+  </div>
+</AdminBase>
+
+<script define:vars={{ adminToken: token, templateId: id, adminEmail }}>
+  const htmlEditor = document.getElementById('html-editor');
+  const subjectInput = document.getElementById('subject-input');
+  const saveBtn = document.getElementById('save-btn');
+  const saveIndicator = document.getElementById('save-indicator');
+  const previewFrame = document.getElementById('preview-frame');
+  const previewStatus = document.getElementById('preview-status');
+  const refreshBtn = document.getElementById('refresh-preview-btn');
+  const testSendBtn = document.getElementById('test-send-btn');
+  const testSendStatus = document.getElementById('test-send-status');
+  const toast = document.getElementById('toast');
+
+  let isDirty = false;
+
+  function showToast(message, success = true) {
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white max-w-sm ${
+      success ? 'bg-green-700' : 'bg-red-600'
+    }`;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 4000);
+  }
+
+  function markDirty() {
+    isDirty = true;
+    saveIndicator?.classList.remove('hidden');
+  }
+
+  htmlEditor?.addEventListener('input', markDirty);
+  subjectInput?.addEventListener('input', markDirty);
+
+  // ── Refresh preview ─────────────────────────────────────────
+  async function refreshPreview() {
+    if (!previewFrame) return;
+    previewStatus?.classList.remove('hidden');
+    if (previewStatus) previewStatus.textContent = 'Loading preview…';
+
+    try {
+      const resp = await fetch(`/api/admin/templates/${templateId}/preview`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const doc = previewFrame.contentDocument || previewFrame.contentWindow?.document;
+        if (doc) {
+          doc.open();
+          doc.write(data.data?.html ?? '<p>No preview available.</p>');
+          doc.close();
+        }
+        previewStatus?.classList.add('hidden');
+      } else {
+        if (previewStatus) previewStatus.textContent = 'Preview failed.';
+      }
+    } catch {
+      if (previewStatus) previewStatus.textContent = 'Preview unavailable.';
+    }
+  }
+
+  // Load initial preview
+  refreshPreview();
+
+  refreshBtn?.addEventListener('click', refreshPreview);
+
+  // Refresh preview on blur from editor
+  htmlEditor?.addEventListener('blur', refreshPreview);
+
+  // ── Save ────────────────────────────────────────────────────
+  saveBtn?.addEventListener('click', async () => {
+    const html = htmlEditor?.value ?? '';
+    const subject = subjectInput?.value?.trim() ?? '';
+
+    if (!subject) {
+      showToast('Subject line cannot be empty.', false);
+      subjectInput?.focus();
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
+    try {
+      const resp = await fetch(`/api/admin/templates/${templateId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ html, subject }),
+      });
+
+      const data = await resp.json();
+
+      if (resp.ok) {
+        isDirty = false;
+        saveIndicator?.classList.add('hidden');
+        showToast('Template saved.');
+        await refreshPreview();
+      } else {
+        showToast(data.error ?? 'Save failed.', false);
+      }
+    } catch {
+      showToast('Network error — could not save.', false);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  });
+
+  // ── Insert variable ─────────────────────────────────────────
+  document.querySelectorAll('.insert-var').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const varName = btn.dataset.var;
+      if (!varName || !htmlEditor) return;
+      const token = `{{${varName}}}`;
+      const start = htmlEditor.selectionStart ?? htmlEditor.value.length;
+      const end = htmlEditor.selectionEnd ?? start;
+      htmlEditor.value = htmlEditor.value.slice(0, start) + token + htmlEditor.value.slice(end);
+      htmlEditor.selectionStart = start + token.length;
+      htmlEditor.selectionEnd = start + token.length;
+      htmlEditor.focus();
+      markDirty();
+    });
+  });
+
+  // ── Test send ───────────────────────────────────────────────
+  testSendBtn?.addEventListener('click', async () => {
+    testSendBtn.disabled = true;
+    testSendStatus?.classList.remove('hidden', 'text-red-600');
+    if (testSendStatus) {
+      testSendStatus.textContent = 'Sending…';
+      testSendStatus.classList.add('text-gray-500');
+    }
+
+    try {
+      const resp = await fetch(`/api/admin/templates/${templateId}/test-send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ to: adminEmail }),
+      });
+
+      const data = await resp.json();
+
+      if (resp.ok) {
+        if (testSendStatus) testSendStatus.textContent = 'Sent!';
+        setTimeout(() => testSendStatus?.classList.add('hidden'), 3000);
+      } else {
+        if (testSendStatus) {
+          testSendStatus.textContent = data.error ?? 'Send failed.';
+          testSendStatus.classList.add('text-red-600');
+        }
+      }
+    } catch {
+      if (testSendStatus) {
+        testSendStatus.textContent = 'Network error.';
+        testSendStatus.classList.add('text-red-600');
+      }
+    } finally {
+      testSendBtn.disabled = false;
+    }
+  });
+
+  // ── Warn on unsaved changes ──────────────────────────────────
+  window.addEventListener('beforeunload', (e) => {
+    if (isDirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+</script>

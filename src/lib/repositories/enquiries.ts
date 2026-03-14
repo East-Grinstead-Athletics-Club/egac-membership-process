@@ -103,8 +103,8 @@ export async function listEnquiries(filters: EnquiryFilters, env: Env): Promise<
   } else if (filters.status === 'academy') {
     conditions.push(
       `EXISTS (
-        SELECT 1 FROM academy_waitlist aw
-        WHERE aw.enquiry_id = e.id AND aw.environment = ?
+        SELECT 1 FROM academy_invitations ai
+        WHERE ai.enquiry_id = e.id AND ai.environment = ?
       )`
     );
     params.push(environment);
@@ -138,7 +138,7 @@ export async function listEnquiries(filters: EnquiryFilters, env: Env): Promise<
 // ------------------------------------------------------------
 export async function updateEnquiry(
   id: string,
-  data: Partial<Pick<Enquiry, 'note' | 'processed' | 'invite_id'>>,
+  data: Partial<Pick<Enquiry, 'note' | 'processed' | 'invite_id' | 'age_group_id'>>,
   env: Env
 ): Promise<Enquiry> {
   const db = getDB(env);

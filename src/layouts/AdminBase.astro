@@ -4,7 +4,7 @@
 
 interface Props {
   title: string;
-  activeNav?: 'enquiries' | 'bookings' | 'templates' | 'config';
+  activeNav?: 'enquiries' | 'bookings' | 'reports' | 'templates' | 'config';
 }
 
 const { title, activeNav } = Astro.props;
@@ -36,6 +36,24 @@ const { title, activeNav } = Astro.props;
             Enquiries
           </a>
           <a
+            href="/admin/bookings"
+            class={`px-3 py-1.5 rounded transition-colors ${activeNav === 'bookings' ? 'bg-blue-700 text-white' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+          >
+            Bookings
+          </a>
+          <a
+            href="/admin/reports"
+            class={`px-3 py-1.5 rounded transition-colors ${activeNav === 'reports' ? 'bg-blue-700 text-white' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+          >
+            Reports
+          </a>
+          <a
+            href="/admin/templates"
+            class={`px-3 py-1.5 rounded transition-colors ${activeNav === 'templates' ? 'bg-blue-700 text-white' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+          >
+            Templates
+          </a>
+          <a
             href="/admin/login"
             id="logout-link"
             class="ml-2 px-3 py-1.5 rounded text-blue-300 hover:bg-blue-800 hover:text-white transition-colors text-sm"
@@ -55,7 +73,6 @@ const { title, activeNav } = Astro.props;
     </footer>
 
     <script>
-      // Clear admin cookie on logout
       const logoutLink = document.getElementById('logout-link');
       if (logoutLink) {
         logoutLink.addEventListener('click', (e) => {

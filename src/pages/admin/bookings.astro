@@ -1,0 +1,255 @@
+---
+// src/pages/admin/bookings.astro
+// Admin bookings calendar — shows next 4 Tuesdays with per-slot
+// attendance management. Attendance buttons update via AJAX.
+
+import AdminBase from '../../layouts/AdminBase.astro';
+import { checkAdminToken } from '../../lib/auth/admin.js';
+import { listUpcomingBookings } from '../../lib/repositories/bookings.js';
+import { getEnquiryById } from '../../lib/repositories/enquiries.js';
+import { listAgeGroups } from '../../lib/repositories/age-groups.js';
+import { getNextNTuesdayDates, formatDateForDisplay } from '../../lib/business/age.js';
+import type { Booking, AgeGroup, Enquiry } from '../../lib/db/schema.js';
+
+// ── Auth ──────────────────────────────────────────────────────
+const env = Astro.locals.runtime.env;
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+if (!checkAdminToken(token, env)) return Astro.redirect('/admin/login');
+
+// ── Load data ─────────────────────────────────────────────────
+const ageGroups: AgeGroup[] = await listAgeGroups(env);
+const tasterGroups = ageGroups.filter((ag) => ag.booking_type === 'taster' && ag.active);
+const nextTuesdays = getNextNTuesdayDates(4);
+const upcomingBookings: Booking[] = await listUpcomingBookings(4, env);
+
+// Enrich bookings with enquiry names
+type EnrichedBooking = Booking & { enquiry_name: string | null; enquiry_email: string };
+const enriched: EnrichedBooking[] = await Promise.all(
+  upcomingBookings.map(async (b) => {
+    const enquiry = await getEnquiryById(b.enquiry_id, env);
+    return { ...b, enquiry_name: enquiry?.name ?? null, enquiry_email: enquiry?.email ?? '' };
+  })
+);
+
+// Build calendar structure: date → ageGroupId → bookings[]
+type SlotData = {
+  ageGroup: AgeGroup;
+  bookings: EnrichedBooking[];
+};
+type DayData = {
+  date: string;
+  displayDate: string;
+  slots: SlotData[];
+};
+
+const calendarDays: DayData[] = nextTuesdays.map((date) => ({
+  date,
+  displayDate: formatDateForDisplay(date),
+  slots: tasterGroups.map((ag) => ({
+    ageGroup: ag,
+    bookings: enriched.filter((b) => b.session_date === date && b.age_group_id === ag.id),
+  })),
+}));
+---
+
+<AdminBase title="Bookings" activeNav="bookings">
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-gray-900">Bookings</h1>
+      <a href="/admin/reports" class="text-sm text-blue-600 hover:text-blue-800">View reports →</a>
+    </div>
+
+    <div
+      id="toast"
+      class="hidden fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white"
+    >
+    </div>
+
+    {
+      calendarDays.length === 0 && (
+        <div class="bg-white rounded-lg shadow p-8 text-center text-gray-400 text-sm">
+          No upcoming sessions found.
+        </div>
+      )
+    }
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {
+        calendarDays.map((day) => (
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-5 py-3 bg-blue-900 text-white">
+              <h2 class="font-semibold text-sm">{day.displayDate}</h2>
+            </div>
+
+            <div class="divide-y divide-gray-100">
+              {day.slots.map((slot) => {
+                const capacity = slot.ageGroup.capacity_per_session ?? 2;
+                const booked = slot.bookings.length;
+                const pct = Math.min(100, Math.round((booked / capacity) * 100));
+                return (
+                  <div class="p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <div>
+                        <span class="text-sm font-semibold text-gray-800">
+                          {slot.ageGroup.label}
+                        </span>
+                        {slot.ageGroup.session_time && (
+                          <span class="ml-2 text-xs text-gray-400">
+                            {slot.ageGroup.session_time}
+                          </span>
+                        )}
+                      </div>
+                      <span class="text-xs text-gray-500">
+                        {booked}/{capacity}
+                      </span>
+                    </div>
+
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mb-3">
+                      <div
+                        class={`h-1.5 rounded-full transition-all ${pct >= 100 ? 'bg-red-500' : pct >= 50 ? 'bg-amber-400' : 'bg-green-500'}`}
+                        style={`width: ${pct}%`}
+                      />
+                    </div>
+
+                    {slot.bookings.length === 0 ? (
+                      <p class="text-xs text-gray-400 italic">No bookings yet</p>
+                    ) : (
+                      <ul class="space-y-2">
+                        {slot.bookings.map((booking) => (
+                          <li
+                            class="flex items-center justify-between gap-2 text-sm"
+                            data-booking-id={booking.id}
+                          >
+                            <span class="text-gray-800 truncate flex-1 min-w-0">
+                              {booking.enquiry_name || booking.enquiry_email}
+                            </span>
+
+                            <span
+                              class={`booking-status-badge shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                booking.status === 'attended'
+                                  ? 'bg-green-100 text-green-700'
+                                  : booking.status === 'no_show'
+                                    ? 'bg-red-100 text-red-700'
+                                    : booking.status === 'cancelled'
+                                      ? 'bg-gray-100 text-gray-500'
+                                      : 'bg-blue-100 text-blue-700'
+                              }`}
+                            >
+                              {booking.status === 'attended'
+                                ? 'Attended'
+                                : booking.status === 'no_show'
+                                  ? 'No show'
+                                  : booking.status === 'cancelled'
+                                    ? 'Cancelled'
+                                    : 'Confirmed'}
+                            </span>
+
+                            {booking.status === 'confirmed' && (
+                              <div class="attendance-controls shrink-0 flex items-center gap-1">
+                                <button
+                                  class="attend-btn px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                  data-booking-id={booking.id}
+                                  data-status="attended"
+                                  title="Mark attended"
+                                >
+                                  ✓
+                                </button>
+                                <button
+                                  class="noshow-btn px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                  data-booking-id={booking.id}
+                                  data-status="no_show"
+                                  title="Mark no show"
+                                >
+                                  ✗
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</AdminBase>
+
+<script define:vars={{ adminToken: token }}>
+  const toast = document.getElementById('toast');
+
+  function showToast(message, success = true) {
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white ${
+      success ? 'bg-green-700' : 'bg-red-600'
+    }`;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+  }
+
+  document.querySelectorAll('.attend-btn, .noshow-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const target = e.currentTarget;
+      const bookingId = target.dataset.bookingId;
+      const status = target.dataset.status;
+      if (!bookingId || !status) return;
+
+      target.disabled = true;
+
+      // If marking attended, ask about membership link
+      let sendMembership = false;
+      if (status === 'attended') {
+        sendMembership = confirm('Send membership invite link to this athlete?');
+      }
+
+      try {
+        const resp = await fetch(`/api/admin/bookings/${bookingId}/attendance`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({ status, send_membership_link: sendMembership }),
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok) {
+          // Update UI inline — swap badge and hide buttons
+          const row = target.closest('[data-booking-id]');
+          if (row) {
+            const badge = row.querySelector('.booking-status-badge');
+            const controls = row.querySelector('.attendance-controls');
+
+            if (badge) {
+              badge.textContent = status === 'attended' ? 'Attended' : 'No show';
+              badge.className = `booking-status-badge shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                status === 'attended' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`;
+            }
+            if (controls) controls.remove();
+          }
+
+          const msg =
+            status === 'attended'
+              ? sendMembership
+                ? 'Marked attended & membership invite sent.'
+                : 'Marked attended.'
+              : 'Marked as no show.';
+          showToast(msg, true);
+        } else {
+          showToast(data.error ?? 'Failed to record attendance.', false);
+          target.disabled = false;
+        }
+      } catch {
+        showToast('Network error — please try again.', false);
+        target.disabled = false;
+      }
+    });
+  });
+</script>

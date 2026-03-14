@@ -95,7 +95,6 @@ export function envQuery(env: Env) {
 class QueryBuilder {
   private _table: string;
   private _db: D1Database;
-  private _env: Environment;
   private _conditions: string[] = [];
   private _params: unknown[] = [];
   private _orderBy: string | null = null;
@@ -106,7 +105,6 @@ class QueryBuilder {
   constructor(db: D1Database, table: string, env: Environment) {
     this._db = db;
     this._table = table;
-    this._env = env;
     // Always scope to environment
     this._conditions.push('environment = ?');
     this._params.push(env);
