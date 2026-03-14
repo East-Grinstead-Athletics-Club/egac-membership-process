@@ -474,7 +474,7 @@ describe('POST /api/admin/invites/resend', () => {
   };
 
   beforeEach(() => {
-    vi.mocked(getConfig).mockResolvedValue(mockConfig);
+    vi.mocked(getSystemConfig).mockResolvedValue(mockConfig);
     vi.mocked(emailTemplates.sendBookingInvite).mockResolvedValue({ success: true });
     vi.mocked(inviteRepo.markInviteSent).mockResolvedValue(undefined);
     vi.mocked(enquiryRepo.appendEnquiryEvent).mockResolvedValue(undefined);
