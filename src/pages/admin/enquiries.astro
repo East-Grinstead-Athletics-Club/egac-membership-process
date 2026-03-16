@@ -103,133 +103,173 @@ const tabs: { id: string; label: string }[] = [
   { id: 'processed', label: 'Processed' },
   { id: 'academy', label: 'Academy' },
 ];
+
+const pendingCount = enquiries.filter((enq) => !enq.processed).length;
+const processedCount = enquiries.length - pendingCount;
+const academyCount = enquiries.filter((enq) => enq.source.toLowerCase().includes('academy')).length;
 ---
 
 <AdminBase title="Enquiries" activeNav="enquiries">
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900">Enquiries</h1>
+    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Membership pipeline</p>
+          <h2 class="mt-1 text-2xl font-semibold text-slate-900">Enquiries overview</h2>
+          <p class="mt-1 text-sm text-slate-600">Review inbound enquiries and track invitation progress.</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Page</p>
+          <p class="text-sm font-semibold text-slate-900">{page}</p>
+        </div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Shown</p>
+          <p class="mt-1 text-2xl font-semibold text-slate-900">{enquiries.length}</p>
+        </div>
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p class="text-xs font-medium uppercase tracking-wide text-amber-700">Pending</p>
+          <p class="mt-1 text-2xl font-semibold text-amber-800">{pendingCount}</p>
+        </div>
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <p class="text-xs font-medium uppercase tracking-wide text-emerald-700">Processed</p>
+          <p class="mt-1 text-2xl font-semibold text-emerald-800">{processedCount}</p>
+        </div>
+        <div class="rounded-xl border border-sky-200 bg-sky-50 p-4">
+          <p class="text-xs font-medium uppercase tracking-wide text-sky-700">Academy</p>
+          <p class="mt-1 text-2xl font-semibold text-sky-800">{academyCount}</p>
+        </div>
+      </div>
     </div>
 
-    <!-- Status tabs -->
-    <div class="border-b border-gray-200">
-      <nav class="-mb-px flex gap-1" aria-label="Enquiry status filter">
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <nav class="flex flex-wrap gap-2" aria-label="Enquiry status filter">
         {
           tabs.map((tab) => (
             <a
               href={tabUrl(tab.id)}
-              class={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              class={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 rawStatus === tab.id || (tab.id === 'all' && rawStatus === 'all')
-                  ? 'border-blue-600 text-blue-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
               }`}
             >
               {tab.label}
             </a>
           ))
         }
-      </nav>
+        </nav>
+
+        <form method="GET" class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+          <input type="hidden" name="status" value={rawStatus} />
+          <input
+            type="search"
+            name="search"
+            value={search}
+            placeholder="Search by name or email"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 sm:min-w-72"
+          />
+          <div class="flex gap-2">
+            <button
+              type="submit"
+              class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Search
+            </button>
+            {
+              search && (
+                <a
+                  href={tabUrl(rawStatus)}
+                  class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Clear
+                </a>
+              )
+            }
+          </div>
+        </form>
+      </div>
     </div>
 
-    <!-- Search form -->
-    <form method="GET" class="flex gap-2">
-      <input type="hidden" name="status" value={rawStatus} />
-      <input
-        type="search"
-        name="search"
-        value={search}
-        placeholder="Search by name or email…"
-        class="flex-1 max-w-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      />
-      <button
-        type="submit"
-        class="px-4 py-2 bg-blue-800 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
-      >
-        Search
-      </button>
-      {
-        search && (
-          <a
-            href={tabUrl(rawStatus)}
-            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors"
-          >
-            Clear
-          </a>
-        )
-      }
-    </form>
-
-    <!-- Table -->
     {
       enquiries.length === 0 ? (
-        <div class="text-center py-16 text-gray-400 text-sm">No enquiries found.</div>
+        <div class="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center text-sm text-slate-500 shadow-sm">
+          No enquiries found.
+        </div>
       ) : (
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="border-b border-slate-200 px-4 py-3 text-sm text-slate-600 sm:px-6">
+            Showing {enquiries.length} enquiry{enquiries.length === 1 ? '' : 'ies'}
+            {search ? ` for "${search}"` : ''}
+          </div>
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+            <table class="min-w-full divide-y divide-slate-200">
+              <thead class="bg-slate-50">
                 <tr>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 sm:px-6">
                     Date
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Name
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Email
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     DOB
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Age Group
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Invite
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Status
                   </th>
                   <th class="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-100">
+              <tbody class="divide-y divide-slate-100 bg-white">
                 {enquiries.map((enq) => {
                   const invite = inviteMap.get(enq.id);
                   const ageGroup = enq.age_group_id ? ageGroupMap.get(enq.age_group_id) : null;
                   const badge = inviteStatusBadge(invite?.status);
                   return (
-                    <tr class="hover:bg-gray-50 transition-colors">
-                      <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                    <tr class="transition-colors hover:bg-slate-50">
+                      <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-600 sm:px-6">
                         {formatDate(enq.created_at)}
                       </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 font-medium">
-                        {enq.name || <span class="text-gray-400">—</span>}
+                      <td class="px-4 py-3 text-sm font-medium text-slate-900">
+                        {enq.name || <span class="text-slate-400">—</span>}
                       </td>
-                      <td class="px-4 py-3 text-sm text-gray-700">{enq.email}</td>
-                      <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
-                        {enq.dob ? formatDate(enq.dob) : <span class="text-gray-400">—</span>}
+                      <td class="px-4 py-3 text-sm text-slate-700">{enq.email}</td>
+                      <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
+                        {enq.dob ? formatDate(enq.dob) : <span class="text-slate-400">—</span>}
                       </td>
-                      <td class="px-4 py-3 text-sm text-gray-600">
+                      <td class="px-4 py-3 text-sm text-slate-600">
                         {ageGroup ? (
                           <span class="text-xs">
                             {ageGroup.label}
-                            <span class="ml-1 text-gray-400">({ageGroup.booking_type})</span>
+                            <span class="ml-1 text-slate-400">({ageGroup.booking_type})</span>
                           </span>
                         ) : (
-                          <span class="text-gray-400">—</span>
+                          <span class="text-slate-400">—</span>
                         )}
                       </td>
                       <td class="px-4 py-3">
                         <span
-                          class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${badge.cls}`}
+                          class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${badge.cls}`}
                         >
                           {badge.label}
                         </span>
                       </td>
                       <td class="px-4 py-3">
                         <span
-                          class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${enq.processed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
+                          class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${enq.processed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}
                         >
                           {enq.processed ? 'Processed' : 'Pending'}
                         </span>
@@ -237,9 +277,9 @@ const tabs: { id: string; label: string }[] = [
                       <td class="px-4 py-3 text-right">
                         <a
                           href={`/admin/enquiries/${enq.id}`}
-                          class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          class="text-xs font-semibold text-slate-700 transition hover:text-slate-900"
                         >
-                          View →
+                          View details
                         </a>
                       </td>
                     </tr>
@@ -252,33 +292,32 @@ const tabs: { id: string; label: string }[] = [
       )
     }
 
-    <!-- Pagination -->
     {
       (page > 1 || hasNextPage) && (
-        <div class="flex items-center justify-between text-sm">
+        <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm sm:px-6">
           <div>
             {page > 1 ? (
               <a
                 href={pageUrl(page - 1)}
-                class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 transition hover:bg-slate-50"
               >
                 ← Previous
               </a>
             ) : (
-              <span class="px-3 py-1.5 text-gray-400">← Previous</span>
+              <span class="px-3 py-1.5 text-slate-400">← Previous</span>
             )}
           </div>
-          <span class="text-gray-500">Page {page}</span>
+          <span class="text-slate-500">Page {page}</span>
           <div>
             {hasNextPage ? (
               <a
                 href={pageUrl(page + 1)}
-                class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 transition hover:bg-slate-50"
               >
                 Next →
               </a>
             ) : (
-              <span class="px-3 py-1.5 text-gray-400">Next →</span>
+              <span class="px-3 py-1.5 text-slate-400">Next →</span>
             )}
           </div>
         </div>

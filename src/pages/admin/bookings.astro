@@ -54,9 +54,20 @@ const calendarDays: DayData[] = nextTuesdays.map((date) => ({
 
 <AdminBase title="Bookings" activeNav="bookings">
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900">Bookings</h1>
-      <a href="/admin/reports" class="text-sm text-blue-600 hover:text-blue-800">View reports →</a>
+    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Session planning</p>
+          <h1 class="mt-1 text-2xl font-semibold text-slate-900">Bookings Calendar</h1>
+          <p class="mt-1 text-sm text-slate-600">Look ahead at upcoming Tuesdays and manage attendance by slot.</p>
+        </div>
+        <a
+          href="/admin/reports"
+          class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          View reports
+        </a>
+      </div>
     </div>
 
     <div
@@ -67,100 +78,100 @@ const calendarDays: DayData[] = nextTuesdays.map((date) => ({
 
     {
       calendarDays.length === 0 && (
-        <div class="bg-white rounded-lg shadow p-8 text-center text-gray-400 text-sm">
+        <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
           No upcoming sessions found.
         </div>
       )
     }
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       {
         calendarDays.map((day) => (
-          <div class="bg-white rounded-lg shadow overflow-hidden">
-            <div class="px-5 py-3 bg-blue-900 text-white">
-              <h2 class="font-semibold text-sm">{day.displayDate}</h2>
+          <section class="space-y-3">
+            <div>
+              <h2 class="px-1 text-2xl font-semibold text-slate-800">{day.displayDate}</h2>
             </div>
 
-            <div class="divide-y divide-gray-100">
+            <div class="space-y-3">
               {day.slots.map((slot) => {
                 const capacity = slot.ageGroup.capacity_per_session ?? 2;
                 const booked = slot.bookings.length;
                 const pct = Math.min(100, Math.round((booked / capacity) * 100));
                 return (
-                  <div class="p-4">
-                    <div class="flex items-center justify-between mb-2">
+                  <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div class="mb-2 flex items-center justify-between gap-3">
                       <div>
-                        <span class="text-sm font-semibold text-gray-800">
+                        <span class="text-xl font-medium text-slate-900">
                           {slot.ageGroup.label}
                         </span>
                         {slot.ageGroup.session_time && (
-                          <span class="ml-2 text-xs text-gray-400">
+                          <span class="ml-2 text-xl font-medium text-slate-900">
                             {slot.ageGroup.session_time}
                           </span>
                         )}
                       </div>
-                      <span class="text-xs text-gray-500">
-                        {booked}/{capacity}
-                      </span>
                     </div>
 
-                    <div class="w-full bg-gray-100 rounded-full h-1.5 mb-3">
+                    <div class="mb-2 h-2 w-full rounded-full bg-slate-200">
                       <div
-                        class={`h-1.5 rounded-full transition-all ${pct >= 100 ? 'bg-red-500' : pct >= 50 ? 'bg-amber-400' : 'bg-green-500'}`}
+                        class={`h-2 rounded-full transition-all ${pct >= 100 ? 'bg-red-600' : 'bg-blue-800'}`}
                         style={`width: ${pct}%`}
                       />
                     </div>
 
+                    <p class="mb-3 text-sm text-slate-600">
+                      {booked} / {capacity} booked
+                    </p>
+
                     {slot.bookings.length === 0 ? (
-                      <p class="text-xs text-gray-400 italic">No bookings yet</p>
+                      <p class="text-sm italic text-slate-400">No bookings</p>
                     ) : (
                       <ul class="space-y-2">
                         {slot.bookings.map((booking) => (
-                          <li
-                            class="flex items-center justify-between gap-2 text-sm"
-                            data-booking-id={booking.id}
-                          >
-                            <span class="text-gray-800 truncate flex-1 min-w-0">
-                              {booking.enquiry_name || booking.enquiry_email}
-                            </span>
+                          <li class="space-y-2" data-booking-id={booking.id}>
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="truncate text-xl text-slate-900">
+                                {booking.enquiry_name || booking.enquiry_email}
+                              </span>
 
-                            <span
-                              class={`booking-status-badge shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                booking.status === 'attended'
-                                  ? 'bg-green-100 text-green-700'
+                              <span
+                                class={`booking-status-badge shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                                  booking.status === 'attended'
+                                    ? 'bg-green-100 text-green-700'
+                                    : booking.status === 'no_show'
+                                      ? 'bg-red-100 text-red-700'
+                                      : booking.status === 'cancelled'
+                                        ? 'bg-gray-100 text-gray-500'
+                                        : 'bg-blue-100 text-blue-700'
+                                }`}
+                              >
+                                {booking.status === 'attended'
+                                  ? 'Attended'
                                   : booking.status === 'no_show'
-                                    ? 'bg-red-100 text-red-700'
+                                    ? 'No show'
                                     : booking.status === 'cancelled'
-                                      ? 'bg-gray-100 text-gray-500'
-                                      : 'bg-blue-100 text-blue-700'
-                              }`}
-                            >
-                              {booking.status === 'attended'
-                                ? 'Attended'
-                                : booking.status === 'no_show'
-                                  ? 'No show'
-                                  : booking.status === 'cancelled'
-                                    ? 'Cancelled'
-                                    : 'Confirmed'}
-                            </span>
+                                      ? 'Cancelled'
+                                      : 'Confirmed'}
+                              </span>
+                            </div>
 
                             {booking.status === 'confirmed' && (
-                              <div class="attendance-controls shrink-0 flex items-center gap-1">
+                              <div class="attendance-controls flex items-center gap-2">
                                 <button
-                                  class="attend-btn px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                  class="attend-btn rounded-md bg-green-600 px-2 py-1 text-xs text-white transition-colors hover:bg-green-700"
                                   data-booking-id={booking.id}
                                   data-status="attended"
                                   title="Mark attended"
                                 >
-                                  ✓
+                                  Mark attended
                                 </button>
                                 <button
-                                  class="noshow-btn px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                  class="noshow-btn rounded-md bg-red-500 px-2 py-1 text-xs text-white transition-colors hover:bg-red-600"
                                   data-booking-id={booking.id}
                                   data-status="no_show"
                                   title="Mark no show"
                                 >
-                                  ✗
+                                  No show
                                 </button>
                               </div>
                             )}
@@ -168,21 +179,21 @@ const calendarDays: DayData[] = nextTuesdays.map((date) => ({
                         ))}
                       </ul>
                     )}
-                  </div>
+                  </article>
                 );
               })}
             </div>
-          </div>
+          </section>
         ))
       }
     </div>
   </div>
 </AdminBase>
 
-<script define:vars={{ adminToken: token }}>
+<script>
   const toast = document.getElementById('toast');
 
-  function showToast(message, success = true) {
+  function showToast(message: string, success = true) {
     if (!toast) return;
     toast.textContent = message;
     toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white ${
@@ -192,9 +203,10 @@ const calendarDays: DayData[] = nextTuesdays.map((date) => ({
     setTimeout(() => toast.classList.add('hidden'), 3000);
   }
 
-  document.querySelectorAll('.attend-btn, .noshow-btn').forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>('.attend-btn, .noshow-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
-      const target = e.currentTarget;
+      const target = e.currentTarget as HTMLButtonElement | null;
+      if (!target) return;
       const bookingId = target.dataset.bookingId;
       const status = target.dataset.status;
       if (!bookingId || !status) return;
@@ -212,19 +224,18 @@ const calendarDays: DayData[] = nextTuesdays.map((date) => ({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
           },
           body: JSON.stringify({ status, send_membership_link: sendMembership }),
         });
 
-        const data = await resp.json();
+          const data = (await resp.json()) as { error?: string };
 
         if (resp.ok) {
           // Update UI inline — swap badge and hide buttons
-          const row = target.closest('[data-booking-id]');
+            const row = target.closest<HTMLElement>('[data-booking-id]');
           if (row) {
-            const badge = row.querySelector('.booking-status-badge');
-            const controls = row.querySelector('.attendance-controls');
+              const badge = row.querySelector<HTMLElement>('.booking-status-badge');
+              const controls = row.querySelector<HTMLElement>('.attendance-controls');
 
             if (badge) {
               badge.textContent = status === 'attended' ? 'Attended' : 'No show';

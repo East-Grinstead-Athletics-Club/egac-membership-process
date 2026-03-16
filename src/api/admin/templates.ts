@@ -76,9 +76,7 @@ async function handleCreate(request: Request, env: Env): Promise<Response> {
       html,
       text_content: body.text_content ?? null,
       variables,
-      active: 1,
       created_at: now(),
-      updated_at: null,
     },
     env
   );

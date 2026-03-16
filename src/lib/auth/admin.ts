@@ -30,9 +30,21 @@ export function checkAdminToken(token: string, env: Env): boolean {
 // ------------------------------------------------------------
 // requireAdmin
 // Returns true if the request is authenticated as an admin.
-// Reads from Authorization header (Bearer) or x-admin-token.
+// Reads from HttpOnly cookie first, then Authorization header (Bearer),
+// then x-admin-token as a legacy fallback.
 // ------------------------------------------------------------
 export function requireAdmin(request: Request, env: Env): boolean {
+  const cookieHeader = request.headers.get('Cookie') ?? '';
+  const cookieToken = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('egac_admin_token='))
+    ?.slice('egac_admin_token='.length);
+
+  if (cookieToken && checkAdminToken(cookieToken, env)) {
+    return true;
+  }
+
   const auth = request.headers.get('Authorization') ?? '';
   const altHeader = request.headers.get('x-admin-token') ?? '';
   const provided = auth.startsWith('Bearer ') ? auth.slice(7) : altHeader;

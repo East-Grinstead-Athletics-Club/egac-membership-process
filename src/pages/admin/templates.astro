@@ -116,10 +116,10 @@ function formatDate(iso: string | null): string {
   </div>
 </AdminBase>
 
-<script define:vars={{ adminToken: token }}>
+<script>
   const toast = document.getElementById('toast');
 
-  function showToast(message, success = true) {
+  function showToast(message: string, success = true) {
     if (!toast) return;
     toast.textContent = message;
     toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white ${
@@ -129,7 +129,7 @@ function formatDate(iso: string | null): string {
     setTimeout(() => toast.classList.add('hidden'), 3000);
   }
 
-  document.querySelectorAll('.active-toggle').forEach((btn) => {
+  document.querySelectorAll<HTMLButtonElement>('.active-toggle').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.templateId;
       const currentActive = parseInt(btn.dataset.active ?? '0', 10);
@@ -142,7 +142,6 @@ function formatDate(iso: string | null): string {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
           },
           body: JSON.stringify({ active: newActive }),
         });
@@ -150,16 +149,18 @@ function formatDate(iso: string | null): string {
         if (resp.ok) {
           // Update toggle visually
           btn.dataset.active = String(newActive);
+          const knob = btn.querySelector<HTMLElement>('span');
+          if (!knob) return;
           if (newActive) {
             btn.classList.remove('bg-gray-300');
             btn.classList.add('bg-green-500');
-            btn.querySelector('span').classList.remove('translate-x-0.5');
-            btn.querySelector('span').classList.add('translate-x-4');
+            knob.classList.remove('translate-x-0.5');
+            knob.classList.add('translate-x-4');
           } else {
             btn.classList.remove('bg-green-500');
             btn.classList.add('bg-gray-300');
-            btn.querySelector('span').classList.remove('translate-x-4');
-            btn.querySelector('span').classList.add('translate-x-0.5');
+            knob.classList.remove('translate-x-4');
+            knob.classList.add('translate-x-0.5');
           }
           showToast(newActive ? 'Template activated.' : 'Template deactivated.');
         } else {

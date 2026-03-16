@@ -35,5 +35,9 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Local workspace artifacts
+egac-session.tar.gz
+index.md
+
 # TypeScript
 *.tsbuildinfo

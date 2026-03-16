@@ -5,8 +5,9 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { Miniflare } from 'miniflare';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   insertEnquiry,
@@ -49,6 +50,7 @@ import type { Env } from '../../src/lib/db/schema.js';
 // ── Setup ─────────────────────────────────────────────────────
 
 let env: Env;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const schema = readFileSync(
   resolve(__dirname, '../../db/migrations/0001_initial_schema.sql'),

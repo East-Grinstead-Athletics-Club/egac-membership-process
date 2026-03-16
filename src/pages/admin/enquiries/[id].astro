@@ -14,8 +14,8 @@ import type { Enquiry, Invite, Booking, EnquiryEvent } from '../../../lib/db/sch
 // ── Auth check ───────────────────────────────────────────────────────────────
 
 const env = Astro.locals.runtime.env;
-const adminToken = Astro.cookies.get('egac_admin_token')?.value ?? '';
-if (!checkAdminToken(adminToken, env)) {
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+if (!checkAdminToken(token, env)) {
   return Astro.redirect('/admin/login');
 }
 
@@ -278,7 +278,7 @@ const bookingUrl = invite ? `/book/${invite.token}` : null;
   </div>
 </AdminBase>
 
-<script define:vars={{ adminToken, enquiryId: id }}>
+<script define:vars={{ enquiryId: id }}>
   // ── Save note ──────────────────────────────────────────────
 
   const saveBtn = document.getElementById('save-note-btn');
@@ -298,7 +298,6 @@ const bookingUrl = invite ? `/book/${invite.token}` : null;
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
           },
           body: JSON.stringify({ note }),
         });
@@ -336,7 +335,6 @@ const bookingUrl = invite ? `/book/${invite.token}` : null;
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${adminToken}`,
           },
           body: JSON.stringify({ enquiry_id: enquiryId }),
         });

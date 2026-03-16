@@ -159,7 +159,7 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
   </div>
 </AdminBase>
 
-<script define:vars={{ adminToken: token, templateId: id, adminEmail }}>
+<script define:vars={{ templateId: id, adminEmail }}>
   const htmlEditor = document.getElementById('html-editor');
   const subjectInput = document.getElementById('subject-input');
   const saveBtn = document.getElementById('save-btn');
@@ -198,9 +198,7 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
     if (previewStatus) previewStatus.textContent = 'Loading preview…';
 
     try {
-      const resp = await fetch(`/api/admin/templates/${templateId}/preview`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      const resp = await fetch(`/api/admin/templates/${templateId}/preview`);
       if (resp.ok) {
         const data = await resp.json();
         const doc = previewFrame.contentDocument || previewFrame.contentWindow?.document;
@@ -245,7 +243,6 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminToken}`,
         },
         body: JSON.stringify({ html, subject }),
       });
@@ -298,7 +295,6 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminToken}`,
         },
         body: JSON.stringify({ to: adminEmail }),
       });

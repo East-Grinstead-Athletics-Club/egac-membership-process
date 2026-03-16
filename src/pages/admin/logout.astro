@@ -1,0 +1,27 @@
+---
+// src/pages/admin/logout.astro
+// Server-side logout: clears admin auth cookies and redirects to login.
+
+const env = Astro.locals.runtime.env;
+const secure = env.APP_ENV !== 'development';
+
+// Clear current cookie path
+Astro.cookies.set('egac_admin_token', '', {
+  path: '/',
+  httpOnly: true,
+  sameSite: 'lax',
+  secure,
+  maxAge: 0,
+});
+
+// Clear legacy cookie path used by earlier versions
+Astro.cookies.set('egac_admin_token', '', {
+  path: '/admin',
+  httpOnly: true,
+  sameSite: 'lax',
+  secure,
+  maxAge: 0,
+});
+
+return Astro.redirect('/admin/login');
+---

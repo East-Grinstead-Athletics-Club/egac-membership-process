@@ -170,6 +170,8 @@ const mockConfig = {
   venue_name: 'East Grinstead Leisure Centre',
   venue_address: '1 Station Road',
   admin_email: 'admin@egac.co.uk',
+  academy_max_age: '10',
+  capacity_per_slot: '2',
 };
 
 // ============================================================

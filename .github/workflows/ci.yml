@@ -128,9 +128,6 @@ jobs:
       - name: Verify test count
         # Fail the build if fewer than 50 tests pass
         run: |
-          COUNT=$(npm test -- --reporter=verbose 2>&1 | grep -c '✓\|√\|PASS' || true)
-          echo "Test indicators found: $COUNT"
-          # vitest outputs a summary line — check it directly
           npm test -- --reporter=json 2>/dev/null | node -e "
             const chunks = [];
             process.stdin.on('data', c => chunks.push(c));
@@ -145,10 +142,11 @@ jobs:
                 }
                 console.log('OK: test count requirement met');
               } catch(e) {
-                console.log('Could not parse JSON report, skipping count check');
+                console.error('FAIL: could not parse test report JSON');
+                process.exit(1);
               }
             });
-          " || true
+          "
 
   # ----------------------------------------------------------------
   # build

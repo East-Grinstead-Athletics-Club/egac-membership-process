@@ -15,9 +15,10 @@ if (Astro.request.method === 'POST') {
 
   if (checkAdminToken(token, env)) {
     Astro.cookies.set('egac_admin_token', token, {
-      path: '/admin',
+      path: '/',
       httpOnly: true,
       sameSite: 'lax',
+      secure: env.APP_ENV !== 'development',
       maxAge: 8 * 60 * 60, // 8 hours
     });
     return Astro.redirect('/admin/enquiries');
