@@ -107,8 +107,8 @@ import Base from '../layouts/Base.astro';
       </div>
 
       <div id="athlete-name-wrap" class="hidden">
-        <label for="athlete_name" class="block text-sm font-medium text-gray-700 mb-1">
-          Athlete's full name <span class="text-red-500" aria-hidden="true">*</span>
+        <label id="athlete-name-label" for="athlete_name" class="block text-sm font-medium text-gray-700 mb-1">
+          Athletes name <span class="text-red-500" aria-hidden="true">*</span>
         </label>
         <input
           id="athlete_name"
@@ -186,6 +186,7 @@ import Base from '../layouts/Base.astro';
   const nameLabel = document.getElementById('name-label') as HTMLElement;
   const phoneLabel = document.getElementById('phone-label') as HTMLElement;
   const dobLabel = document.getElementById('dob-label') as HTMLElement;
+  const athleteNameLabel = document.getElementById('athlete-name-label') as HTMLElement;
   const athleteNameInput = document.getElementById('athlete_name') as HTMLInputElement;
   const enquiryForInputs = document.querySelectorAll<HTMLInputElement>('input[name="enquiry_for"]');
 
@@ -204,7 +205,8 @@ import Base from '../layouts/Base.astro';
 
     nameLabel.innerHTML = `${onBehalf ? 'Your full name' : 'Your full name'} <span class="text-red-500" aria-hidden="true">*</span>`;
     phoneLabel.innerHTML = `Your contact number <span class="text-gray-400 font-normal">(optional)</span>`;
-    dobLabel.innerHTML = `${onBehalf ? "Athlete's date of birth" : 'Your date of birth'} <span class="text-red-500" aria-hidden="true">*</span>`;
+    athleteNameLabel.innerHTML = `Athletes name <span class="text-red-500" aria-hidden="true">*</span>`;
+    dobLabel.innerHTML = `${onBehalf ? 'Athletes date of birth' : 'Your date of birth'} <span class="text-red-500" aria-hidden="true">*</span>`;
   }
 
   enquiryForInputs.forEach((input) => input.addEventListener('change', syncEnquiryMode));
@@ -266,8 +268,8 @@ import Base from '../layouts/Base.astro';
       errors.push('Please enter a valid email address');
     }
     if (enquiryFor === 'other' && !athleteName) {
-      showFieldError('athlete_name', "Athlete's full name is required");
-      errors.push("Athlete's full name is required");
+      showFieldError('athlete_name', 'Athletes name is required');
+      errors.push('Athletes name is required');
     }
     if (!dob) {
       showFieldError('dob', 'Date of birth is required');
