@@ -113,7 +113,9 @@ export async function listUpcomingBookings(weeksAhead: number, env: Env): Promis
     db
       .prepare(
         `SELECT * FROM bookings
-       WHERE session_date >= ? AND session_date <= ? AND status = 'confirmed' AND environment = ?
+       WHERE session_date >= ? AND session_date <= ?
+         AND status IN ('confirmed','attended','no_show')
+         AND environment = ?
        ORDER BY session_date ASC`
       )
       .bind(today, futureDate, environment)

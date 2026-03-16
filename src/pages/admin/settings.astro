@@ -7,6 +7,7 @@ import {
   clearConfigCache,
   validateConfigUpdate,
 } from '../../lib/config.js';
+import { listAgeGroups, updateAgeGroup } from '../../lib/repositories/age-groups.js';
 import type { SystemConfig } from '../../lib/db/schema.js';
 
 const env = Astro.locals.runtime.env;
@@ -18,28 +19,96 @@ let successMessage = '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const updates: Partial<SystemConfig> = {
-    weeks_ahead_booking: String(form.get('weeks_ahead_booking') ?? '').trim(),
-    capacity_per_slot: String(form.get('capacity_per_slot') ?? '').trim(),
-    academy_max_age: String(form.get('academy_max_age') ?? '').trim(),
-    site_name: String(form.get('site_name') ?? '').trim(),
-    site_url: String(form.get('site_url') ?? '').trim(),
-    email_from: String(form.get('email_from') ?? '').trim(),
-    venue_name: String(form.get('venue_name') ?? '').trim(),
-    venue_address: String(form.get('venue_address') ?? '').trim(),
-    admin_email: String(form.get('admin_email') ?? '').trim(),
-  };
+  const action = String(form.get('action') ?? 'config-save');
 
-  errors = validateConfigUpdate(updates);
+  if (action === 'age-group-save') {
+    const ageGroupId = String(form.get('age_group_id') ?? '').trim();
+    const label = String(form.get('label') ?? '').trim();
+    const bookingType = String(form.get('booking_type') ?? '').trim();
+    const ageMin = parseInt(String(form.get('age_min_aug31') ?? '').trim(), 10);
+    const ageMax = parseInt(String(form.get('age_max_aug31') ?? '').trim(), 10);
+    const sessionDaysRaw = String(form.get('session_days') ?? '').trim();
+    const sessionTime = String(form.get('session_time') ?? '').trim();
+    const capacityRaw = String(form.get('capacity_per_session') ?? '').trim();
+    const sortOrder = parseInt(String(form.get('sort_order') ?? '').trim(), 10);
+    const active = form.get('active') === '1' ? 1 : 0;
 
-  if (errors.length === 0) {
-    await setSystemConfig(updates, env);
-    await clearConfigCache(env);
-    successMessage = 'Settings saved.';
+    if (!ageGroupId) errors.push('age_group_id is required');
+    if (!label) errors.push('label is required');
+    if (bookingType !== 'taster' && bookingType !== 'waitlist') {
+      errors.push('booking_type must be taster or waitlist');
+    }
+    if (Number.isNaN(ageMin) || Number.isNaN(ageMax) || ageMin < 0 || ageMax < ageMin) {
+      errors.push('age range is invalid');
+    }
+    if (Number.isNaN(sortOrder) || sortOrder < 1) {
+      errors.push('sort_order must be a positive number');
+    }
+
+    let sessionDays = '[]';
+    try {
+      const parsed = JSON.parse(sessionDaysRaw);
+      if (!Array.isArray(parsed) || parsed.some((d) => typeof d !== 'string')) {
+        throw new Error('Invalid session days');
+      }
+      sessionDays = JSON.stringify(parsed);
+    } catch {
+      errors.push('session_days must be a JSON array, e.g. ["Tuesday"]');
+    }
+
+    let capacity: number | null = null;
+    if (capacityRaw) {
+      const n = parseInt(capacityRaw, 10);
+      if (Number.isNaN(n) || n < 1 || n > 20) {
+        errors.push('capacity_per_session must be empty or between 1 and 20');
+      } else {
+        capacity = n;
+      }
+    }
+
+    if (errors.length === 0) {
+      await updateAgeGroup(
+        ageGroupId,
+        {
+          label,
+          booking_type: bookingType as 'taster' | 'waitlist',
+          age_min_aug31: ageMin,
+          age_max_aug31: ageMax,
+          session_days: sessionDays,
+          session_time: sessionTime || null,
+          capacity_per_session: capacity,
+          active,
+          sort_order: sortOrder,
+        },
+        env
+      );
+      successMessage = 'Age group updated.';
+    }
+  } else {
+    const updates: Partial<SystemConfig> = {
+      weeks_ahead_booking: String(form.get('weeks_ahead_booking') ?? '').trim(),
+      capacity_per_slot: String(form.get('capacity_per_slot') ?? '').trim(),
+      academy_max_age: String(form.get('academy_max_age') ?? '').trim(),
+      site_name: String(form.get('site_name') ?? '').trim(),
+      site_url: String(form.get('site_url') ?? '').trim(),
+      email_from: String(form.get('email_from') ?? '').trim(),
+      venue_name: String(form.get('venue_name') ?? '').trim(),
+      venue_address: String(form.get('venue_address') ?? '').trim(),
+      admin_email: String(form.get('admin_email') ?? '').trim(),
+    };
+
+    errors = validateConfigUpdate(updates);
+
+    if (errors.length === 0) {
+      await setSystemConfig(updates, env);
+      await clearConfigCache(env);
+      successMessage = 'Settings saved.';
+    }
   }
 }
 
 const config = await getSystemConfig(env);
+const ageGroups = await listAgeGroups(env, false);
 const appEnv = env.APP_ENV ?? 'development';
 ---
 
@@ -87,6 +156,7 @@ const appEnv = env.APP_ENV ?? 'development';
     </div>
 
     <form method="POST" class="space-y-4">
+      <input type="hidden" name="action" value="config-save" />
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-4">
           <h2 class="text-lg font-medium text-slate-900">Booking defaults</h2>
@@ -156,5 +226,68 @@ const appEnv = env.APP_ENV ?? 'development';
         </button>
       </div>
     </form>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="mb-4">
+        <h2 class="text-lg font-medium text-slate-900">Age groups</h2>
+        <p class="mt-1 text-sm text-slate-500">Adjust age-group ranges and session settings. Changes apply site-wide immediately.</p>
+      </div>
+      <div class="space-y-3">
+        {
+          ageGroups.map((group) => (
+            <form method="POST" class="rounded-xl border border-slate-200 p-4">
+              <input type="hidden" name="action" value="age-group-save" />
+              <input type="hidden" name="age_group_id" value={group.id} />
+              <div class="mb-3 flex items-center justify-between">
+                <h3 class="font-semibold text-slate-900">{group.code.toUpperCase()}</h3>
+                <label class="inline-flex items-center gap-2 text-xs text-slate-600">
+                  <input type="checkbox" name="active" value="1" checked={group.active === 1} /> Active
+                </label>
+              </div>
+              <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div class="md:col-span-2">
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Label</label>
+                  <input name="label" value={group.label} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Booking type</label>
+                  <select name="booking_type" class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm">
+                    <option value="taster" selected={group.booking_type === 'taster'}>Taster</option>
+                    <option value="waitlist" selected={group.booking_type === 'waitlist'}>Waitlist</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Sort order</label>
+                  <input name="sort_order" value={group.sort_order} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Age min</label>
+                  <input name="age_min_aug31" value={group.age_min_aug31} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Age max</label>
+                  <input name="age_max_aug31" value={group.age_max_aug31} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Session time</label>
+                  <input name="session_time" value={group.session_time ?? ''} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Capacity/session</label>
+                  <input name="capacity_per_session" value={group.capacity_per_session ?? ''} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                </div>
+                <div class="md:col-span-4">
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Session days (JSON array)</label>
+                  <input name="session_days" value={group.session_days} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-mono" />
+                </div>
+              </div>
+              <div class="mt-3 flex justify-end">
+                <button type="submit" class="rounded-md border border-[#2d5ea5] px-3 py-1.5 text-xs font-medium text-[#2d5ea5] hover:bg-blue-50">Save age group</button>
+              </div>
+            </form>
+          ))
+        }
+      </div>
+    </section>
   </div>
 </AdminBase>

@@ -8,6 +8,7 @@ import { checkAdminToken } from '../../lib/auth/admin.js';
 import { listEnquiries } from '../../lib/repositories/enquiries.js';
 import { getInviteById } from '../../lib/repositories/invites.js';
 import { listAgeGroups } from '../../lib/repositories/age-groups.js';
+import { listBookingsByEnquiry } from '../../lib/repositories/bookings.js';
 import type { Enquiry, AgeGroup, Invite, EnquiryFilters } from '../../lib/db/schema.js';
 
 // ── Auth check ───────────────────────────────────────────────────────────────
@@ -49,11 +50,35 @@ const ageGroupMap = new Map<string, AgeGroup>(ageGroups.map((ag) => [ag.id, ag])
 
 // Load invites in parallel for enquiries that have one
 const inviteMap = new Map<string, Invite>();
+const latestBookingStatusMap = new Map<string, string>();
 await Promise.all(
   enquiries.map(async (e) => {
-    if (!e.invite_id) return;
-    const inv = await getInviteById(e.invite_id, env);
-    if (inv) inviteMap.set(e.id, inv);
+    const tasks: Array<Promise<void>> = [];
+
+    if (e.invite_id) {
+      tasks.push(
+        (async () => {
+          const inv = await getInviteById(e.invite_id, env);
+          if (inv) inviteMap.set(e.id, inv);
+        })()
+      );
+    }
+
+    tasks.push(
+      (async () => {
+        const bookings = await listBookingsByEnquiry(e.id, env);
+        if (bookings.length > 0) {
+          const sorted = bookings
+            .slice()
+            .sort((a, b) =>
+              `${b.session_date}T${b.created_at}`.localeCompare(`${a.session_date}T${a.created_at}`)
+            );
+          latestBookingStatusMap.set(e.id, sorted[0].status);
+        }
+      })()
+    );
+
+    await Promise.all(tasks);
   })
 );
 
@@ -185,6 +210,7 @@ const tabs: { id: string; label: string }[] = [
                   const ageGroup = enq.age_group_id ? ageGroupMap.get(enq.age_group_id) : null;
                   const badge = inviteStatusBadge(invite?.status);
                   const isAcademy = ageGroup?.booking_type === 'waitlist' || enq.source.toLowerCase().includes('academy');
+                  const latestBookingStatus = latestBookingStatusMap.get(enq.id);
                   return (
                     <tr class="transition-colors hover:bg-slate-50">
                       <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-600 sm:px-6">
@@ -210,8 +236,22 @@ const tabs: { id: string; label: string }[] = [
                         </span>
                       </td>
                       <td class="px-4 py-3 text-sm text-slate-600">
-                        {invite?.status === 'accepted' ? (
-                          <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-emerald-100 text-emerald-700">Confirmed</span>
+                        {latestBookingStatus ? (
+                          <span
+                            class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                              latestBookingStatus === 'attended'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : latestBookingStatus === 'no_show'
+                                  ? 'bg-rose-100 text-rose-700'
+                                  : latestBookingStatus === 'cancelled'
+                                    ? 'bg-slate-100 text-slate-600'
+                                    : 'bg-blue-100 text-blue-700'
+                            }`}
+                          >
+                            {latestBookingStatus === 'no_show'
+                              ? 'No show'
+                              : latestBookingStatus.charAt(0).toUpperCase() + latestBookingStatus.slice(1)}
+                          </span>
                         ) : (
                           <span class="text-slate-400">—</span>
                         )}
