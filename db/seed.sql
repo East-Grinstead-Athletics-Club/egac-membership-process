@@ -4,11 +4,9 @@
 -- All INSERT OR IGNORE — fully idempotent, safe to re-run.
 --
 -- Age group ages are on 31 August of the athletics season:
---   U11 (Academy) : 9–10   waitlist, Sat + Tue, Apr–Aug
---   U13            : 11–12  taster,   Tuesday
---   U15            : 13–14  taster,   Tuesday
---   U17            : 15–16  taster,   Tuesday
---   U20            : 17–19  taster,   Tuesday
+--   U11 Academy    : 9–10   waitlist, Sat + Tue, Apr–Aug (inactive)
+--   U13            : 11–12  taster,   Tuesday (2 places)
+--   U15 and older  : 13+    taster,   Tuesday (2 places)
 -- ============================================================
 
 INSERT OR IGNORE INTO age_groups
@@ -24,7 +22,7 @@ VALUES
    '["Saturday","Tuesday"]', NULL,
    NULL, 40,
    4, 8,
-   1, 1, datetime('now')),
+    0, 1, datetime('now')),
 
   ('ag_u13', 'u13', 'U13', 'taster',
    11, 12,
@@ -33,8 +31,8 @@ VALUES
    NULL, NULL,
    1, 2, datetime('now')),
 
-  ('ag_u15', 'u15', 'U15', 'taster',
-   13, 14,
+  ('ag_u15', 'u15', 'U15 and older', 'taster',
+   13, 120,
    '["Tuesday"]', '18:30',
    2, NULL,
    NULL, NULL,
@@ -45,14 +43,14 @@ VALUES
    '["Tuesday"]', '19:30',
    2, NULL,
    NULL, NULL,
-   1, 4, datetime('now')),
+    0, 4, datetime('now')),
 
   ('ag_u20', 'u20', 'U20', 'taster',
    17, 19,
    '["Tuesday"]', '19:30',
    2, NULL,
    NULL, NULL,
-   1, 5, datetime('now'));
+    0, 5, datetime('now'));
 
 -- ------------------------------------------------------------
 -- Email templates

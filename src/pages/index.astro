@@ -108,7 +108,7 @@ import Base from '../layouts/Base.astro';
 
       <div id="athlete-name-wrap" class="hidden">
         <label id="athlete-name-label" for="athlete_name" class="block text-sm font-medium text-gray-700 mb-1">
-          Athletes name <span class="text-red-500" aria-hidden="true">*</span>
+          Athlete's name <span class="text-red-500" aria-hidden="true">*</span>
         </label>
         <input
           id="athlete_name"
@@ -205,11 +205,13 @@ import Base from '../layouts/Base.astro';
 
     nameLabel.innerHTML = `${onBehalf ? 'Your full name' : 'Your full name'} <span class="text-red-500" aria-hidden="true">*</span>`;
     phoneLabel.innerHTML = `Your contact number <span class="text-gray-400 font-normal">(optional)</span>`;
-    athleteNameLabel.innerHTML = `Athletes name <span class="text-red-500" aria-hidden="true">*</span>`;
-    dobLabel.innerHTML = `${onBehalf ? 'Athletes date of birth' : 'Your date of birth'} <span class="text-red-500" aria-hidden="true">*</span>`;
+    athleteNameLabel.innerHTML = `Athlete's name <span class="text-red-500" aria-hidden="true">*</span>`;
+    dobLabel.innerHTML = `${onBehalf ? "Athlete's date of birth" : 'Your date of birth'} <span class="text-red-500" aria-hidden="true">*</span>`;
   }
 
   enquiryForInputs.forEach((input) => input.addEventListener('change', syncEnquiryMode));
+  const selfEnquiryInput = document.querySelector<HTMLInputElement>('input[name="enquiry_for"][value="self"]');
+  if (selfEnquiryInput) selfEnquiryInput.checked = true;
   syncEnquiryMode();
 
   function clearErrors() {
@@ -268,8 +270,8 @@ import Base from '../layouts/Base.astro';
       errors.push('Please enter a valid email address');
     }
     if (enquiryFor === 'other' && !athleteName) {
-      showFieldError('athlete_name', 'Athletes name is required');
-      errors.push('Athletes name is required');
+      showFieldError('athlete_name', "Athlete's name is required");
+      errors.push("Athlete's name is required");
     }
     if (!dob) {
       showFieldError('dob', 'Date of birth is required');
