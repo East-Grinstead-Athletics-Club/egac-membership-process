@@ -90,14 +90,14 @@ export const SAMPLE_TEMPLATE_VARS: Record<string, string> = {
   contact_name: 'Jane Smith',
   parent_name: 'Jane Smith',
   child_name: 'Emily Smith',
-  booking_url: 'https://egac.pages.dev/booking?invite=abc123def456',
+  booking_url: 'https://egac-cl9.pages.dev/book/abc123def456',
   available_dates_list: '• Tuesday 14 April 2026\n• Tuesday 21 April 2026\n• Tuesday 28 April 2026',
   session_date: 'Tuesday 14 April 2026',
   session_time: '18:30',
   slot_label: 'U13 (Tuesday 18:30)',
   venue: 'East Grinstead Leisure Centre',
   add_to_calendar_url: 'https://calendar.google.com/calendar/render?action=TEMPLATE',
-  response_url: 'https://egac.pages.dev/academy/respond?token=xyz789',
+  response_url: 'https://egac-cl9.pages.dev/academy/respond/xyz789',
   membership_url: 'https://egac.pages.dev/join?token=mem123',
 };
 

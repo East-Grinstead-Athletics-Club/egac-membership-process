@@ -19,6 +19,16 @@ import { formatDateForDisplay } from '../business/age.js';
 import type { Enquiry, Invite, AcademyWaitlistEntry, Booking, Env } from '../db/schema.js';
 import type { SendEmailResult } from './client.js';
 
+function getPublicSiteUrl(env: Env): string {
+  const explicit = (env as unknown as Record<string, string>).SITE_URL;
+  if (explicit && explicit.trim()) return explicit.trim().replace(/\/$/, '');
+
+  // Production fallback used when SITE_URL is not configured.
+  if (env.APP_ENV === 'production') return 'https://egac-cl9.pages.dev';
+
+  return 'https://egac.pages.dev';
+}
+
 // ------------------------------------------------------------
 // sendBookingInvite
 // Sent when a non-academy enquiry is processed.
@@ -38,8 +48,8 @@ export async function sendBookingInvite(
     return { success: false, error: 'Template booking_invite not found or inactive' };
   }
 
-  const siteUrl = (env as unknown as Record<string, string>).SITE_URL || 'https://egac.pages.dev';
-  const bookingUrl = `${siteUrl}/booking?invite=${invite.token}`;
+  const siteUrl = getPublicSiteUrl(env);
+  const bookingUrl = `${siteUrl}/book/${invite.token}`;
   const datesList = availableDates.map((d) => `• ${formatDateForDisplay(d)}`).join('\n');
 
   try {
@@ -143,8 +153,8 @@ export async function sendAcademyWaitlist(
     return { success: false, error: 'Template academy_waitlist not found or inactive' };
   }
 
-  const siteUrl = (env as unknown as Record<string, string>).SITE_URL || 'https://egac.pages.dev';
-  const responseUrl = `${siteUrl}/academy/respond?token=${invitation.token}`;
+  const siteUrl = getPublicSiteUrl(env);
+  const responseUrl = `${siteUrl}/academy/respond/${invitation.token}`;
 
   try {
     const html = renderTemplate(template.html, {
@@ -191,7 +201,7 @@ export async function sendMembershipInvite(
     return { success: false, error: 'Template membership_invite not found or inactive' };
   }
 
-  const siteUrl = (env as unknown as Record<string, string>).SITE_URL || 'https://egac.pages.dev';
+  const siteUrl = getPublicSiteUrl(env);
   const membershipUrl = `${siteUrl}/join?token=${membershipToken}`;
 
   try {
