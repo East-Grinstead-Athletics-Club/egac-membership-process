@@ -124,8 +124,9 @@ export function resolveAgeGroup(
   const athleticsAge = ageForAthletics(dobIso, sessionDateIso);
   if (athleticsAge === null) return null;
 
+  // D1 can return integer-like fields as strings depending on query/runtime.
   const active = ageGroups
-    .filter((g) => g.active === 1)
+    .filter((g) => Number(g.active) === 1)
     .sort((a, b) => a.sort_order - b.sort_order);
 
   return (
