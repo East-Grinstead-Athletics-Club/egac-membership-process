@@ -4,16 +4,18 @@
 
 interface Props {
   title: string;
-  activeNav?: 'enquiries' | 'bookings' | 'reports' | 'templates' | 'config';
+  activeNav?: 'dashboard' | 'enquiries' | 'bookings' | 'academy' | 'templates' | 'settings';
 }
 
 const { title, activeNav } = Astro.props;
 
 const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href: string }> = [
+  { id: 'dashboard', label: 'Dashboard', href: '/admin/reports' },
   { id: 'enquiries', label: 'Enquiries', href: '/admin/enquiries' },
   { id: 'bookings', label: 'Bookings', href: '/admin/bookings' },
-  { id: 'reports', label: 'Reports', href: '/admin/reports' },
+  { id: 'academy', label: 'Academy', href: '/admin/reports#academy' },
   { id: 'templates', label: 'Templates', href: '/admin/templates' },
+  { id: 'settings', label: 'Settings', href: '/admin/templates' },
 ];
 ---
 
@@ -26,14 +28,13 @@ const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
+  <body class="min-h-screen bg-[#eff2f7] text-slate-900 antialiased">
     <div class="relative min-h-screen lg:flex">
-      <aside class="w-full border-b border-slate-200 bg-slate-900 text-slate-100 lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:border-b-0 lg:border-r lg:border-slate-800">
-        <div class="px-6 py-6 border-b border-slate-800">
-          <a href="/admin/enquiries" class="text-xl font-bold tracking-tight text-white hover:text-slate-200">
-            EGAC Admin
+      <aside class="w-full border-b border-[#1f457f] bg-[#214c8f] text-slate-100 lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-60 lg:flex-col lg:border-b-0 lg:border-r lg:border-[#1f457f]">
+        <div class="px-5 py-7 border-b border-[#2f5ca0]">
+          <a href="/admin/enquiries" class="text-2xl font-bold tracking-tight text-white hover:text-slate-100">
+            EGAC
           </a>
-          <p class="mt-1 text-xs uppercase tracking-wider text-slate-400">East Grinstead Athletics Club</p>
         </div>
 
         <nav class="px-3 py-4" aria-label="Admin navigation">
@@ -43,12 +44,13 @@ const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href
                 <li>
                   <a
                     href={item.href}
-                    class={`flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    class={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                       activeNav === item.id
-                        ? 'bg-slate-700 text-white'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        ? 'bg-[#2d5ea5] text-white'
+                        : 'text-[#d9e4f6] hover:bg-[#2d5ea5] hover:text-white'
                     }`}
                   >
+                    <span class="inline-block h-2 w-2 rounded-full bg-current opacity-80" aria-hidden="true"></span>
                     {item.label}
                   </a>
                 </li>
@@ -57,30 +59,17 @@ const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href
           </ul>
         </nav>
 
-        <div class="px-3 pb-6 lg:mt-auto">
-          <a
-            href="/admin/logout"
-            class="flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
-          >
-            Log out
-          </a>
+        <div class="hidden lg:block lg:mt-auto border-t border-[#2f5ca0] px-5 py-5 text-xs text-[#d9e4f6]">
+          <p class="font-medium">EGAC Admin</p>
+          <p class="mt-2 flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>Production</p>
+          <a href="/admin/logout" class="mt-4 inline-block text-[#d9e4f6] underline-offset-2 hover:underline">Log out</a>
         </div>
       </aside>
 
       <div class="flex-1">
-        <header class="border-b border-slate-200 bg-white/85 backdrop-blur">
-          <div class="px-4 py-4 sm:px-6 lg:px-10">
-            <h1 class="text-lg font-semibold text-slate-900">{title}</h1>
-          </div>
-        </header>
-
-        <main class="px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+        <main class="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <slot />
         </main>
-
-        <footer class="border-t border-slate-200 px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-10">
-          EGAC Admin - &copy; {new Date().getFullYear()} East Grinstead Athletics Club
-        </footer>
       </div>
     </div>
   </body>

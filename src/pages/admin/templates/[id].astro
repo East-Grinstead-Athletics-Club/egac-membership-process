@@ -34,22 +34,22 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
 ---
 
 <AdminBase title={`Edit — ${template.name}`} activeNav="templates">
-  <div class="space-y-6">
+  <div class="space-y-5">
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="/admin/templates" class="text-sm text-blue-600 hover:text-blue-800">
+        <a href="/admin/templates" class="text-sm text-[#2d5ea5] hover:underline">
           ← Templates
         </a>
-        <span class="text-gray-300">/</span>
-        <h1 class="text-lg font-bold text-gray-900">{template.name}</h1>
-        <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">{template.key}</code>
+        <span class="text-slate-300">/</span>
+        <h1 class="text-2xl font-semibold text-slate-900">{template.name}</h1>
+        <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">{template.key}</code>
       </div>
       <div class="flex items-center gap-2">
-        <span id="save-indicator" class="text-xs text-gray-400 hidden">Unsaved changes</span>
+        <span id="save-indicator" class="hidden text-xs text-slate-400">Unsaved changes</span>
         <button
           id="save-btn"
-          class="px-4 py-2 bg-blue-800 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
+          class="rounded-md bg-[#2d5ea5] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#254f89] disabled:opacity-60"
         >
           Save
         </button>
@@ -65,14 +65,14 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
 
     <!-- Subject line -->
     <div>
-      <label for="subject-input" class="block text-sm font-medium text-gray-700 mb-1">
+      <label for="subject-input" class="mb-1 block text-sm font-medium text-slate-700">
         Subject line
       </label>
       <input
         id="subject-input"
         type="text"
         value={template.subject}
-        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
       />
     </div>
 
@@ -81,8 +81,8 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
       <!-- HTML editor -->
       <div class="flex flex-col gap-2">
         <div class="flex items-center justify-between">
-          <label for="html-editor" class="block text-sm font-medium text-gray-700">HTML</label>
-          <span class="text-xs text-gray-400"
+          <label for="html-editor" class="block text-sm font-medium text-slate-700">HTML</label>
+          <span class="text-xs text-slate-400"
             >Edit, then click Save or tab out to refresh preview</span
           >
         </div>
@@ -90,7 +90,7 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
           id="html-editor"
           rows="24"
           spellcheck="false"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
+          class="w-full resize-y rounded-md border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
           >{template.html}</textarea
         >
       </div>
@@ -98,35 +98,35 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
       <!-- Preview iframe -->
       <div class="flex flex-col gap-2">
         <div class="flex items-center justify-between">
-          <span class="block text-sm font-medium text-gray-700">Preview</span>
-          <button id="refresh-preview-btn" class="text-xs text-blue-600 hover:text-blue-800">
+          <span class="block text-sm font-medium text-slate-700">Preview</span>
+          <button id="refresh-preview-btn" class="text-xs text-[#2d5ea5] hover:underline">
             ↻ Refresh
           </button>
         </div>
         <iframe
           id="preview-frame"
-          class="w-full rounded-md border border-gray-200 bg-white"
+          class="w-full rounded-md border border-slate-200 bg-white"
           style="height: 520px;"
           title="Email preview"></iframe>
-        <p id="preview-status" class="text-xs text-gray-400 hidden"></p>
+        <p id="preview-status" class="hidden text-xs text-slate-400"></p>
       </div>
     </div>
 
     <!-- Bottom bar -->
-    <div class="flex flex-wrap items-start justify-between gap-6 pt-2 border-t border-gray-200">
+    <div class="flex flex-wrap items-start justify-between gap-6 border-t border-slate-200 pt-2">
       <!-- Variables reference -->
       <div>
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
           Available variables
         </p>
         {
           allVars.length === 0 ? (
-            <p class="text-xs text-gray-400 italic">No variables detected.</p>
+            <p class="text-xs italic text-slate-400">No variables detected.</p>
           ) : (
             <div class="flex flex-wrap gap-2">
               {allVars.map((v) => (
                 <button
-                  class="insert-var font-mono text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                  class="insert-var rounded border border-blue-200 bg-blue-50 px-2 py-0.5 font-mono text-xs text-blue-700 transition-colors hover:bg-blue-100"
                   data-var={v}
                   title={`Click to insert {{${v}}}`}
                 >
@@ -141,19 +141,19 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
       <!-- Test send -->
       <div class="flex items-center gap-3">
         <div>
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Send test email
           </p>
-          <p class="text-xs text-gray-400">Sends to: {adminEmail || 'ADMIN_EMAIL not set'}</p>
+          <p class="text-xs text-slate-400">Sends to: {adminEmail || 'ADMIN_EMAIL not set'}</p>
         </div>
         <button
           id="test-send-btn"
-          class="px-4 py-2 border border-blue-700 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors disabled:opacity-60"
+          class="rounded-md border border-[#2d5ea5] px-4 py-2 text-sm font-medium text-[#2d5ea5] transition-colors hover:bg-blue-50 disabled:opacity-60"
           disabled={!adminEmail}
         >
           Send test
         </button>
-        <span id="test-send-status" class="text-sm text-gray-500 hidden"></span>
+        <span id="test-send-status" class="hidden text-sm text-slate-500"></span>
       </div>
     </div>
   </div>

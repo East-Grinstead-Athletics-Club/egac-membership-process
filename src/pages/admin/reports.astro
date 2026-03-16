@@ -144,22 +144,22 @@ const trend =
     : null;
 ---
 
-<AdminBase title="Reports" activeNav="bookings">
-  <div class="space-y-8">
-    <h1 class="text-2xl font-bold text-gray-900">Reports</h1>
+<AdminBase title="Reports" activeNav="dashboard">
+  <div class="space-y-6">
+    <h1 class="text-4xl font-semibold text-slate-900">Dashboard</h1>
 
     <!-- Metric cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <!-- Total enquiries -->
-      <div class="bg-white rounded-lg shadow p-5">
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total enquiries</p>
-        <p class="mt-2 text-3xl font-bold text-gray-900">{enquiriesTotal}</p>
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Total enquiries</p>
+        <p class="mt-2 text-3xl font-semibold text-slate-900">{enquiriesTotal}</p>
       </div>
 
       <!-- This month -->
-      <div class="bg-white rounded-lg shadow p-5">
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">This month</p>
-        <p class="mt-2 text-3xl font-bold text-gray-900">{enquiriesThisMonth}</p>
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">This month</p>
+        <p class="mt-2 text-3xl font-semibold text-slate-900">{enquiriesThisMonth}</p>
         {
           trend !== null && (
             <p class={`mt-1 text-xs font-medium ${trend >= 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -170,28 +170,28 @@ const trend =
       </div>
 
       <!-- Attendance rate -->
-      <div class="bg-white rounded-lg shadow p-5">
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Attendance rate</p>
-        <p class="mt-2 text-3xl font-bold text-gray-900">
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Attendance rate</p>
+        <p class="mt-2 text-3xl font-semibold text-slate-900">
           {attendanceRate !== null ? `${attendanceRate}%` : '—'}
         </p>
-        <p class="mt-1 text-xs text-gray-400">this month</p>
+        <p class="mt-1 text-xs text-slate-400">this month</p>
       </div>
 
       <!-- Academy pipeline -->
-      <div class="bg-white rounded-lg shadow p-5">
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Academy waitlist</p>
-        <p class="mt-2 text-3xl font-bold text-gray-900">{academyTotal?.n ?? 0}</p>
-        <p class="mt-1 text-xs text-gray-400">
+      <div id="academy" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Academy waitlist</p>
+        <p class="mt-2 text-3xl font-semibold text-slate-900">{academyTotal?.n ?? 0}</p>
+        <p class="mt-1 text-xs text-slate-400">
           {academyYes?.n ?? 0} yes · {academyPending} pending
         </p>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <!-- Monthly enquiry trend -->
-      <div class="bg-white rounded-lg shadow p-5">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">Enquiries — last 6 months</h2>
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-sm font-semibold text-slate-700">Enquiries — last 6 months</h2>
         <div class="space-y-2">
           {
             monthlyTrend.map((m) => (
@@ -211,8 +211,8 @@ const trend =
       </div>
 
       <!-- Booking funnel -->
-      <div class="bg-white rounded-lg shadow p-5">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">Booking funnel</h2>
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-sm font-semibold text-slate-700">Booking funnel</h2>
         <div class="space-y-3">
           {
             funnelSteps.map((step, i) => {
@@ -242,8 +242,8 @@ const trend =
       </div>
 
       <!-- Academy pipeline bar -->
-      <div class="bg-white rounded-lg shadow p-5">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">Academy pipeline</h2>
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-sm font-semibold text-slate-700">Academy pipeline</h2>
         {
           (academyTotal?.n ?? 0) === 0 ? (
             <p class="text-sm text-gray-400 italic">No academy waitlist entries.</p>
@@ -295,8 +295,8 @@ const trend =
       </div>
 
       <!-- Upcoming sessions -->
-      <div class="bg-white rounded-lg shadow p-5">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">Upcoming sessions</h2>
+      <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-sm font-semibold text-slate-700">Upcoming sessions</h2>
         {
           upcomingSessions.length === 0 ? (
             <p class="text-sm text-gray-400 italic">No upcoming sessions.</p>

@@ -104,93 +104,43 @@ const tabs: { id: string; label: string }[] = [
   { id: 'academy', label: 'Academy' },
 ];
 
-const pendingCount = enquiries.filter((enq) => !enq.processed).length;
-const processedCount = enquiries.length - pendingCount;
-const academyCount = enquiries.filter((enq) => enq.source.toLowerCase().includes('academy')).length;
 ---
 
 <AdminBase title="Enquiries" activeNav="enquiries">
-  <div class="space-y-6">
-    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6">
-      <div class="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-widest text-slate-500">Membership pipeline</p>
-          <h2 class="mt-1 text-2xl font-semibold text-slate-900">Enquiries overview</h2>
-          <p class="mt-1 text-sm text-slate-600">Review inbound enquiries and track invitation progress.</p>
-        </div>
-        <div class="text-right">
-          <p class="text-xs uppercase tracking-wide text-slate-500">Page</p>
-          <p class="text-sm font-semibold text-slate-900">{page}</p>
-        </div>
-      </div>
-
-      <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Shown</p>
-          <p class="mt-1 text-2xl font-semibold text-slate-900">{enquiries.length}</p>
-        </div>
-        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-amber-700">Pending</p>
-          <p class="mt-1 text-2xl font-semibold text-amber-800">{pendingCount}</p>
-        </div>
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-emerald-700">Processed</p>
-          <p class="mt-1 text-2xl font-semibold text-emerald-800">{processedCount}</p>
-        </div>
-        <div class="rounded-xl border border-sky-200 bg-sky-50 p-4">
-          <p class="text-xs font-medium uppercase tracking-wide text-sky-700">Academy</p>
-          <p class="mt-1 text-2xl font-semibold text-sky-800">{academyCount}</p>
-        </div>
+  <div class="space-y-5">
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="text-4xl font-semibold text-slate-900">Enquiries</h1>
+      <div class="flex items-center gap-3">
+        <form method="GET" class="hidden md:block">
+          <input type="hidden" name="status" value={rawStatus} />
+          <input
+            type="search"
+            name="search"
+            value={search}
+            placeholder="Search..."
+            class="w-64 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+          />
+        </form>
+        <a href="/admin/enquiries" class="rounded-xl bg-[#2d5ea5] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#254f89]">New enquiry</a>
       </div>
     </div>
 
-    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <nav class="flex flex-wrap gap-2" aria-label="Enquiry status filter">
+    <div class="border-b border-slate-300 pb-1">
+      <div class="flex flex-wrap gap-5" aria-label="Enquiry status filter">
         {
           tabs.map((tab) => (
             <a
               href={tabUrl(tab.id)}
-              class={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              class={`border-b-2 pb-2 text-sm font-medium transition-colors ${
                 rawStatus === tab.id || (tab.id === 'all' && rawStatus === 'all')
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
+                  ? 'border-[#2d5ea5] text-[#2d5ea5]'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
               {tab.label}
             </a>
           ))
         }
-        </nav>
-
-        <form method="GET" class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-          <input type="hidden" name="status" value={rawStatus} />
-          <input
-            type="search"
-            name="search"
-            value={search}
-            placeholder="Search by name or email"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 sm:min-w-72"
-          />
-          <div class="flex gap-2">
-            <button
-              type="submit"
-              class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-            >
-              Search
-            </button>
-            {
-              search && (
-                <a
-                  href={tabUrl(rawStatus)}
-                  class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Clear
-                </a>
-              )
-            }
-          </div>
-        </form>
       </div>
     </div>
 
@@ -201,10 +151,6 @@ const academyCount = enquiries.filter((enq) => enq.source.toLowerCase().includes
         </div>
       ) : (
         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div class="border-b border-slate-200 px-4 py-3 text-sm text-slate-600 sm:px-6">
-            Showing {enquiries.length} enquiry{enquiries.length === 1 ? '' : 'ies'}
-            {search ? ` for "${search}"` : ''}
-          </div>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200">
               <thead class="bg-slate-50">
@@ -222,15 +168,15 @@ const academyCount = enquiries.filter((enq) => enq.source.toLowerCase().includes
                     DOB
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Age Group
+                    Path
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Invite
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Status
+                    Booking
                   </th>
-                  <th class="px-4 py-3" />
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 bg-white">
@@ -238,6 +184,7 @@ const academyCount = enquiries.filter((enq) => enq.source.toLowerCase().includes
                   const invite = inviteMap.get(enq.id);
                   const ageGroup = enq.age_group_id ? ageGroupMap.get(enq.age_group_id) : null;
                   const badge = inviteStatusBadge(invite?.status);
+                  const isAcademy = ageGroup?.booking_type === 'waitlist' || enq.source.toLowerCase().includes('academy');
                   return (
                     <tr class="transition-colors hover:bg-slate-50">
                       <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-600 sm:px-6">
@@ -251,14 +198,9 @@ const academyCount = enquiries.filter((enq) => enq.source.toLowerCase().includes
                         {enq.dob ? formatDate(enq.dob) : <span class="text-slate-400">—</span>}
                       </td>
                       <td class="px-4 py-3 text-sm text-slate-600">
-                        {ageGroup ? (
-                          <span class="text-xs">
-                            {ageGroup.label}
-                            <span class="ml-1 text-slate-400">({ageGroup.booking_type})</span>
-                          </span>
-                        ) : (
-                          <span class="text-slate-400">—</span>
-                        )}
+                        <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${isAcademy ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {isAcademy ? 'Academy' : 'Taster'}
+                        </span>
                       </td>
                       <td class="px-4 py-3">
                         <span
@@ -267,19 +209,23 @@ const academyCount = enquiries.filter((enq) => enq.source.toLowerCase().includes
                           {badge.label}
                         </span>
                       </td>
-                      <td class="px-4 py-3">
-                        <span
-                          class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${enq.processed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}
-                        >
-                          {enq.processed ? 'Processed' : 'Pending'}
-                        </span>
+                      <td class="px-4 py-3 text-sm text-slate-600">
+                        {invite?.status === 'accepted' ? (
+                          <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-emerald-100 text-emerald-700">Confirmed</span>
+                        ) : (
+                          <span class="text-slate-400">—</span>
+                        )}
                       </td>
-                      <td class="px-4 py-3 text-right">
+                      <td class="px-4 py-3 text-sm whitespace-nowrap">
                         <a
                           href={`/admin/enquiries/${enq.id}`}
-                          class="text-xs font-semibold text-slate-700 transition hover:text-slate-900"
+                          class="font-medium text-[#2d5ea5] hover:underline"
                         >
-                          View details
+                          View
+                        </a>
+                        <span class="mx-2 text-slate-300"> </span>
+                        <a href={`/admin/enquiries/${enq.id}`} class="font-medium text-[#2d5ea5] hover:underline">
+                          Resend
                         </a>
                       </td>
                     </tr>
@@ -294,7 +240,7 @@ const academyCount = enquiries.filter((enq) => enq.source.toLowerCase().includes
 
     {
       (page > 1 || hasNextPage) && (
-        <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm sm:px-6">
+        <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm sm:px-6">
           <div>
             {page > 1 ? (
               <a
