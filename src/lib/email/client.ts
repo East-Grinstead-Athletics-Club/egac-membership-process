@@ -27,6 +27,7 @@ export interface SendEmailOptions {
   html: string;
   text?: string;
   replyTo?: string;
+  from?: string;
 }
 
 export interface SendEmailResult {
@@ -41,7 +42,7 @@ export interface SendEmailResult {
 // rather than throwing — callers decide how to handle it.
 // ------------------------------------------------------------
 export async function sendEmail(options: SendEmailOptions, env: Env): Promise<SendEmailResult> {
-  const from = env.EMAIL_FROM || 'noreply@egac.co.uk';
+  const from = options.from || env.EMAIL_FROM || 'noreply@egac.co.uk';
 
   try {
     const response = await fetch(RESEND_API_URL, {

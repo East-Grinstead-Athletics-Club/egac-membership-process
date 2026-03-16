@@ -112,6 +112,20 @@ describe('sendEmail', () => {
     expect(body.from).toBe('club@egac.co.uk');
   });
 
+  it('prefers explicit from option over EMAIL_FROM env var', async () => {
+    const mockFetch = mockFetchSuccess();
+    vi.stubGlobal('fetch', mockFetch);
+
+    await sendEmail(
+      { ...makeEmailOptions(), from: 'admin-updates@eastgrinsteadac.co.uk' },
+      makeEnv({ EMAIL_FROM: 'club@egac.co.uk' })
+    );
+
+    const [, options] = mockFetch.mock.calls[0];
+    const body = JSON.parse(options.body);
+    expect(body.from).toBe('admin-updates@eastgrinsteadac.co.uk');
+  });
+
   it('returns success:false on non-2xx response — does not throw', async () => {
     vi.stubGlobal('fetch', mockFetchFailure(422, 'Invalid recipient'));
 
