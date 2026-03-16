@@ -289,6 +289,7 @@ describe('POST /api/enquiry', () => {
     const req = postRequest('/api/enquiry', {
       name: 'Jane Smith',
       email: 'jane@example.com',
+      dob: '2014-06-15',
     });
 
     const { status, body } = await parseResponse<{ ok: boolean }>(
@@ -298,6 +299,33 @@ describe('POST /api/enquiry', () => {
     expect(status).toBe(201);
     expect(body.ok).toBe(true);
     expect(enquiryRepo.insertEnquiry).toHaveBeenCalled();
+  });
+
+  it('accepts on-behalf enquiry payload and maps athlete details', async () => {
+    const req = postRequest('/api/enquiry', {
+      enquiry_for: 'other',
+      enquirer_name: 'Parent Contact',
+      enquirer_email: 'parent@example.com',
+      enquirer_phone: '07700900000',
+      athlete_name: 'Athlete Person',
+      athlete_dob: '2015-03-20',
+    });
+
+    const { status, body } = await parseResponse<{ ok: boolean }>(
+      await handleEnquiry(req, makeEnv())
+    );
+
+    expect(status).toBe(201);
+    expect(body.ok).toBe(true);
+    expect(enquiryRepo.insertEnquiry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Parent Contact',
+        email: 'parent@example.com',
+        dob: '2015-03-20',
+        note: 'Enquiring about: Athlete Person',
+      }),
+      expect.anything()
+    );
   });
 
   it('adds to academy waitlist for under-10 enquiry', async () => {

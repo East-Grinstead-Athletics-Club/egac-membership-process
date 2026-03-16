@@ -29,9 +29,34 @@ import Base from '../layouts/Base.astro';
     </div>
 
     <form id="enquiry-form" method="POST" action="/api/enquiry" novalidate class="space-y-5">
+      <fieldset>
+        <legend class="block text-sm font-medium text-gray-700 mb-2">Who is this enquiry for?</legend>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <label class="flex items-start gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+            <input
+              type="radio"
+              name="enquiry_for"
+              value="self"
+              checked
+              class="mt-0.5 accent-blue-700"
+            />
+            <span>I'm enquiring for myself</span>
+          </label>
+          <label class="flex items-start gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+            <input
+              type="radio"
+              name="enquiry_for"
+              value="other"
+              class="mt-0.5 accent-blue-700"
+            />
+            <span>I'm enquiring on behalf of someone else</span>
+          </label>
+        </div>
+      </fieldset>
+
       <!-- Full name -->
       <div>
-        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+        <label id="name-label" for="name" class="block text-sm font-medium text-gray-700 mb-1">
           Full name <span class="text-red-500" aria-hidden="true">*</span>
         </label>
         <input
@@ -67,7 +92,7 @@ import Base from '../layouts/Base.astro';
 
       <!-- Phone -->
       <div>
-        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
+        <label id="phone-label" for="phone" class="block text-sm font-medium text-gray-700 mb-1">
           Phone number
           <span class="text-gray-400 font-normal">(optional)</span>
         </label>
@@ -81,13 +106,25 @@ import Base from '../layouts/Base.astro';
         />
       </div>
 
+      <div id="athlete-name-wrap" class="hidden">
+        <label for="athlete_name" class="block text-sm font-medium text-gray-700 mb-1">
+          Athlete's full name <span class="text-red-500" aria-hidden="true">*</span>
+        </label>
+        <input
+          id="athlete_name"
+          name="athlete_name"
+          type="text"
+          aria-describedby="athlete_name-error"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+          placeholder="Name of the person you are enquiring about"
+        />
+        <p id="athlete_name-error" class="hidden mt-1 text-xs text-red-600" role="alert"></p>
+      </div>
+
       <!-- Date of birth -->
       <div>
-        <label for="dob" class="block text-sm font-medium text-gray-700 mb-1">
-          Child's date of birth
-          <span class="text-gray-400 font-normal"
-            >(optional — helps us place your child in the right group)</span
-          >
+        <label id="dob-label" for="dob" class="block text-sm font-medium text-gray-700 mb-1">
+          Date of birth <span class="text-red-500" aria-hidden="true">*</span>
         </label>
         <input
           id="dob"
@@ -145,6 +182,33 @@ import Base from '../layouts/Base.astro';
   const confirmationMessage = document.getElementById('confirmation-message') as HTMLElement;
   const errorSummary = document.getElementById('error-summary') as HTMLElement;
   const errorList = document.getElementById('error-list') as HTMLElement;
+  const athleteNameWrap = document.getElementById('athlete-name-wrap') as HTMLElement;
+  const nameLabel = document.getElementById('name-label') as HTMLElement;
+  const phoneLabel = document.getElementById('phone-label') as HTMLElement;
+  const dobLabel = document.getElementById('dob-label') as HTMLElement;
+  const athleteNameInput = document.getElementById('athlete_name') as HTMLInputElement;
+  const enquiryForInputs = document.querySelectorAll<HTMLInputElement>('input[name="enquiry_for"]');
+
+  function selectedEnquiryFor(): 'self' | 'other' {
+    const selected = document.querySelector<HTMLInputElement>('input[name="enquiry_for"]:checked');
+    return selected?.value === 'other' ? 'other' : 'self';
+  }
+
+  function syncEnquiryMode() {
+    const mode = selectedEnquiryFor();
+    const onBehalf = mode === 'other';
+
+    athleteNameWrap.classList.toggle('hidden', !onBehalf);
+    athleteNameInput.required = onBehalf;
+    if (!onBehalf) athleteNameInput.value = '';
+
+    nameLabel.innerHTML = `${onBehalf ? 'Your full name' : 'Your full name'} <span class="text-red-500" aria-hidden="true">*</span>`;
+    phoneLabel.innerHTML = `Your contact number <span class="text-gray-400 font-normal">(optional)</span>`;
+    dobLabel.innerHTML = `${onBehalf ? "Athlete's date of birth" : 'Your date of birth'} <span class="text-red-500" aria-hidden="true">*</span>`;
+  }
+
+  enquiryForInputs.forEach((input) => input.addEventListener('change', syncEnquiryMode));
+  syncEnquiryMode();
 
   function clearErrors() {
     errorSummary.classList.add('hidden');
@@ -153,7 +217,7 @@ import Base from '../layouts/Base.astro';
       el.classList.add('hidden');
       el.textContent = '';
     });
-    document.querySelectorAll('input').forEach((el) => {
+    document.querySelectorAll('input, select, textarea').forEach((el) => {
       el.classList.remove('border-red-500');
     });
   }
@@ -181,9 +245,11 @@ import Base from '../layouts/Base.astro';
     clearErrors();
 
     const data = new FormData(form);
+    const enquiryFor = selectedEnquiryFor();
     const name = (data.get('name') as string).trim();
     const email = (data.get('email') as string).trim();
     const phone = (data.get('phone') as string).trim();
+    const athleteName = ((data.get('athlete_name') as string) || '').trim();
     const dob = (data.get('dob') as string).trim();
 
     // Client-side validation
@@ -199,6 +265,14 @@ import Base from '../layouts/Base.astro';
       showFieldError('email', 'Please enter a valid email address');
       errors.push('Please enter a valid email address');
     }
+    if (enquiryFor === 'other' && !athleteName) {
+      showFieldError('athlete_name', "Athlete's full name is required");
+      errors.push("Athlete's full name is required");
+    }
+    if (!dob) {
+      showFieldError('dob', 'Date of birth is required');
+      errors.push('Date of birth is required');
+    }
 
     if (errors.length > 0) {
       showSummaryErrors(errors);
@@ -212,7 +286,19 @@ import Base from '../layouts/Base.astro';
       const response = await fetch('/api/enquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone: phone || undefined, dob: dob || undefined }),
+        body: JSON.stringify({
+          enquiry_for: enquiryFor,
+          enquirer_name: name,
+          enquirer_email: email,
+          enquirer_phone: phone || undefined,
+          athlete_name: enquiryFor === 'other' ? athleteName : name,
+          athlete_dob: dob || undefined,
+          // Legacy keys retained for compatibility while API transition settles.
+          name,
+          email,
+          phone: phone || undefined,
+          dob: dob || undefined,
+        }),
       });
 
       const json = (await response.json()) as { message?: string; code?: string };

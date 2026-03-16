@@ -21,6 +21,12 @@ import { resolveAgeGroup } from '../lib/business/age.js';
 import type { Env } from '../lib/db/schema.js';
 
 interface PublicEnquiryBody {
+  enquiry_for?: 'self' | 'other';
+  enquirer_name?: string;
+  enquirer_email?: string;
+  enquirer_phone?: string;
+  athlete_name?: string;
+  athlete_dob?: string;
   name?: string;
   email?: string;
   phone?: string;
@@ -55,6 +61,12 @@ async function parsePublicEnquiryBody(request: Request): Promise<PublicEnquiryBo
         .filter(Boolean);
 
       return {
+        enquiry_for: getString('enquiry_for') as 'self' | 'other' | undefined,
+        enquirer_name: getString('enquirer_name'),
+        enquirer_email: getString('enquirer_email'),
+        enquirer_phone: getString('enquirer_phone'),
+        athlete_name: getString('athlete_name'),
+        athlete_dob: getString('athlete_dob'),
         name: getString('name'),
         email: getString('email'),
         phone: getString('phone'),
@@ -78,15 +90,34 @@ export async function handleEnquiry(request: Request, env: Env): Promise<Respons
   const body = await parsePublicEnquiryBody(request);
   if (!body) return err('Request body is required', 400, 'INVALID_JSON');
 
+  const enquiryFor = body.enquiry_for === 'other' ? 'other' : 'self';
+  const enquirerName = String(body.enquirer_name ?? body.name ?? '').trim();
+  const enquirerEmail = String(body.enquirer_email ?? body.email ?? '')
+    .toLowerCase()
+    .trim();
+  const enquirerPhone = String(body.enquirer_phone ?? body.phone ?? '').trim();
+  const athleteName = String(
+    body.athlete_name ?? (enquiryFor === 'self' ? enquirerName : '')
+  ).trim();
+  const athleteDob = String(body.athlete_dob ?? body.dob ?? '').trim();
+
+  if (!athleteDob) {
+    return err('athlete_dob is required', 422, 'VALIDATION_ERROR', true);
+  }
+
+  if (enquiryFor === 'other' && !athleteName) {
+    return err('athlete_name is required', 422, 'VALIDATION_ERROR', true);
+  }
+
   // Normalise to the field names validateEnquiryData expects
   try {
     validateEnquiryData({
-      contact_name: body.name,
-      contact_email: body.email,
-      dob: body.dob,
+      contact_name: enquirerName,
+      contact_email: enquirerEmail,
+      dob: athleteDob,
       interest: body.interest,
       training_days: body.training_days,
-      phone: body.phone,
+      phone: enquirerPhone,
     });
   } catch (validationErr) {
     const message = validationErr instanceof Error ? validationErr.message : 'Validation error';
@@ -95,20 +126,27 @@ export async function handleEnquiry(request: Request, env: Env): Promise<Respons
 
   const config = await getConfig(env);
   const environment = env.APP_ENV ?? 'development';
-  const email = String(body.email ?? '')
-    .toLowerCase()
-    .trim();
+  const email = enquirerEmail;
 
   const enquiry = await insertEnquiry(
     {
       id: generateId('enq'),
       created_at: new Date().toISOString(),
-      name: body.name ? String(body.name).trim() : null,
+      name: enquirerName || null,
       email,
-      phone: body.phone ? String(body.phone) : null,
-      dob: body.dob ? String(body.dob) : null,
+      phone: enquirerPhone || null,
+      dob: athleteDob || null,
       source: body.source ? String(body.source) : 'website',
-      raw_payload: JSON.stringify(body),
+      note: enquiryFor === 'other' ? `Enquiring about: ${athleteName}` : null,
+      raw_payload: JSON.stringify({
+        ...body,
+        enquiry_for: enquiryFor,
+        enquirer_name: enquirerName,
+        enquirer_email: enquirerEmail,
+        enquirer_phone: enquirerPhone || null,
+        athlete_name: athleteName || null,
+        athlete_dob: athleteDob,
+      }),
       events: '[]',
       processed: 0,
       environment,
