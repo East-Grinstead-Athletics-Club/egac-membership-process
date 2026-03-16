@@ -316,7 +316,7 @@ if (!token) {
         const res = await fetch('/api/booking', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ invite_token: token, session_date: sessionDate }),
+          body: JSON.stringify({ token, date: sessionDate }),
         });
 
         const json = await res.json();
@@ -358,7 +358,7 @@ if (!token) {
           bookBtn.disabled = false;
           bookBtn.textContent = 'Book this session';
         } else {
-          errorEl.textContent = json.message ?? 'Something went wrong. Please try again.';
+          errorEl.textContent = json.error ?? json.message ?? 'Something went wrong. Please try again.';
           errorEl.classList.remove('hidden');
           bookBtn.disabled = false;
           bookBtn.textContent = 'Book this session';
