@@ -44,6 +44,12 @@ module.exports = {
   ],
   overrides: [
     {
+      files: ['src/env.d.ts'],
+      rules: {
+        '@typescript-eslint/triple-slash-reference': 'off',
+      },
+    },
+    {
       files: ['*.astro'],
       parser: 'astro-eslint-parser',
       parserOptions: {
