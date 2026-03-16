@@ -280,7 +280,7 @@ describe('POST /api/enquiry', () => {
     expect(status).toBe(405);
   });
 
-  it('returns 200 silently if enquiry email already processed', async () => {
+  it('accepts repeat submissions for the same email', async () => {
     vi.mocked(enquiryRepo.getEnquiryByEmail).mockResolvedValue({
       ...mockEnquiry,
       processed: 1,
@@ -295,9 +295,9 @@ describe('POST /api/enquiry', () => {
       await handleEnquiry(req, makeEnv())
     );
 
-    expect(status).toBe(200);
+    expect(status).toBe(201);
     expect(body.ok).toBe(true);
-    expect(enquiryRepo.insertEnquiry).not.toHaveBeenCalled();
+    expect(enquiryRepo.insertEnquiry).toHaveBeenCalled();
   });
 
   it('adds to academy waitlist for under-10 enquiry', async () => {

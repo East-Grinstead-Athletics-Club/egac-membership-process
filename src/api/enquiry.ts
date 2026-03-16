@@ -8,7 +8,6 @@ import { validateEnquiryData, routeEnquiry } from '../lib/business/enquiry.js';
 import { getNextNTuesdayDates } from '../lib/business/age.js';
 import {
   insertEnquiry,
-  getEnquiryByEmail,
   appendEnquiryEvent,
   updateEnquiry,
 } from '../lib/repositories/enquiries.js';
@@ -99,12 +98,6 @@ export async function handleEnquiry(request: Request, env: Env): Promise<Respons
   const email = String(body.email ?? '')
     .toLowerCase()
     .trim();
-
-  // Duplicate check
-  const existing = await getEnquiryByEmail(email, env);
-  if (existing && existing.processed === 1) {
-    return ok({ message: 'Enquiry received' }, 200, true);
-  }
 
   const enquiry = await insertEnquiry(
     {
