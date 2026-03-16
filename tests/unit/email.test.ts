@@ -112,7 +112,7 @@ describe('sendEmail', () => {
     expect(body.from).toBe('club@egac.co.uk');
   });
 
-  it('prefers explicit from option over EMAIL_FROM env var', async () => {
+  it('ignores explicit from option and enforces EMAIL_FROM env var', async () => {
     const mockFetch = mockFetchSuccess();
     vi.stubGlobal('fetch', mockFetch);
 
@@ -123,7 +123,7 @@ describe('sendEmail', () => {
 
     const [, options] = mockFetch.mock.calls[0];
     const body = JSON.parse(options.body);
-    expect(body.from).toBe('admin-updates@eastgrinsteadac.co.uk');
+    expect(body.from).toBe('club@egac.co.uk');
   });
 
   it('returns success:false on non-2xx response — does not throw', async () => {

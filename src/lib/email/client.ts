@@ -42,7 +42,18 @@ export interface SendEmailResult {
 // rather than throwing — callers decide how to handle it.
 // ------------------------------------------------------------
 export async function sendEmail(options: SendEmailOptions, env: Env): Promise<SendEmailResult> {
-  const from = options.from || env.EMAIL_FROM || 'noreply@egac.co.uk';
+  const from = env.EMAIL_FROM?.trim() || 'no-reply@updates.eastgrinsteadac.co.uk';
+
+  if (options.from && options.from !== from) {
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        event: 'email_from_ignored',
+        provided_from: options.from,
+        enforced_from: from,
+      })
+    );
+  }
 
   try {
     const response = await fetch(RESEND_API_URL, {

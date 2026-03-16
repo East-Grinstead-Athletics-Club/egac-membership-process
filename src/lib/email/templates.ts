@@ -16,7 +16,6 @@ import { sendEmailWithRetry } from './client.js';
 import { getEmailTemplateByKey } from '../repositories/templates.js';
 import { renderTemplate } from '../business/templates.js';
 import { formatDateForDisplay } from '../business/age.js';
-import { getConfig } from '../config.js';
 import type { Enquiry, Invite, AcademyWaitlistEntry, Booking, Env } from '../db/schema.js';
 import type { SendEmailResult } from './client.js';
 
@@ -28,18 +27,6 @@ function getPublicSiteUrl(env: Env): string {
   if (env.APP_ENV === 'production') return 'https://egac-cl9.pages.dev';
 
   return 'https://egac.pages.dev';
-}
-
-async function getOutboundFromAddress(env: Env): Promise<string | undefined> {
-  try {
-    const config = await getConfig(env);
-    const configured = (config.email_from ?? '').trim();
-    if (configured) return configured;
-  } catch {
-    // Non-fatal: fallback to EMAIL_FROM in the email client.
-  }
-
-  return undefined;
 }
 
 // ------------------------------------------------------------
@@ -80,8 +67,7 @@ export async function sendBookingInvite(
         })
       : undefined;
 
-    const from = await getOutboundFromAddress(env);
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text, from }, env);
+    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -137,8 +123,7 @@ export async function sendBookingConfirmation(
         })
       : undefined;
 
-    const from = await getOutboundFromAddress(env);
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text, from }, env);
+      return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -186,8 +171,7 @@ export async function sendAcademyWaitlist(
         })
       : undefined;
 
-    const from = await getOutboundFromAddress(env);
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text, from }, env);
+      return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -233,8 +217,7 @@ export async function sendMembershipInvite(
         })
       : undefined;
 
-    const from = await getOutboundFromAddress(env);
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text, from }, env);
+      return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -286,8 +269,7 @@ export async function sendBookingReminder(
         })
       : undefined;
 
-    const from = await getOutboundFromAddress(env);
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text, from }, env);
+      return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(

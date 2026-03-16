@@ -23,7 +23,7 @@ const CONFIG_DEFAULTS: SystemConfig = {
   capacity_per_slot: '2',
   site_name: 'East Grinstead Athletics Club',
   site_url: 'https://egac.pages.dev',
-  email_from: 'noreply@egac.co.uk',
+  email_from: 'no-reply@updates.eastgrinsteadac.co.uk',
   venue_name: 'East Grinstead Leisure Centre',
   venue_address: 'King Street, East Grinstead, RH19 3DJ',
   admin_email: '',
