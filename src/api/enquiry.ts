@@ -31,11 +31,52 @@ interface PublicEnquiryBody {
   source?: string;
 }
 
+async function parsePublicEnquiryBody(request: Request): Promise<PublicEnquiryBody | null> {
+  const contentType = (request.headers.get('content-type') ?? '').toLowerCase();
+
+  if (contentType.includes('application/json') || !contentType) {
+    return parseBody<PublicEnquiryBody>(request);
+  }
+
+  if (
+    contentType.includes('application/x-www-form-urlencoded') ||
+    contentType.includes('multipart/form-data')
+  ) {
+    try {
+      const form = await request.formData();
+      const getString = (key: string): string | undefined => {
+        const value = form.get(key);
+        return typeof value === 'string' ? value : undefined;
+      };
+
+      const trainingDays = form
+        .getAll('training_days')
+        .filter((value): value is string => typeof value === 'string')
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+      return {
+        name: getString('name'),
+        email: getString('email'),
+        phone: getString('phone'),
+        dob: getString('dob'),
+        interest: getString('interest'),
+        training_days: trainingDays.length > 0 ? trainingDays : undefined,
+        source: getString('source'),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  return parseBody<PublicEnquiryBody>(request);
+}
+
 export async function handleEnquiry(request: Request, env: Env): Promise<Response> {
   if (request.method === 'OPTIONS') return corsPreflightResponse();
   if (request.method !== 'POST') return err('Method not allowed', 405);
 
-  const body = await parseBody<PublicEnquiryBody>(request);
+  const body = await parsePublicEnquiryBody(request);
   if (!body) return err('Request body is required', 400, 'INVALID_JSON');
 
   // Normalise to the field names validateEnquiryData expects

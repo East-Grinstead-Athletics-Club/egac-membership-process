@@ -229,6 +229,28 @@ describe('POST /api/enquiry', () => {
     expect(body.ok).toBe(true);
   });
 
+  it('accepts application/x-www-form-urlencoded body', async () => {
+    const form = new URLSearchParams({
+      name: 'Form Parent',
+      email: 'form-parent@example.com',
+      dob: '2015-05-05',
+      phone: '07700900000',
+    });
+
+    const req = new Request('https://egac.pages.dev/api/enquiry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+
+    const { status, body } = await parseResponse<{ ok: boolean }>(
+      await handleEnquiry(req, makeEnv())
+    );
+
+    expect(status).toBe(201);
+    expect(body.ok).toBe(true);
+  });
+
   it('returns 422 when email is missing', async () => {
     const req = postRequest('/api/enquiry', { name: 'No Email' });
     const { status, body } = await parseResponse<{ ok: boolean; error: string }>(
