@@ -1,0 +1,130 @@
+---
+import AdminBase from '../../layouts/AdminBase.astro';
+import { checkAdminToken } from '../../lib/auth/admin.js';
+import {
+  getSystemConfig,
+  setSystemConfig,
+  clearConfigCache,
+  validateConfigUpdate,
+} from '../../lib/config.js';
+import type { SystemConfig } from '../../lib/db/schema.js';
+
+const env = Astro.locals.runtime.env;
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+if (!checkAdminToken(token, env)) return Astro.redirect('/admin/login');
+
+let errors: string[] = [];
+let successMessage = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const updates: Partial<SystemConfig> = {
+    weeks_ahead_booking: String(form.get('weeks_ahead_booking') ?? '').trim(),
+    capacity_per_slot: String(form.get('capacity_per_slot') ?? '').trim(),
+    academy_max_age: String(form.get('academy_max_age') ?? '').trim(),
+    site_name: String(form.get('site_name') ?? '').trim(),
+    site_url: String(form.get('site_url') ?? '').trim(),
+    email_from: String(form.get('email_from') ?? '').trim(),
+    venue_name: String(form.get('venue_name') ?? '').trim(),
+    venue_address: String(form.get('venue_address') ?? '').trim(),
+    admin_email: String(form.get('admin_email') ?? '').trim(),
+  };
+
+  errors = validateConfigUpdate(updates);
+
+  if (errors.length === 0) {
+    await setSystemConfig(updates, env);
+    await clearConfigCache(env);
+    successMessage = 'Settings saved.';
+  }
+}
+
+const config = await getSystemConfig(env);
+---
+
+<AdminBase title="Settings" activeNav="settings">
+  <div class="space-y-5">
+    <h1 class="text-4xl font-semibold text-slate-900">Settings</h1>
+
+    {
+      successMessage && (
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {successMessage}
+        </div>
+      )
+    }
+
+    {
+      errors.length > 0 && (
+        <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <p class="mb-1 font-medium">Please fix the following:</p>
+          <ul class="list-disc pl-5">
+            {errors.map((e) => <li>{e}</li>)}
+          </ul>
+        </div>
+      )
+    }
+
+    <form method="POST" class="space-y-4">
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-lg font-medium text-slate-900">Booking defaults</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <label for="weeks_ahead_booking" class="mb-1 block text-sm font-medium text-slate-700">Weeks ahead booking</label>
+            <input id="weeks_ahead_booking" name="weeks_ahead_booking" value={config.weeks_ahead_booking} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+          <div>
+            <label for="capacity_per_slot" class="mb-1 block text-sm font-medium text-slate-700">Capacity per slot</label>
+            <input id="capacity_per_slot" name="capacity_per_slot" value={config.capacity_per_slot} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+          <div>
+            <label for="academy_max_age" class="mb-1 block text-sm font-medium text-slate-700">Academy max age</label>
+            <input id="academy_max_age" name="academy_max_age" value={config.academy_max_age} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-lg font-medium text-slate-900">Site and venue</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label for="site_name" class="mb-1 block text-sm font-medium text-slate-700">Site name</label>
+            <input id="site_name" name="site_name" value={config.site_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+          <div>
+            <label for="site_url" class="mb-1 block text-sm font-medium text-slate-700">Site URL</label>
+            <input id="site_url" name="site_url" value={config.site_url} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+          <div>
+            <label for="venue_name" class="mb-1 block text-sm font-medium text-slate-700">Venue name</label>
+            <input id="venue_name" name="venue_name" value={config.venue_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+          <div>
+            <label for="venue_address" class="mb-1 block text-sm font-medium text-slate-700">Venue address</label>
+            <input id="venue_address" name="venue_address" value={config.venue_address} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 class="mb-4 text-lg font-medium text-slate-900">Email settings</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label for="email_from" class="mb-1 block text-sm font-medium text-slate-700">Email from</label>
+            <input id="email_from" name="email_from" value={config.email_from} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+          <div>
+            <label for="admin_email" class="mb-1 block text-sm font-medium text-slate-700">Admin email</label>
+            <input id="admin_email" name="admin_email" value={config.admin_email} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+        </div>
+      </section>
+
+      <div class="flex justify-end">
+        <button type="submit" class="rounded-md bg-[#2d5ea5] px-5 py-2 text-sm font-medium text-white hover:bg-[#254f89]">
+          Save settings
+        </button>
+      </div>
+    </form>
+  </div>
+</AdminBase>
