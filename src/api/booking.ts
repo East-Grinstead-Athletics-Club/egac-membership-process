@@ -105,16 +105,35 @@ export async function handleBooking(request: Request, env: Env): Promise<Respons
   const siteUrl = config.site_url ?? 'https://egac.pages.dev';
   const confirmation = buildBookingConfirmation(enquiry, booking, ageGroup, venueName, siteUrl);
 
-  sendBookingConfirmation(enquiry, booking, venueName, confirmation.calendarUrl, env).catch((e) =>
+  try {
+    const emailResult = await sendBookingConfirmation(
+      enquiry,
+      booking,
+      venueName,
+      confirmation.calendarUrl,
+      env
+    );
+
+    if (!emailResult.success) {
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          event: 'booking_confirmation_email_failed',
+          booking_id: booking.id,
+          error: emailResult.error ?? 'Unknown email delivery failure',
+        })
+      );
+    }
+  } catch (e) {
     console.error(
       JSON.stringify({
         level: 'error',
-        event: 'booking_confirmation_email_failed',
+        event: 'booking_confirmation_email_exception',
         booking_id: booking.id,
         error: String(e),
       })
-    )
-  );
+    );
+  }
 
   return ok({
     booking_id: booking.id,

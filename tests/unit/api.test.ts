@@ -477,6 +477,32 @@ describe('POST /api/booking', () => {
     await handleBooking(req, makeEnv());
     expect(inviteRepo.markInviteAccepted).toHaveBeenCalledWith('inv_001', expect.anything());
   });
+
+  it('sends booking confirmation email after successful booking', async () => {
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
+    await handleBooking(req, makeEnv());
+
+    expect(emailTemplates.sendBookingConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'enq_001' }),
+      expect.objectContaining({ id: 'bkg_001' }),
+      expect.any(String),
+      expect.any(String),
+      expect.anything()
+    );
+  });
+
+  it('still returns 200 if confirmation email send fails', async () => {
+    vi.mocked(emailTemplates.sendBookingConfirmation).mockResolvedValue({
+      success: false,
+      error: 'Resend rejected sender',
+    });
+
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
+    const { status, body } = await parseResponse<{ ok: boolean }>(await handleBooking(req, makeEnv()));
+
+    expect(status).toBe(200);
+    expect(body.ok).toBe(true);
+  });
 });
 
 // ============================================================
