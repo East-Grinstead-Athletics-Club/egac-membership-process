@@ -7,6 +7,8 @@ interface Props {
   activeNav?: 'dashboard' | 'enquiries' | 'bookings' | 'academy' | 'templates' | 'settings';
 }
 
+import '../styles/tailwind.css';
+
 const { title, activeNav } = Astro.props;
 
 const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href: string }> = [
@@ -26,7 +28,6 @@ const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title} — EGAC Admin</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="min-h-screen bg-[#eff2f7] text-slate-900 antialiased">
     <div class="relative min-h-screen lg:flex">

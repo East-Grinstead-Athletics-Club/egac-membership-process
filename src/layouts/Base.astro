@@ -7,6 +7,8 @@ interface Props {
   description?: string;
 }
 
+import '../styles/tailwind.css';
+
 const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
 ---
 
@@ -18,7 +20,6 @@ const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
     <meta name="description" content={description} />
     <title>{title} — EGAC</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
     <header class="bg-white border-b border-gray-200">
