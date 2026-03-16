@@ -40,11 +40,17 @@ if (Astro.request.method === 'POST') {
 }
 
 const config = await getSystemConfig(env);
+const appEnv = env.APP_ENV ?? 'development';
 ---
 
 <AdminBase title="Settings" activeNav="settings">
   <div class="space-y-5">
-    <h1 class="text-4xl font-semibold text-slate-900">Settings</h1>
+    <div class="flex items-center justify-between">
+      <h1 class="text-4xl font-semibold text-slate-900">Settings</h1>
+      <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+        Environment: {appEnv}
+      </span>
+    </div>
 
     {
       successMessage && (
@@ -65,9 +71,27 @@ const config = await getSystemConfig(env);
       )
     }
 
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Weeks ahead</p>
+        <p class="mt-1 text-2xl font-semibold text-slate-900">{config.weeks_ahead_booking}</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Slot capacity</p>
+        <p class="mt-1 text-2xl font-semibold text-slate-900">{config.capacity_per_slot}</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Academy max age</p>
+        <p class="mt-1 text-2xl font-semibold text-slate-900">{config.academy_max_age}</p>
+      </div>
+    </div>
+
     <form method="POST" class="space-y-4">
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="mb-4 text-lg font-medium text-slate-900">Booking defaults</h2>
+        <div class="mb-4">
+          <h2 class="text-lg font-medium text-slate-900">Booking defaults</h2>
+          <p class="mt-1 text-sm text-slate-500">Controls how many sessions are offered and how capacity is applied.</p>
+        </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <label for="weeks_ahead_booking" class="mb-1 block text-sm font-medium text-slate-700">Weeks ahead booking</label>
@@ -85,7 +109,10 @@ const config = await getSystemConfig(env);
       </section>
 
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="mb-4 text-lg font-medium text-slate-900">Site and venue</h2>
+        <div class="mb-4">
+          <h2 class="text-lg font-medium text-slate-900">Site and venue</h2>
+          <p class="mt-1 text-sm text-slate-500">Used in links, emails, and confirmation details.</p>
+        </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label for="site_name" class="mb-1 block text-sm font-medium text-slate-700">Site name</label>
@@ -107,7 +134,10 @@ const config = await getSystemConfig(env);
       </section>
 
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="mb-4 text-lg font-medium text-slate-900">Email settings</h2>
+        <div class="mb-4">
+          <h2 class="text-lg font-medium text-slate-900">Email settings</h2>
+          <p class="mt-1 text-sm text-slate-500">Sender and admin mailbox for alerts and test messages.</p>
+        </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label for="email_from" class="mb-1 block text-sm font-medium text-slate-700">Email from</label>
