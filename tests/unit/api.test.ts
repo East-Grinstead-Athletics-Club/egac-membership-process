@@ -88,7 +88,12 @@ function makeEnv(): Env {
     DB: {
       prepare: vi.fn().mockReturnValue({ first: vi.fn().mockResolvedValue({ 1: 1 }) }),
     } as unknown as D1Database,
-    KV: {} as KVNamespace,
+    KV: {
+      get: vi.fn().mockResolvedValue('1'),
+      put: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+      list: vi.fn().mockResolvedValue({ keys: [] }),
+    } as unknown as KVNamespace,
     RESEND_API_KEY: 'test',
     ADMIN_TOKEN: 'secret_token',
     ADMIN_EMAIL: 'admin@egac.co.uk',
@@ -526,7 +531,9 @@ describe('POST /api/booking', () => {
     });
 
     const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
-    const { status, body } = await parseResponse<{ ok: boolean }>(await handleBooking(req, makeEnv()));
+    const { status, body } = await parseResponse<{ ok: boolean }>(
+      await handleBooking(req, makeEnv())
+    );
 
     expect(status).toBe(200);
     expect(body.ok).toBe(true);
