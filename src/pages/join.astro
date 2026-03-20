@@ -1,0 +1,402 @@
+---
+import Base from '../layouts/Base.astro';
+import { getDB, getEnv, generateId, now } from '../lib/db/client.js';
+import { getEnquiryById, appendEnquiryEvent } from '../lib/repositories/enquiries.js';
+import { isMembershipOtpExpired } from '../lib/business/tokens.js';
+
+const env = Astro.locals.runtime.env;
+const db = getDB(env);
+const environment = getEnv(env);
+
+const requestUrl = new URL(Astro.request.url);
+let token = requestUrl.searchParams.get('token')?.trim() ?? '';
+
+type OtpRow = {
+  id: string;
+  enquiry_id: string;
+  token: string;
+  created_at: string;
+  used_at: string | null;
+  environment: string;
+};
+
+type MembershipFormPayload = {
+  consent_data_processing: 'yes' | 'no';
+  title: string;
+  first_name: string;
+  last_name: string;
+  dob: string;
+  sex_at_birth: string;
+  address_line_1: string;
+  address_line_2: string;
+  address_line_3: string;
+  address_line_4: string;
+  postcode: string;
+  mobile_phone: string;
+  whatsapp_opt_in: 'yes' | 'no';
+  email: string;
+  home_phone: string;
+  medication: string;
+  illnesses_injuries: string;
+  allergies: string;
+  emergency_contact_name: string;
+  emergency_contact_mobile: string;
+  emergency_contact_relationship: string;
+  emergency_contact_name_2: string;
+  emergency_contact_mobile_2: string;
+  emergency_contact_relationship_2: string;
+  existing_family_member: 'yes' | 'no';
+  existing_family_member_details: string;
+  consent_policies: 'yes' | 'no';
+};
+
+const emptyPayload: MembershipFormPayload = {
+  consent_data_processing: 'no',
+  title: '',
+  first_name: '',
+  last_name: '',
+  dob: '',
+  sex_at_birth: '',
+  address_line_1: '',
+  address_line_2: '',
+  address_line_3: '',
+  address_line_4: '',
+  postcode: '',
+  mobile_phone: '',
+  whatsapp_opt_in: 'no',
+  email: '',
+  home_phone: '',
+  medication: '',
+  illnesses_injuries: '',
+  allergies: '',
+  emergency_contact_name: '',
+  emergency_contact_mobile: '',
+  emergency_contact_relationship: '',
+  emergency_contact_name_2: '',
+  emergency_contact_mobile_2: '',
+  emergency_contact_relationship_2: '',
+  existing_family_member: 'no',
+  existing_family_member_details: '',
+  consent_policies: 'no',
+};
+
+let formData: MembershipFormPayload = { ...emptyPayload };
+let formErrors: string[] = [];
+let successMessage = '';
+let pageError = '';
+
+async function ensureMembershipFormsTable(): Promise<void> {
+  await db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS membership_forms (
+        id TEXT PRIMARY KEY,
+        enquiry_id TEXT NOT NULL,
+        membership_otp_id TEXT NOT NULL,
+        submitted_at TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        environment TEXT DEFAULT 'production',
+        FOREIGN KEY (enquiry_id) REFERENCES enquiries(id),
+        FOREIGN KEY (membership_otp_id) REFERENCES membership_otps(id)
+      )`
+    )
+    .run();
+
+  await db
+    .prepare(
+      'CREATE UNIQUE INDEX IF NOT EXISTS membership_forms_otp_idx ON membership_forms(membership_otp_id, environment)'
+    )
+    .run();
+}
+
+async function getOtp(otpToken: string): Promise<OtpRow | null> {
+  return db
+    .prepare(
+      `SELECT id, enquiry_id, token, created_at, used_at, environment
+       FROM membership_otps
+       WHERE token = ? AND environment = ?
+       LIMIT 1`
+    )
+    .bind(otpToken, environment)
+    .first<OtpRow>();
+}
+
+const applyPayloadFromForm = (f: FormData): MembershipFormPayload => ({
+  consent_data_processing: (String(f.get('consent_data_processing') ?? 'no') === 'yes'
+    ? 'yes'
+    : 'no') as 'yes' | 'no',
+  title: String(f.get('title') ?? '').trim(),
+  first_name: String(f.get('first_name') ?? '').trim(),
+  last_name: String(f.get('last_name') ?? '').trim(),
+  dob: String(f.get('dob') ?? '').trim(),
+  sex_at_birth: String(f.get('sex_at_birth') ?? '').trim(),
+  address_line_1: String(f.get('address_line_1') ?? '').trim(),
+  address_line_2: String(f.get('address_line_2') ?? '').trim(),
+  address_line_3: String(f.get('address_line_3') ?? '').trim(),
+  address_line_4: String(f.get('address_line_4') ?? '').trim(),
+  postcode: String(f.get('postcode') ?? '').trim(),
+  mobile_phone: String(f.get('mobile_phone') ?? '').trim(),
+  whatsapp_opt_in: (String(f.get('whatsapp_opt_in') ?? 'no') === 'yes'
+    ? 'yes'
+    : 'no') as 'yes' | 'no',
+  email: String(f.get('email') ?? '').trim(),
+  home_phone: String(f.get('home_phone') ?? '').trim(),
+  medication: String(f.get('medication') ?? '').trim(),
+  illnesses_injuries: String(f.get('illnesses_injuries') ?? '').trim(),
+  allergies: String(f.get('allergies') ?? '').trim(),
+  emergency_contact_name: String(f.get('emergency_contact_name') ?? '').trim(),
+  emergency_contact_mobile: String(f.get('emergency_contact_mobile') ?? '').trim(),
+  emergency_contact_relationship: String(f.get('emergency_contact_relationship') ?? '').trim(),
+  emergency_contact_name_2: String(f.get('emergency_contact_name_2') ?? '').trim(),
+  emergency_contact_mobile_2: String(f.get('emergency_contact_mobile_2') ?? '').trim(),
+  emergency_contact_relationship_2: String(f.get('emergency_contact_relationship_2') ?? '').trim(),
+  existing_family_member: (String(f.get('existing_family_member') ?? 'no') === 'yes'
+    ? 'yes'
+    : 'no') as 'yes' | 'no',
+  existing_family_member_details: String(f.get('existing_family_member_details') ?? '').trim(),
+  consent_policies: (String(f.get('consent_policies') ?? 'no') === 'yes'
+    ? 'yes'
+    : 'no') as 'yes' | 'no',
+});
+
+function validatePayload(payload: MembershipFormPayload): string[] {
+  const errors: string[] = [];
+
+  if (payload.consent_data_processing !== 'yes') {
+    errors.push('Consent for governing-body data processing must be Yes.');
+  }
+  if (!payload.title) errors.push('Title is required.');
+  if (!payload.first_name) errors.push('First name is required.');
+  if (!payload.last_name) errors.push('Last name is required.');
+  if (!payload.dob) errors.push('Date of birth is required.');
+  if (!payload.sex_at_birth) errors.push('Sex at birth is required.');
+  if (!payload.address_line_1) errors.push('Address line 1 is required.');
+  if (!payload.address_line_2) errors.push('Address line 2 is required.');
+  if (!payload.postcode) errors.push('Post code is required.');
+  if (!payload.mobile_phone) errors.push('Mobile phone number is required.');
+  if (!payload.email) errors.push('Email address is required.');
+  if (!payload.emergency_contact_name) errors.push('Emergency contact name is required.');
+  if (!payload.emergency_contact_mobile) errors.push('Emergency contact mobile number is required.');
+  if (!payload.emergency_contact_relationship) {
+    errors.push('Emergency contact relationship is required.');
+  }
+  if (payload.existing_family_member !== 'yes' && payload.existing_family_member !== 'no') {
+    errors.push('Please answer whether there is an existing family member in the club.');
+  }
+  if (payload.consent_policies !== 'yes') {
+    errors.push('You must agree to the club policies and codes of conduct.');
+  }
+
+  return errors;
+}
+
+if (Astro.request.method === 'POST') {
+  const postForm = await Astro.request.formData();
+  token = String(postForm.get('token') ?? token ?? '').trim();
+  formData = applyPayloadFromForm(postForm);
+
+  if (!token) {
+    pageError = 'Membership token is missing.';
+  }
+
+  if (!pageError) {
+    const otp = await getOtp(token);
+    if (!otp) {
+      pageError = 'This membership link is invalid.';
+    } else if (otp.used_at) {
+      pageError = 'This membership link has already been used.';
+    } else if (isMembershipOtpExpired(otp.created_at)) {
+      pageError = 'This membership link has expired. Please contact the club.';
+    } else {
+      const enquiry = await getEnquiryById(otp.enquiry_id, env);
+      if (!enquiry) {
+        pageError = 'Related enquiry could not be found.';
+      } else {
+        formErrors = validatePayload(formData);
+
+        if (formErrors.length === 0) {
+          await ensureMembershipFormsTable();
+
+          await db
+            .prepare(
+              `INSERT INTO membership_forms
+                 (id, enquiry_id, membership_otp_id, submitted_at, payload_json, environment)
+               VALUES (?, ?, ?, ?, ?, ?)`
+            )
+            .bind(
+              generateId('mbr'),
+              enquiry.id,
+              otp.id,
+              now(),
+              JSON.stringify(formData),
+              environment
+            )
+            .run();
+
+          await db
+            .prepare('UPDATE membership_otps SET used_at = ? WHERE id = ? AND environment = ?')
+            .bind(now(), otp.id, environment)
+            .run();
+
+          await appendEnquiryEvent(enquiry.id, { type: 'membership_form_submitted' }, env);
+
+          successMessage = 'Thank you. Your membership form has been submitted.';
+        }
+      }
+    }
+  }
+}
+
+if (!successMessage && !pageError) {
+  if (!token) {
+    pageError = 'Membership token is missing.';
+  } else {
+    const otp = await getOtp(token);
+    if (!otp) {
+      pageError = 'This membership link is invalid.';
+    } else if (otp.used_at) {
+      pageError = 'This membership link has already been used.';
+    } else if (isMembershipOtpExpired(otp.created_at)) {
+      pageError = 'This membership link has expired. Please contact the club.';
+    } else {
+      const enquiry = await getEnquiryById(otp.enquiry_id, env);
+      const nameParts = (enquiry?.name ?? '').trim().split(/\s+/).filter(Boolean);
+      if (!formData.first_name) formData.first_name = nameParts[0] ?? '';
+      if (!formData.last_name) formData.last_name = nameParts.slice(1).join(' ');
+      if (!formData.dob && enquiry?.dob) formData.dob = enquiry.dob;
+      if (!formData.email && enquiry?.email) formData.email = enquiry.email;
+      if (!formData.mobile_phone && enquiry?.phone) formData.mobile_phone = enquiry.phone;
+    }
+  }
+}
+---
+
+<Base title="Membership Form" description="Complete your EGAC membership joining form.">
+  <div class="space-y-6">
+    <h1 class="text-3xl font-semibold text-slate-900">Membership Joining Form</h1>
+
+    {
+      pageError && (
+        <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {pageError}
+        </div>
+      )
+    }
+
+    {
+      successMessage && (
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {successMessage}
+        </div>
+      )
+    }
+
+    {
+      formErrors.length > 0 && (
+        <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          <p class="mb-1 font-medium">Please correct the following:</p>
+          <ul class="list-disc pl-5">
+            {formErrors.map((e) => <li>{e}</li>)}
+          </ul>
+        </div>
+      )
+    }
+
+    {
+      !successMessage && !pageError && (
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="token" value={token} />
+
+          <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-3 text-lg font-medium text-slate-900">Consent</h2>
+            <label class="mb-2 block text-sm font-medium text-slate-700">Consent for governing-body data processing *</label>
+            <div class="flex gap-4 text-sm">
+              <label><input type="radio" name="consent_data_processing" value="yes" checked={formData.consent_data_processing === 'yes'} /> Yes</label>
+              <label><input type="radio" name="consent_data_processing" value="no" checked={formData.consent_data_processing !== 'yes'} /> No</label>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">The member is aware that their data is being passed to the Athletics Governing Bodies and will be processed in accordance with the privacy statement.</p>
+          </section>
+
+          <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-3 text-lg font-medium text-slate-900">Athlete details</h2>
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label class="text-sm">Title *<input name="title" value={formData.title} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">First Name *<input name="first_name" value={formData.first_name} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Last Name *<input name="last_name" value={formData.last_name} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Date of birth *<input type="date" name="dob" value={formData.dob} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Sex at birth *<input name="sex_at_birth" value={formData.sex_at_birth} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Address line 1 *<input name="address_line_1" value={formData.address_line_1} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Address line 2 *<input name="address_line_2" value={formData.address_line_2} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Address line 3<input name="address_line_3" value={formData.address_line_3} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Address line 4<input name="address_line_4" value={formData.address_line_4} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Post Code *<input name="postcode" value={formData.postcode} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Mobile phone number *<input name="mobile_phone" value={formData.mobile_phone} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Email Address *<input type="email" name="email" value={formData.email} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Home phone number<input name="home_phone" value={formData.home_phone} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+            </div>
+
+            <div class="mt-3">
+              <label class="mb-1 block text-sm font-medium text-slate-700">Join club WhatsApp? *</label>
+              <div class="flex gap-4 text-sm">
+                <label><input type="radio" name="whatsapp_opt_in" value="yes" checked={formData.whatsapp_opt_in === 'yes'} /> Yes</label>
+                <label><input type="radio" name="whatsapp_opt_in" value="no" checked={formData.whatsapp_opt_in !== 'yes'} /> No</label>
+              </div>
+              <p class="mt-1 text-xs text-slate-500">This is our main source to keep you up to date with last minute changes.</p>
+            </div>
+          </section>
+
+          <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-3 text-lg font-medium text-slate-900">Medical information</h2>
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label class="text-sm">Medication<textarea name="medication" class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2">{formData.medication}</textarea></label>
+              <label class="text-sm">Illnesses & injuries<textarea name="illnesses_injuries" class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2">{formData.illnesses_injuries}</textarea></label>
+              <label class="text-sm md:col-span-2">Allergies<textarea name="allergies" class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2">{formData.allergies}</textarea></label>
+            </div>
+          </section>
+
+          <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-3 text-lg font-medium text-slate-900">Emergency contacts</h2>
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label class="text-sm">Emergency contact name *<input name="emergency_contact_name" value={formData.emergency_contact_name} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Emergency contact mobile number *<input name="emergency_contact_mobile" value={formData.emergency_contact_mobile} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Relationship to athlete *<input name="emergency_contact_relationship" value={formData.emergency_contact_relationship} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <div></div>
+              <label class="text-sm">Emergency contact details (2nd person)<input name="emergency_contact_name_2" value={formData.emergency_contact_name_2} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Emergency contact number (2nd person)<input name="emergency_contact_mobile_2" value={formData.emergency_contact_mobile_2} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+              <label class="text-sm">Relationship to athlete (2nd person)<input name="emergency_contact_relationship_2" value={formData.emergency_contact_relationship_2} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" /></label>
+            </div>
+          </section>
+
+          <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-3 text-lg font-medium text-slate-900">Club policies and family details</h2>
+            <div class="space-y-3 text-sm">
+              <div>
+                <label class="mb-1 block font-medium text-slate-700">Is there an existing family member in the club? *</label>
+                <div class="flex gap-4">
+                  <label><input type="radio" name="existing_family_member" value="yes" checked={formData.existing_family_member === 'yes'} /> Yes</label>
+                  <label><input type="radio" name="existing_family_member" value="no" checked={formData.existing_family_member !== 'yes'} /> No</label>
+                </div>
+              </div>
+
+              <label class="text-sm">Family member details (if applicable)
+                <input name="existing_family_member_details" value={formData.existing_family_member_details} class="mt-1 w-full rounded border border-slate-300 px-2.5 py-2" />
+              </label>
+
+              <div>
+                <label class="mb-1 block font-medium text-slate-700">I/we have read and agree to abide by the Club policies and codes of conduct *</label>
+                <div class="flex gap-4">
+                  <label><input type="radio" name="consent_policies" value="yes" checked={formData.consent_policies === 'yes'} /> Yes</label>
+                  <label><input type="radio" name="consent_policies" value="no" checked={formData.consent_policies !== 'yes'} /> No</label>
+                </div>
+                <p class="mt-1 text-xs text-slate-500">Yes, I as a parent/carer and/or athlete agree with the club's policies and the codes of conduct for both the club and England Athletics.</p>
+              </div>
+            </div>
+          </section>
+
+          <div class="flex justify-end">
+            <button type="submit" class="rounded-md bg-blue-800 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700">Submit membership form</button>
+          </div>
+        </form>
+      )
+    }
+  </div>
+</Base>

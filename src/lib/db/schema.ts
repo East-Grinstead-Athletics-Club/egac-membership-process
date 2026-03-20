@@ -55,6 +55,7 @@ export type EnquiryEventType =
   | 'invite_resent'
   | 'attendance_recorded'
   | 'membership_invite_sent'
+  | 'membership_form_submitted'
   | 'reminder_sent';
 
 export interface EnquiryFilters {
@@ -217,6 +218,18 @@ export interface MembershipOtp {
   token: string;
   created_at: string;
   used_at: string | null;
+  environment: Environment;
+}
+
+// ------------------------------------------------------------
+// Membership Form Submission
+// ------------------------------------------------------------
+export interface MembershipFormSubmission {
+  id: string;
+  enquiry_id: string;
+  membership_otp_id: string;
+  submitted_at: string;
+  payload_json: string;
   environment: Environment;
 }
 

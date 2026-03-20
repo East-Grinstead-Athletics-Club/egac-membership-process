@@ -37,9 +37,9 @@
         - Expected: They remain listed in the calendar and the enquiry board updated
         - Notes: No-show status now remains visible in bookings calendar; enquiry list reflects no-show/attended/confirmed.
 
-5. [Open] Membership form
+5. [Fixed] Membership form
          - Expected:  When someone receives an invitation to join the club an email is not sent with a link to a non-existent page. A form pre-filled with info already submitted will be sent, and they will be invited to complete the membership form
-         Notes: 
+         Notes: Added live `/join?token=...` page with token checks, prefilled fields from enquiry data, required consent gating, and persistence of completed form payloads.
 
 Membership Joining Form
 Consent *
@@ -82,6 +82,6 @@ I/we have read and agree to abide by the Club policies and codes of conduct * (Y
 
 Yes, I as a parent/carer and/or athlete agree with the clubs policies and the codes of conduct for both the club and England Athletics.
 
-6. [Open] - Academy waiting list
+6. [Fixed] - Academy waiting list
         Expected: If you are considered U11, you are added to the Academy waiting list and a notification email is sent out saying "We run an Academy for U11 children and operate a waiting list for thos interested. Once space becomes available, you will be contacted and offered a place." - this needs to be included in the list of editable email templates.
-        Notes: 
+        Notes: `academy_waitlist` template is in the editable templates list and seed copy now reflects the requested waiting-list wording.

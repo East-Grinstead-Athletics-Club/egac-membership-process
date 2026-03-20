@@ -127,13 +127,13 @@ VALUES (
   '<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
 <h2>Hi {{parent_name}},</h2>
 <p>Thank you for your interest in the EGAC Junior Academy for <strong>{{child_name}}</strong>.</p>
-<p>We have added them to our waiting list. We will be in touch when places become available.</p>
+<p>We run an Academy for U11 children and operate a waiting list for those interested. Once space becomes available, you will be contacted and offered a place.</p>
 <p>The EGAC Team</p>
 </body></html>',
   'Hi {{parent_name}},
 
 Thank you for your interest in the EGAC Junior Academy for {{child_name}}.
-We have added them to our waiting list.
+We run an Academy for U11 children and operate a waiting list for those interested. Once space becomes available, you will be contacted and offered a place.
 
 The EGAC Team',
   '["parent_name","child_name"]',

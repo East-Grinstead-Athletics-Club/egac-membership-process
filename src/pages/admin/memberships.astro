@@ -1,0 +1,125 @@
+---
+import AdminBase from '../../layouts/AdminBase.astro';
+import { checkAdminToken } from '../../lib/auth/admin.js';
+import { listMembershipForms } from '../../lib/repositories/membership-forms.js';
+
+const env = Astro.locals.runtime.env;
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+if (!checkAdminToken(token, env)) return Astro.redirect('/admin/login');
+
+const submissions = await listMembershipForms(env, 300);
+
+type MembershipPayload = {
+  first_name?: string;
+  last_name?: string;
+  dob?: string;
+  email?: string;
+  mobile_phone?: string;
+  emergency_contact_name?: string;
+  emergency_contact_mobile?: string;
+  consent_data_processing?: 'yes' | 'no';
+  consent_policies?: 'yes' | 'no';
+};
+
+function parsePayload(raw: string): MembershipPayload {
+  try {
+    const parsed = JSON.parse(raw) as MembershipPayload;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+---
+
+<AdminBase title="Memberships" activeNav="memberships">
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-4xl font-semibold text-slate-900">Membership Forms</h1>
+        <p class="mt-1 text-sm text-slate-500">
+          Submitted join forms captured from the invitation link flow.
+        </p>
+      </div>
+      <a
+        href="/api/admin/memberships?format=csv"
+        class="rounded-xl bg-[#2d5ea5] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#254f89]"
+      >
+        Export CSV
+      </a>
+    </div>
+
+    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-200 px-5 py-4 text-sm text-slate-600">
+        {submissions.length} submission{submissions.length === 1 ? '' : 's'} shown
+      </div>
+
+      {
+        submissions.length === 0 ? (
+          <div class="px-5 py-12 text-center text-sm text-slate-500">
+            No membership forms submitted yet.
+          </div>
+        ) : (
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th class="px-4 py-3">Submitted</th>
+                  <th class="px-4 py-3">Athlete</th>
+                  <th class="px-4 py-3">DOB</th>
+                  <th class="px-4 py-3">Email</th>
+                  <th class="px-4 py-3">Mobile</th>
+                  <th class="px-4 py-3">Emergency Contact</th>
+                  <th class="px-4 py-3">Consent</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  submissions.map((s) => {
+                    const payload = parsePayload(s.payload_json);
+                    const athleteName = [payload.first_name ?? '', payload.last_name ?? '']
+                      .join(' ')
+                      .trim();
+                    return (
+                      <tr class="border-t border-slate-100 align-top">
+                        <td class="px-4 py-3 whitespace-nowrap text-slate-600">{formatDateTime(s.submitted_at)}</td>
+                        <td class="px-4 py-3">
+                          <p class="font-medium text-slate-900">{athleteName || s.enquiry_name || '—'}</p>
+                          <p class="text-xs text-slate-500">Enquiry: {s.enquiry_email}</p>
+                        </td>
+                        <td class="px-4 py-3 text-slate-700">{payload.dob || '—'}</td>
+                        <td class="px-4 py-3 text-slate-700">{payload.email || s.enquiry_email}</td>
+                        <td class="px-4 py-3 text-slate-700">{payload.mobile_phone || '—'}</td>
+                        <td class="px-4 py-3 text-slate-700">
+                          <p>{payload.emergency_contact_name || '—'}</p>
+                          <p class="text-xs text-slate-500">{payload.emergency_contact_mobile || '—'}</p>
+                        </td>
+                        <td class="px-4 py-3 text-slate-700">
+                          <span class={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${payload.consent_data_processing === 'yes' && payload.consent_policies === 'yes' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {payload.consent_data_processing === 'yes' && payload.consent_policies === 'yes'
+                              ? 'Complete'
+                              : 'Review'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                }
+              </tbody>
+            </table>
+          </div>
+        )
+      }
+    </section>
+  </div>
+</AdminBase>

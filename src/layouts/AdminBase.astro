@@ -4,7 +4,14 @@
 
 interface Props {
   title: string;
-  activeNav?: 'dashboard' | 'enquiries' | 'bookings' | 'academy' | 'templates' | 'settings';
+  activeNav?:
+    | 'dashboard'
+    | 'enquiries'
+    | 'bookings'
+    | 'academy'
+    | 'memberships'
+    | 'templates'
+    | 'settings';
 }
 
 import '../styles/tailwind.css';
@@ -16,6 +23,7 @@ const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href
   { id: 'enquiries', label: 'Enquiries', href: '/admin/enquiries' },
   { id: 'bookings', label: 'Bookings', href: '/admin/bookings' },
   { id: 'academy', label: 'Academy', href: '/admin/academy' },
+  { id: 'memberships', label: 'Memberships', href: '/admin/memberships' },
   { id: 'templates', label: 'Templates', href: '/admin/templates' },
   { id: 'settings', label: 'Settings', href: '/admin/settings' },
 ];

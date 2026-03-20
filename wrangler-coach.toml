@@ -1,0 +1,47 @@
+# ============================================================
+# wrangler-coach.toml
+# Cloudflare Worker config for the EGAC Coach App.
+#
+# This is a SEPARATE Worker from the main Pages deployment.
+# It shares the same D1 database and KV namespace.
+#
+# Deploy:
+#   wrangler deploy --config wrangler-coach.toml
+#
+# Local dev:
+#   wrangler dev src/workers/coach-app.js --config wrangler-coach.toml
+#
+# Required secrets (set once):
+#   wrangler secret put APP_ENV --config wrangler-coach.toml
+#
+# Cloudflare Access:
+#   Protect this Worker's route in Zero Trust → Access → Applications.
+#   Add the coaches' email addresses to the policy.
+#   The Worker checks for the cf-access-authenticated-user-email header
+#   and returns 403 if absent — defence in depth.
+# ============================================================
+
+name = "egac-coach"
+main = "src/workers/coach-app.js"
+compatibility_date = "2024-09-23"
+
+[vars]
+APP_ENV = "production"
+
+# Shares the same D1 database as the main platform
+[[d1_databases]]
+binding = "DB"
+database_name = "egac"
+database_id = "6a053384-20ee-4fee-bf73-aa29c1779fe3"
+
+# Shares the same KV namespace (not used directly but available)
+[[kv_namespaces]]
+binding = "KV"
+id = "28ecc4df31b44e5e92cc4730c1870829"
+
+# Routes — update to match your actual domain
+# The Access policy must protect this route
+[env.production]
+routes = [
+  { pattern = "coach.eastgrinsteadac.co.uk/*", zone_name = "eastgrinsteadac.co.uk" }
+]

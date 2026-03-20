@@ -30,6 +30,7 @@ import { handleAdminInviteResend } from './admin/invites.js';
 import { handleAdminBookings } from './admin/bookings.js';
 import { handleAdminAttendance } from './admin/attendance.js';
 import { handleAdminReports } from './admin/reports.js';
+import { handleAdminMemberships } from './admin/memberships.js';
 import { handleAdminTemplates } from './admin/templates.js';
 import {
   handleAdminTemplateDetail,
@@ -60,6 +61,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   if (path === '/api/admin/invites/resend') return handleAdminInviteResend(request, env);
   if (path === '/api/admin/bookings') return handleAdminBookings(request, env);
   if (path === '/api/admin/reports') return handleAdminReports(request, env);
+  if (path === '/api/admin/memberships') return handleAdminMemberships(request, env);
   if (path === '/api/admin/templates') return handleAdminTemplates(request, env);
 
   // Dynamic admin routes — extract ID segments
