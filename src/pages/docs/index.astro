@@ -1,0 +1,76 @@
+---
+import DocsBase from '../../layouts/DocsBase.astro';
+---
+<DocsBase title="Overview" section="Overview">
+
+# EGAC Platform
+
+Bespoke club management for East Grinstead Athletics Club. Handles the full athlete journey — enquiry, taster session booking, Academy waitlist, membership, and attendance.
+
+<div class="not-prose grid grid-cols-2 sm:grid-cols-4 gap-3 my-6">
+  {[['67','Source files'],['231','Tests passing'],['11','D1 tables'],['£0/mo','Infra cost']].map(([n,l]) => (
+    <div class="bg-blue-900 rounded-lg p-4 text-center">
+      <p class="text-2xl font-black text-white">{n}</p>
+      <p class="text-blue-300 text-xs mt-1 uppercase tracking-wide font-medium">{l}</p>
+    </div>
+  ))}
+</div>
+
+## What it does
+
+- **Enquiry form** — parents register interest; auto-routed to taster booking or Academy waitlist using the UK Athletics 31 Aug age rule
+- **Taster booking** — invite-token page with live capacity, Google Calendar confirmation
+- **Academy waitlist** — U11 programme with accept/decline flow and annual season rollover
+- **Membership** — OTP-gated form after first attended session; creates athlete record
+- **Admin portal** — enquiry management, bookings, attendance, templates, config, reports
+- **Coach app** — mobile session register with safeguarding audit trail (Cloudflare Access)
+- **6 email types** — editable templates via Resend
+
+## System diagram
+
+```mermaid
+graph TB
+    subgraph Users
+        P[Parent]
+        A[Admin]
+        C[Coach]
+    end
+
+    subgraph Cloudflare
+        Pages[Pages — Astro SSR\n/ /book /academy /join /admin /docs]
+        Workers[Workers — /api/* router]
+        D1[(D1 SQLite\n11 tables)]
+        KV[(KV\nConfig + rate limits)]
+        Access[Access — Zero Trust]
+        CoachW[Coach Worker]
+    end
+
+    Resend([Resend — Email])
+
+    P -->|enquiry / booking| Pages
+    A -->|admin portal| Pages
+    C --> Access --> CoachW
+    Pages --> Workers
+    Workers --> D1 & KV & Resend
+    CoachW --> D1
+```
+
+## Technology stack
+
+| Layer | Technology | Notes |
+|---|---|---|
+| Framework | Astro 4 SSR | Pages + API catch-all |
+| Hosting | Cloudflare Pages | Auto-deploy on push to main |
+| API | Cloudflare Workers | All /api/* via Astro adapter |
+| Database | Cloudflare D1 (SQLite) | 11 tables, environment-isolated |
+| Cache | Cloudflare KV | Config + rate limiting |
+| Email | Resend | 6 templates, editable in admin |
+| Tests | Vitest + Miniflare | 231 tests, 8 files |
+| Coach auth | Cloudflare Access | Zero Trust — email policy |
+
+## Cost
+
+Runs entirely within Cloudflare's free tier at expected volumes (< 200 enquiries/month).
+**Total infrastructure cost: £0/month.**
+
+</DocsBase>

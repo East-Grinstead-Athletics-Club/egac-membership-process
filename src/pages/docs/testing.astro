@@ -1,0 +1,94 @@
+---
+import DocsBase from '../../layouts/DocsBase.astro';
+---
+<DocsBase title="Testing" section="Testing">
+
+# Testing
+
+231 tests across 8 files. All tests run with `npm test` (Vitest + Miniflare).
+
+## Coverage by file
+
+```mermaid
+pie title Tests by file (231 total)
+    "business.test.ts" : 57
+    "db.test.ts" : 34
+    "api.test.ts" : 30
+    "admin.test.ts" : 24
+    "repositories.test.ts" : 26
+    "cron.test.ts" : 21
+    "security.test.ts" : 21
+    "email.test.ts" : 18
+```
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph Unit["Unit tests — vi.mock()"]
+        B[business.test.ts\nPure functions — no mocks needed]
+        D[db.test.ts\nClient helpers + KV config]
+        API[api.test.ts\nPublic API handlers]
+        ADM[admin.test.ts\nAdmin auth + handlers]
+        CR[cron.test.ts\nAll four cron jobs]
+        EM[email.test.ts\nResend client + retry]
+        SEC[security.test.ts\nError classes + health]
+    end
+
+    subgraph Integration["Integration — real SQLite"]
+        REP[repositories.test.ts\nMiniflare D1]
+    end
+
+    Repos[All repositories\nvi.mock] --> API & ADM & CR
+    Email[Email module\nvi.mock] --> API & ADM & CR
+    Config[Config module\nvi.mock] --> API & ADM & CR
+    REP -->|Miniflare| SQLite[(SQLite in-process\n0001 schema + seed.sql)]
+```
+
+## Key patterns
+
+### Idempotency (cron)
+
+Every cron handler verifies it produces the same result when run twice:
+
+```typescript
+it('does not send reminder twice', async () => {
+  await handleSendReminders(req, env);  // sends
+  const r2 = await handleSendReminders(req, env);  // skips
+  expect(r2.data.sent).toBe(0);
+  expect(r2.data.skipped).toBe(1);
+});
+```
+
+### Environment isolation (repositories)
+
+```typescript
+it('dev rows invisible to production queries', async () => {
+  await insertEnquiry({ ...data, environment: 'development' }, devEnv);
+  const result = await getEnquiryByEmail(data.email, prodEnv);
+  expect(result).toBeNull();
+});
+```
+
+### Error class mapping (security)
+
+```typescript
+it('never exposes internal error details', async () => {
+  const res = handleApiError(new Error('DB password abc123'));
+  const body = await res.json();
+  expect(body.error).toBe('Internal server error');
+  expect(JSON.stringify(body)).not.toContain('abc123');
+});
+```
+
+## Running tests
+
+```bash
+npm test                           # run all 231 tests
+npx vitest run --reporter=verbose  # show every test name
+
+# Full quality check before commit:
+npm test && npm run lint && npx tsc --noEmit
+```
+
+</DocsBase>

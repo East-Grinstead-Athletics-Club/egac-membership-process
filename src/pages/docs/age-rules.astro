@@ -1,0 +1,63 @@
+---
+import DocsBase from '../../layouts/DocsBase.astro';
+---
+<DocsBase title="UK Athletics Age Rules" section="UK Athletics age rules">
+
+# UK Athletics Age Rules
+
+The most important domain rule in the platform.
+
+## The 31 August rule
+
+An athlete's age group is their age on **31 August at the END of the athletics season** the session falls in.
+
+```mermaid
+flowchart TD
+    A[Session date] --> B{Month >= September?}
+    B -->|Yes — new season| C[Season end year = current year + 1]
+    B -->|No — current season| D[Season end year = current year]
+    C & D --> E[Reference date: 31 Aug of season end year]
+    E --> F[Age = ageOnDate dob refDate]
+    F --> G[Match against age_groups table]
+    G --> H{booking_type?}
+    H -->|taster| I[Booking invite path]
+    H -->|waitlist| J[Academy waitlist path]
+    H -->|no match| I
+```
+
+## Examples
+
+| Session | Season | Reference date | DOB | Age on ref | Group |
+|---|---|---|---|---|---|
+| 14 Oct 2026 | 2026/27 | 31 Aug **2027** | 1 Sep 2016 | 10 | U11 |
+| 14 Apr 2026 | 2025/26 | 31 Aug **2026** | 1 Sep 2016 | 9 | U11 |
+| 14 Apr 2026 | 2025/26 | 31 Aug **2026** | 1 Sep 2014 | 11 | U13 |
+| 31 Aug 2026 | 2025/26 | 31 Aug **2026** | 1 Sep 2013 | 12 | U13 |
+
+> The season switches on **1 September**. A session on 31 August is still in the old season.
+
+## Implementation (`src/lib/business/age.ts`)
+
+```typescript
+athleticsSeasonEndYear("2026-10-14")  // → 2027  (Oct is in new season)
+athleticsSeasonEndYear("2026-04-14")  // → 2026  (Apr is in current season)
+
+ageForAthletics(dob, sessionDate)
+// = ageOnDate(dob, `${seasonEndYear}-08-31`)
+
+resolveAgeGroup(dob, sessionDate, allAgeGroups)
+// Finds first active group where athleticsAge >= age_min AND <= age_max
+// Sorted by sort_order — lowest wins if multiple match
+```
+
+## Enquiry routing
+
+```mermaid
+graph LR
+    Enquiry[Enquiry submitted] --> Resolve[resolveAgeGroup\nbusiness/age.ts]
+    Resolve --> Route[routeEnquiry\nbusiness/enquiry.ts]
+    Route -->|booking_type = waitlist| WL[addToWaitlist\n→ Academy email]
+    Route -->|booking_type = taster\nor no DOB| Inv[createInviteForEnquiry\n→ Booking invite email]
+```
+
+</DocsBase>

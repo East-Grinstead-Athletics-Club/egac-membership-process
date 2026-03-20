@@ -1,0 +1,102 @@
+---
+import DocsBase from '../../layouts/DocsBase.astro';
+---
+<DocsBase title="Coach App" section="Coach app">
+
+# Coach App
+
+Standalone Cloudflare Worker (`src/workers/coach-app.js`). Deployed separately from the main platform but sharing the same D1 database. Secured via Cloudflare Access.
+
+## Architecture
+
+```mermaid
+graph LR
+    Coach[Coach\nmobile browser] --> Access[Cloudflare Access\nZero Trust policy]
+    Access -->|cf-access-authenticated-user-email| Worker[egac-coach Worker]
+    Worker -->|No header| Block[403 Forbidden]
+    Worker -->|Valid| D1[(D1 — shared\ndatabase)]
+```
+
+## Authentication
+
+```mermaid
+sequenceDiagram
+    participant C as Coach
+    participant CF as Cloudflare Access
+    participant W as Coach Worker
+
+    C->>CF: GET coach.eastgrinsteadac.co.uk
+    CF->>CF: Check email policy
+    CF-->>C: Auth challenge (if not logged in)
+    C->>CF: Authenticate via Google / OTP
+    CF->>W: Request + cf-access-authenticated-user-email header
+    W->>W: Header present?
+    alt Missing
+        W-->>C: 403 Forbidden
+    else Present
+        W->>D1: Query session data
+        W-->>C: Session register HTML
+    end
+```
+
+> The Worker's header check is defence in depth — the primary protection is the Access policy.
+
+## Session register
+
+```mermaid
+graph TB
+    Register[Session register\n?date=YYYY-MM-DD] --> Tasters
+    Register --> Members
+
+    Tasters[TASTERS\nbookings JOIN enquiries\nWHERE session_date=? AND status=confirmed]
+    Members[MEMBERS\nathletes WHERE status=active\nLEFT JOIN attendance_log]
+
+    Tasters --> TRow[Name · Age group badge · TASTER badge\nPhone · CHECK IN button]
+    Members --> MRow[Name · Age group badge\nEmergency contact · ⚕ if medical info\nCHECK IN button]
+```
+
+## Check-in logic
+
+```mermaid
+sequenceDiagram
+    participant Coach
+    participant Worker
+    participant D1
+
+    Coach->>Worker: POST /api/checkin { id, type, date }
+    alt type = taster
+        Worker->>D1: SELECT checked_in_at FROM bookings
+        Worker->>D1: UPDATE bookings SET checked_in_at = now()
+        Worker->>D1: INSERT OR IGNORE INTO attendance_log
+    else type = member
+        Worker->>D1: SELECT FROM attendance_log
+        Worker->>D1: INSERT OR IGNORE INTO attendance_log
+        Worker->>D1: UPDATE athletes SET last_attended_at = today
+    end
+    Worker-->>Coach: { ok: true, checked_in: true }
+```
+
+Unchecking removes the `attendance_log` entry and clears `checked_in_at`. Past sessions' records are never modified.
+
+## Deployment
+
+```bash
+wrangler deploy --config wrangler-coach.toml
+```
+
+Then in **Cloudflare Zero Trust** → Access → Applications → Add Self-hosted:
+- Domain: `coach.eastgrinsteadac.co.uk`
+- Policy: Allow → Email addresses → list each coach
+
+## Step B — members (pending)
+
+The Members section currently shows "No members yet". Once Step B is implemented, submitting the membership form automatically creates an `athletes` row, and the coach sees them on the register from the next session.
+
+```mermaid
+flowchart LR
+    Form[/join form submitted] --> Parse[Parse payload_json\nfrom membership_forms]
+    Parse --> Insert[INSERT INTO athletes\nname dob emergency_contacts medical_info]
+    Insert --> Coach[Visible on coach\nregister next session]
+```
+
+</DocsBase>

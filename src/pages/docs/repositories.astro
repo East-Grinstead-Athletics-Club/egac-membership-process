@@ -1,0 +1,84 @@
+---
+import DocsBase from '../../layouts/DocsBase.astro';
+---
+<DocsBase title="Repositories" section="Repositories">
+
+# Repositories
+
+All D1 access is in `src/lib/repositories/`. No SQL appears elsewhere in the codebase. Every function accepts `env: Env` as its last parameter and automatically injects `AND environment = ?`.
+
+## Pattern
+
+```typescript
+// Every repository function follows this pattern:
+export async function getEnquiryById(id: string, env: Env): Promise<Enquiry | null> {
+  const db = getDB(env);
+  const environment = getEnv(env);  // reads APP_ENV from env
+  return one<Enquiry>(
+    db.prepare('SELECT * FROM enquiries WHERE id = ? AND environment = ?')
+      .bind(id, environment)
+  );
+}
+```
+
+## enquiries.ts
+
+| Function | Purpose |
+|---|---|
+| `insertEnquiry(data, env)` | Creates a new enquiry |
+| `getEnquiryById(id, env)` | Fetch by primary key |
+| `getEnquiryByEmail(email, env)` | Duplicate detection |
+| `listEnquiries(filters, env)` | Paginated list — status, search, limit, offset |
+| `updateEnquiry(id, data, env)` | Partial update — note, processed, invite_id, age_group_id |
+| `appendEnquiryEvent(id, event, env)` | Atomically appends to the JSON events array |
+
+## invites.ts
+
+| Function | Purpose |
+|---|---|
+| `createInviteForEnquiry(enquiryId, env)` | Creates invite with secure random token |
+| `getInviteByToken(token, env)` | Primary lookup — used by booking page |
+| `getInviteByEnquiryId(enquiryId, env)` | Find existing invite (for resend) |
+| `markInviteSent / Accepted / Expired / Failed` | Status transitions |
+| `incrementSendAttempts(id, error, env)` | Records failed send attempts |
+| `listPendingInvites(env)` | Invites with status=pending and attempts < 3 |
+| `listSentInvitesOlderThan(days, env)` | For the expire cron |
+
+## bookings.ts
+
+| Function | Purpose |
+|---|---|
+| `createBooking(...)` | Creates booking after validation |
+| `getBookingByInviteAndDate(inviteId, date, env)` | Duplicate check before insert |
+| `countBookingsForDateAndGroup(date, ageGroupId, env)` | Capacity check on booking page |
+| `listUpcomingBookings(weeksAhead, env)` | Confirmed bookings in the next N weeks |
+| `updateBookingStatus(id, status, note, env)` | Records attendance |
+| `countBookingsByStatus(status, env, sinceDate?)` | Aggregate counts for reports |
+
+## academy.ts
+
+| Function | Purpose |
+|---|---|
+| `addToWaitlist(enquiryId, env)` | Creates waitlist entry with unique token |
+| `getWaitlistEntryByToken(token, env)` | Lookup for academy response page |
+| `recordWaitlistResponse(token, response, env)` | Records yes/no — idempotent |
+| `listUnassignedWaitlist(env)` | Entries not yet assigned to a season |
+| `getOpenAcademySeason(env)` | The current open season |
+| `updateSeasonStatus(id, status, env)` | Season lifecycle transitions |
+| `rolloverWaitlistEntry(entry, env)` | Resets for next season, sets is_returning |
+| `hasAcceptedEntryForEnquiry(enquiryId, env)` | Detects returning athletes |
+
+## D1 helpers (`src/lib/db/client.ts`)
+
+```typescript
+getDB(env)              // Returns env.DB — throws if missing
+getEnv(env)             // Returns env.APP_ENV — defaults to 'production'
+one<T>(stmt)            // Typed single-row fetch
+many<T>(stmt)           // Typed multi-row fetch
+run(stmt)               // Execute without return
+generateId(prefix)      // e.g. generateId('enq') → 'enq_a3f8b2...'
+generateToken(length)   // Cryptographically secure hex string
+now()                   // Current UTC ISO string
+```
+
+</DocsBase>
