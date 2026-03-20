@@ -9,7 +9,7 @@
 --   U15 and older  : 13+    taster,   Tuesday (2 places)
 -- ============================================================
 
-INSERT OR IGNORE INTO age_groups
+INSERT OR REPLACE INTO age_groups
   (id, code, label, booking_type,
    age_min_aug31, age_max_aug31,
    session_days, session_time,
@@ -22,7 +22,7 @@ VALUES
    '["Saturday","Tuesday"]', NULL,
    NULL, 40,
    4, 8,
-    0, 1, datetime('now')),
+    1, 1, datetime('now')),
 
   ('ag_u13', 'u13', 'U13', 'taster',
    11, 12,
@@ -43,14 +43,14 @@ VALUES
    '["Tuesday"]', '19:30',
    2, NULL,
    NULL, NULL,
-    0, 4, datetime('now')),
+    1, 4, datetime('now')),
 
   ('ag_u20', 'u20', 'U20', 'taster',
    17, 19,
    '["Tuesday"]', '19:30',
    2, NULL,
    NULL, NULL,
-    0, 5, datetime('now'));
+    1, 5, datetime('now'));
 
 -- ------------------------------------------------------------
 -- Email templates
