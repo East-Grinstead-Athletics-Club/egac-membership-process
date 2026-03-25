@@ -62,3 +62,14 @@ Wrap these pages in PublicLayout: [list your public page files]
 Nav source: [paste Nav.astro]
 Footer source: [paste Footer.astro]
 BaseLayout source: [paste BaseLayout.astro]
+
+## Phase 5
+
+9. The font is incorrect and it looks awful compared to egac-website
+10. The "logo" in the top left should point to https://eastgrinsteadac.co.uk
+11. Dark mode should be an icon, not the words
+12. Book a taster isn't needed on the top of the page as this comes from the email sent out.
+13. The look and feel isn't working properly on the acknowledgement page after the enquiry submission.
+14. The look and feel isn't working properly on the booking taster session page when clicking on the link in the email.
+15. Pages should all by default open on light mode.
+16. Once booked in, the confirmation page is not looking at the Training Locations value in Settings on the Admin pages.

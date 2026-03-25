@@ -1,6 +1,6 @@
 ---
 // src/layouts/PublicLayout.astro
-// Layout for all public-facing pages with full Nav and Footer from the EGAC design system.
+// Layout for all public-facing pages — EGAC design system: Nav, Footer, fonts, dark mode.
 
 import Nav from '../components/layout/Nav.astro';
 import Footer from '../components/layout/Footer.astro';
@@ -27,36 +27,22 @@ const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
 
-    <!-- Prevent flash of wrong theme -->
+    <!-- Apply stored theme before paint — defaults to light if no preference is saved -->
     <script is:inline>
       (function () {
-        const theme = localStorage.getItem('theme');
-        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (localStorage.getItem('theme') === 'dark') {
           document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
         }
       })();
     </script>
-
-    <style>
-      .material-symbols-outlined {
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      }
-    </style>
-    <slot name="head" />
   </head>
-  <body class="min-h-screen bg-surface text-on-surface font-body dark:bg-slate-900 dark:text-slate-100 antialiased">
+  <body class="min-h-screen bg-surface text-on-surface font-body dark:bg-slate-900 dark:text-slate-100">
     <Nav />
-    <main class="max-w-2xl mx-auto px-4 pt-28 pb-10">
+    <main class="max-w-2xl mx-auto px-4 pt-28 pb-16 min-h-[calc(100vh-4rem)]">
       <slot />
     </main>
     <Footer />

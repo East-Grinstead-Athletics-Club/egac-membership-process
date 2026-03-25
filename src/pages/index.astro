@@ -150,27 +150,28 @@ import Base from '../layouts/PublicLayout.astro';
   </div>
 
   <!-- Confirmation (shown after successful submission) -->
-  <div id="confirmation" class="hidden text-center py-8">
-    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
-      <svg
-        class="w-7 h-7 text-green-600"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        aria-hidden="true"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
-        ></path>
-      </svg>
+  <div id="confirmation" class="hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-outline-variant shadow-sm p-8 text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 mb-5">
+        <svg
+          class="w-7 h-7 text-green-600 dark:text-green-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">Enquiry received</h2>
+      <p id="confirmation-message" class="text-on-surface-variant dark:text-slate-300 max-w-sm mx-auto mb-6"></p>
+      <p class="text-sm text-on-surface-variant dark:text-slate-400">
+        Can't find our email? Check your spam folder or contact us at
+        <a href="mailto:secretary@eastgrinsteadac.co.uk" class="text-primary underline">
+          secretary@eastgrinsteadac.co.uk
+        </a>.
+      </p>
     </div>
-    <h2 class="text-xl font-headline font-bold text-on-surface mb-2">Enquiry received</h2>
-    <p id="confirmation-message" class="text-on-surface-variant max-w-sm mx-auto"></p>
-    <p class="mt-4 text-sm text-on-surface-variant">
-      Can't find our email? Check your spam folder or contact us at
-      <a href="mailto:info@eastgrinsteadac.org.uk" class="text-primary underline">
-        secretary@eastgrinsteadac.org.uk
-      </a>.
-    </p>
   </div>
 </Base>
 

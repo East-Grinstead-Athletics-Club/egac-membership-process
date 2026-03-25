@@ -249,37 +249,34 @@ if (!token) {
           )}
         </form>
 
-        <div id="booking-confirmation" class="hidden text-center py-8">
-          <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
-            <svg
-              class="w-7 h-7 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
+        <div id="booking-confirmation" class="hidden">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-outline-variant shadow-sm p-8 text-center">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 mb-5">
+              <svg
+                class="w-7 h-7 text-green-600 dark:text-green-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">You're booked in!</h2>
+            <p id="confirmation-detail" class="text-on-surface-variant dark:text-slate-300 mb-6"></p>
+            <a
+              id="calendar-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-block rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary-fixed/20 transition-colors"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+              Add to Google Calendar
+            </a>
+            <p class="mt-6 text-sm text-on-surface-variant dark:text-slate-400">
+              A confirmation email is on its way to you. See you there!
+            </p>
           </div>
-          <h2 class="text-xl font-headline font-bold text-on-surface mb-2">You're booked in!</h2>
-          <p id="confirmation-detail" class="text-on-surface-variant mb-4" />
-          <a
-            id="calendar-link"
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-block rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary-fixed/20 transition-colors"
-          >
-            Add to Google Calendar
-          </a>
-          <p class="mt-6 text-sm text-on-surface-variant">
-            A confirmation email is on its way to you. See you there!
-          </p>
         </div>
       </div>
     )
@@ -335,7 +332,9 @@ if (!token) {
           gcal.searchParams.set('action', 'TEMPLATE');
           gcal.searchParams.set('text', `EGAC ${ageGroupLabel} Taster Session`);
           gcal.searchParams.set('dates', `${fmt(start)}/${fmt(end)}`);
-          gcal.searchParams.set('location', venueName);
+          // Use venue from API response — it resolves the per-day Training Location from Settings
+          const venue = (json.venue || venueName);
+          gcal.searchParams.set('location', venue);
           gcal.searchParams.set('details', 'East Grinstead Athletics Club taster session');
 
           // Format display date
@@ -346,7 +345,7 @@ if (!token) {
             year: 'numeric',
           });
 
-          confirmationDetail.textContent = `${displayDate}${sessionTime ? ` at ${sessionTime}` : ''} · ${venueName}`;
+          confirmationDetail.textContent = `${displayDate}${sessionTime ? ` at ${sessionTime}` : ''} · ${venue}`;
           calendarLink.href = gcal.toString();
 
           // Swap form for confirmation
