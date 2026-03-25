@@ -147,22 +147,22 @@ VALUES (
   'tmpl_academy_rejection', 'academy_rejection', 'Academy Application - Too Young',
   'Thank you for your interest in EGAC',
   '<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
-<h2>Hi {{contact_name}},</h2>
-<p>Thank you for your interest in East Grinstead Athletics Club.</p>
-<p>Our Junior Academy accepts children from <strong>Year 5</strong> upwards (age 9–10). Unfortunately the child you have applied for is not yet old enough to join.</p>
-<p>We would love to welcome them when they reach Year 5 — please do reapply at that point and we will be happy to add them to the waiting list.</p>
+<h2>Hi {{parent_name}},</h2>
+<p>Thank you for your interest in East Grinstead Athletics Club for <strong>{{child_name}}</strong>.</p>
+<p>We are sorry to say that our Junior Academy is only able to register children from <strong>Year 5</strong> upwards. Unfortunately {{child_name}} is not yet old enough to join.</p>
+<p>We would love to welcome {{child_name}} when they reach Year 5 — please do reapply at that point and we will be happy to add them to the waiting list.</p>
 <p>The EGAC Team</p>
 </body></html>',
-  'Hi {{contact_name}},
+  'Hi {{parent_name}},
 
-Thank you for your interest in East Grinstead Athletics Club.
+Thank you for your interest in East Grinstead Athletics Club for {{child_name}}.
 
-Our Junior Academy accepts children from Year 5 upwards (age 9-10). Unfortunately the child you have applied for is not yet old enough to join.
+We are sorry to say that our Junior Academy is only able to register children from Year 5 upwards. Unfortunately {{child_name}} is not yet old enough to join.
 
-We would love to welcome them when they reach Year 5 — please do reapply at that point and we will be happy to add them to the waiting list.
+We would love to welcome {{child_name}} when they reach Year 5 — please do reapply at that point and we will be happy to add them to the waiting list.
 
 The EGAC Team',
-  '["contact_name"]',
+  '["parent_name","child_name"]',
   1, datetime('now')
 );
 

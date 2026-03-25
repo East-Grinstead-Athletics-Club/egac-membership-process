@@ -4,7 +4,6 @@ import { checkAdminToken } from '../../lib/auth/admin.js';
 import {
   getSystemConfig,
   setSystemConfig,
-  clearConfigCache,
   validateConfigUpdate,
 } from '../../lib/config.js';
 import { listAgeGroups, updateAgeGroup } from '../../lib/repositories/age-groups.js';
@@ -16,6 +15,7 @@ if (!checkAdminToken(token, env)) return Astro.redirect('/admin/login');
 
 let errors: string[] = [];
 let successMessage = '';
+let config = await getSystemConfig(env);
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -103,14 +103,12 @@ if (Astro.request.method === 'POST') {
     errors = validateConfigUpdate(updates);
 
     if (errors.length === 0) {
-      await setSystemConfig(updates, env);
-      await clearConfigCache(env);
+      config = await setSystemConfig(updates, env);
       successMessage = 'Settings saved.';
     }
   }
 }
 
-const config = await getSystemConfig(env);
 const ageGroups = await listAgeGroups(env, false);
 const appEnv = env.APP_ENV ?? 'development';
 ---

@@ -208,7 +208,8 @@ export async function handleEnquiry(request: Request, env: Env): Promise<Respons
       const result = await sendAcademyWaitlist(enquiry, invitation, env);
 
       if (result.success) {
-        await markWaitlistInviteSent(invitation.id, env);
+        // Do NOT call markWaitlistInviteSent here — that is reserved for when a season
+        // place is offered. Status stays 'waiting' so the entry appears on the Academy page.
         await appendEnquiryEvent(enquiry.id, { type: 'academy_waitlist_added' }, env);
       } else {
         console.error(

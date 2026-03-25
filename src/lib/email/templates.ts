@@ -200,14 +200,21 @@ export async function sendAcademyRejection(
     return { success: false, error: 'Template academy_rejection not found or inactive' };
   }
 
+  const parentName = enquiry.name || 'there';
+  // For on-behalf enquiries the note is "Enquiring about: <athlete name>"
+  const noteMatch = enquiry.note?.match(/^Enquiring about:\s*(.+)$/i);
+  const childName = noteMatch ? noteMatch[1].trim() : parentName;
+
   try {
     const html = renderTemplate(template.html, {
-      contact_name: enquiry.name || 'there',
+      parent_name: parentName,
+      child_name: childName,
     });
 
     const text = template.text_content
       ? renderTemplate(template.text_content, {
-          contact_name: enquiry.name || 'there',
+          parent_name: parentName,
+          child_name: childName,
         })
       : undefined;
 

@@ -34,3 +34,10 @@ Admin portal — add a "Training Location" setting that can be configured per tr
 Academy joining logic — when a new application comes in, calculate the applicant's school year from their DOB. If year 5 or 6: add to Academy waiting list, do NOT send the taster session invitation email. If below year 5: send a rejection email explaining the club accepts from year 5 upwards and invites them to reapply then. (Current behaviour wrongly sends a taster invite to year 5/6 — suppress that.)
 
 Also update or add tests covering: (a) year 5/6 applicants go to waiting list with no taster email, (b) below year 5 applicants get the rejection email, (c) the taster email is not sent to year 5/6.
+
+## Phase 2
+
+1. The venue details are not showing a changed after being saved.
+2. The varied location only show data can be added, they don't indicate the data has been saved.
+3. If a child is calculated by DoB as being in year 4 or less, then the email sent back to them must be templated and thank them for their interest but state we are sorry and only able to register children from year 5 onwards
+4. If a child is calculated as being in year 5 or 6, they need to show on the "Academy" page with the business logic that was built.

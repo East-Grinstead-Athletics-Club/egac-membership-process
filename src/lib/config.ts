@@ -78,9 +78,8 @@ export async function setSystemConfig(
   const current = await getSystemConfig(env);
   const next = { ...current, ...updates };
 
-  await env.KV.put(CONFIG_CACHE_KEY, JSON.stringify(next), {
-    expirationTtl: CONFIG_TTL_SECONDS,
-  });
+  // Store without TTL — KV is the persistent store for config, not just a cache.
+  await env.KV.put(CONFIG_CACHE_KEY, JSON.stringify(next));
 
   return next;
 }
