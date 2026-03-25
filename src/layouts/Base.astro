@@ -20,15 +20,21 @@ const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
     <meta name="description" content={description} />
     <title>{title} — EGAC</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
-  <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
-    <header class="bg-white border-b border-gray-200">
+  <body class="min-h-screen bg-background text-on-surface font-body antialiased">
+    <header class="bg-white/90 backdrop-blur-xl border-b border-outline-variant">
       <div class="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-        <a href="/" class="text-blue-800 font-bold text-lg tracking-tight hover:text-blue-700">
+        <a href="/" class="font-headline font-black tracking-tighter text-primary text-lg hover:text-primary-container transition-colors">
           EGAC
         </a>
-        <span class="text-gray-300">|</span>
-        <span class="text-gray-500 text-sm">East Grinstead Athletics Club</span>
+        <span class="text-outline-variant">|</span>
+        <span class="text-on-surface-variant text-sm">East Grinstead Athletics Club</span>
       </div>
     </header>
 
@@ -36,7 +42,7 @@ const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
       <slot />
     </main>
 
-    <footer class="mt-16 border-t border-gray-200 py-6 text-center text-xs text-gray-400">
+    <footer class="mt-16 border-t border-outline-variant py-6 text-center text-xs text-on-surface-variant">
       &copy; {new Date().getFullYear()} East Grinstead Athletics Club
     </footer>
   </body>
