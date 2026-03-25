@@ -15,7 +15,7 @@ import { ok, err, checkCronAuth } from '../helpers.js';
 import { listBookingsForDate } from '../../lib/repositories/bookings.js';
 import { getEnquiryById, appendEnquiryEvent } from '../../lib/repositories/enquiries.js';
 import { sendBookingReminder } from '../../lib/email/templates.js';
-import { getConfig } from '../../lib/config.js';
+import { getConfig, resolveVenueForDate } from '../../lib/config.js';
 import type { Env, EnquiryEvent } from '../../lib/db/schema.js';
 
 const REMINDER_DAYS_AHEAD = 7;
@@ -25,7 +25,6 @@ const REMINDER_DAYS_AHEAD = 7;
 // ------------------------------------------------------------
 export async function runSendReminders(env: Env): Promise<{ sent: number; skipped: number }> {
   const config = await getConfig(env);
-  const venueName = config.venue_name ?? '';
 
   // Target: sessions happening exactly REMINDER_DAYS_AHEAD from today
   const targetDate = new Date();
@@ -68,6 +67,7 @@ export async function runSendReminders(env: Env): Promise<{ sent: number; skippe
       continue;
     }
 
+    const venueName = resolveVenueForDate(booking.session_date, config);
     const result = await sendBookingReminder(enquiry, booking, venueName, env);
 
     if (result.success) {

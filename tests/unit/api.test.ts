@@ -61,9 +61,13 @@ vi.mock('../../src/lib/email/templates.js', () => ({
   sendAcademyRejection: vi.fn(),
 }));
 
-vi.mock('../../src/lib/config.js', () => ({
-  getConfig: vi.fn(),
-}));
+vi.mock('../../src/lib/config.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/lib/config.js')>();
+  return {
+    ...actual,
+    getConfig: vi.fn(),
+  };
+});
 
 import { handleEnquiry } from '../../src/api/enquiry.js';
 import { handleBooking } from '../../src/api/booking.js';
@@ -683,6 +687,38 @@ describe('POST /api/booking', () => {
 
     expect(status).toBe(200);
     expect(body.ok).toBe(true);
+  });
+
+  it('uses Tuesday location for a Tuesday session', async () => {
+    // futureDate is always a Tuesday (enforced by the date loop above)
+    vi.mocked(getConfig).mockResolvedValue({
+      ...mockConfig,
+      location_tuesday: 'Meridian Sports Ground',
+    });
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
+    await handleBooking(req, makeEnv());
+
+    expect(emailTemplates.sendBookingConfirmation).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      'Meridian Sports Ground',
+      expect.any(String),
+      expect.anything()
+    );
+  });
+
+  it('falls back to venue_name when no day-specific location is configured', async () => {
+    // mockConfig has no location_tuesday — must fall back to venue_name
+    const req = postRequest('/api/booking', { token: 'abc123token', date: futureDate });
+    await handleBooking(req, makeEnv());
+
+    expect(emailTemplates.sendBookingConfirmation).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      'East Grinstead Leisure Centre',
+      expect.any(String),
+      expect.anything()
+    );
   });
 });
 

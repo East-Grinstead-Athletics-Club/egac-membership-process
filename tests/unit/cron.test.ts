@@ -47,9 +47,13 @@ vi.mock('../../src/lib/email/templates.js', () => ({
   sendBookingReminder: vi.fn(),
 }));
 
-vi.mock('../../src/lib/config.js', () => ({
-  getConfig: vi.fn(),
-}));
+vi.mock('../../src/lib/config.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/lib/config.js')>();
+  return {
+    ...actual,
+    getConfig: vi.fn(),
+  };
+});
 
 vi.mock('../../src/lib/business/age.js', () => ({
   getNextNTuesdayDates: vi.fn().mockReturnValue(['2026-06-10', '2026-06-17', '2026-06-24']),
@@ -443,6 +447,46 @@ describe('POST /api/cron/send-reminders', () => {
     );
 
     expect(body.data.sent).toBe(0);
+  });
+
+  it('uses Tuesday location when session is on a Tuesday', async () => {
+    // 2026-04-07 is a Tuesday
+    const tuesdayBooking = { ...mockBooking, session_date: '2026-04-07' };
+    vi.mocked(bookingRepo.listBookingsForDate).mockResolvedValue([tuesdayBooking]);
+    vi.mocked(getConfig).mockResolvedValue({
+      ...mockConfig,
+      location_tuesday: 'Meridian Sports Ground',
+    });
+
+    const req = cronRequest('/api/cron/send-reminders', 'cron_secret_abc');
+    await handleSendReminders(req, makeEnv());
+
+    expect(emailTemplates.sendBookingReminder).toHaveBeenCalledWith(
+      mockEnquiry,
+      tuesdayBooking,
+      'Meridian Sports Ground',
+      expect.anything()
+    );
+  });
+
+  it('uses Thursday location when session is on a Thursday', async () => {
+    // 2026-04-09 is a Thursday
+    const thursdayBooking = { ...mockBooking, session_date: '2026-04-09' };
+    vi.mocked(bookingRepo.listBookingsForDate).mockResolvedValue([thursdayBooking]);
+    vi.mocked(getConfig).mockResolvedValue({
+      ...mockConfig,
+      location_thursday: 'East Grinstead Sports Ground',
+    });
+
+    const req = cronRequest('/api/cron/send-reminders', 'cron_secret_abc');
+    await handleSendReminders(req, makeEnv());
+
+    expect(emailTemplates.sendBookingReminder).toHaveBeenCalledWith(
+      mockEnquiry,
+      thursdayBooking,
+      'East Grinstead Sports Ground',
+      expect.anything()
+    );
   });
 });
 

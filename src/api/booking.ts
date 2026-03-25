@@ -19,7 +19,7 @@ import { validateBookingRequest, buildBookingConfirmation } from '../lib/busines
 import { resolveAgeGroup } from '../lib/business/age.js';
 import { isInviteExpired } from '../lib/business/tokens.js';
 import { sendBookingConfirmation } from '../lib/email/templates.js';
-import { getConfig } from '../lib/config.js';
+import { getConfig, resolveVenueForDate } from '../lib/config.js';
 import type { Env } from '../lib/db/schema.js';
 
 export async function handleBooking(request: Request, env: Env): Promise<Response> {
@@ -101,7 +101,7 @@ export async function handleBooking(request: Request, env: Env): Promise<Respons
   await appendEnquiryEvent(enquiry.id, { type: 'booking_created', booking_id: booking.id }, env);
 
   // 9. Build confirmation and send email (fire-and-forget)
-  const venueName = config.venue_name ?? 'East Grinstead Leisure Centre';
+  const venueName = resolveVenueForDate(date, config);
   const siteUrl = config.site_url ?? 'https://egac.pages.dev';
   const confirmation = buildBookingConfirmation(enquiry, booking, ageGroup, venueName, siteUrl);
 

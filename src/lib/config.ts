@@ -164,6 +164,23 @@ export function validateConfigUpdate(updates: Partial<SystemConfig>): string[] {
   return errors;
 }
 
+// ------------------------------------------------------------
+// resolveVenueForDate
+// Returns the configured location for the day of the week of
+// dateIso (YYYY-MM-DD). Falls back to venue_name when no
+// day-specific location is set.
+// ------------------------------------------------------------
+export function resolveVenueForDate(dateIso: string, config: SystemConfig): string {
+  const fallback = config.venue_name ?? 'East Grinstead Leisure Centre';
+  const d = new Date(dateIso + 'T00:00:00Z');
+  if (isNaN(d.getTime())) return fallback;
+  const day = d.getUTCDay();
+  if (day === 2 && config.location_tuesday) return config.location_tuesday;
+  if (day === 4 && config.location_thursday) return config.location_thursday;
+  if (day === 6 && config.location_saturday) return config.location_saturday;
+  return fallback;
+}
+
 export { CONFIG_DEFAULTS };
 
 // Alias used by API handlers — resolves to getSystemConfig.

@@ -3,12 +3,12 @@
 // Public enquiry form — the main entry point for new athletes.
 // Submits to POST /api/enquiry via fetch (JS) with plain form POST fallback.
 
-import Base from '../layouts/Base.astro';
+import Base from '../layouts/PublicLayout.astro';
 ---
 
 <Base
   title="Join EGAC"
-  description="Register your child's interest in East Grinstead Athletics Club taster sessions or the U11 Academy programme."
+  description="Register your child's interest in East Grinstead Athletics Club taster sessions or the U12 Academy programme."
 >
   <div id="form-section">
     <h1 class="text-2xl font-headline font-bold text-primary mb-1">Get in touch</h1>
@@ -168,7 +168,7 @@ import Base from '../layouts/Base.astro';
     <p class="mt-4 text-sm text-on-surface-variant">
       Can't find our email? Check your spam folder or contact us at
       <a href="mailto:info@eastgrinsteadac.org.uk" class="text-primary underline">
-        info@eastgrinsteadac.org.uk
+        secretary@eastgrinsteadac.org.uk
       </a>.
     </p>
   </div>
@@ -314,7 +314,7 @@ import Base from '../layouts/Base.astro';
           json.message?.toLowerCase().includes('academy');
         confirmationMessage.textContent = isWaitlist
           ? "We've added your child to the Academy waitlist. We'll be in touch before the season starts."
-          : 'Thanks — check your email for a link to book your first session. It should arrive within a few minutes.';
+          : 'Thanks - check your email for a confirmation. It should arrive within a few minutes.';
         formSection.classList.add('hidden');
         confirmation.classList.remove('hidden');
       } else if (response.status === 422) {

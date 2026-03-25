@@ -41,3 +41,24 @@ Also update or add tests covering: (a) year 5/6 applicants go to waiting list wi
 2. The varied location only show data can be added, they don't indicate the data has been saved.
 3. If a child is calculated by DoB as being in year 4 or less, then the email sent back to them must be templated and thank them for their interest but state we are sorry and only able to register children from year 5 onwards
 4. If a child is calculated as being in year 5 or 6, they need to show on the "Academy" page with the business logic that was built.
+
+## Phase 3
+
+5. When a booking session is confirmed, if it's a Tuesday, the notification must show the Training Location for Tuesday value from the Settings.
+6. When a booking session is confirmed, if it's a Thursday, the notification must show the Training Location for Thursday value from the Settings.
+
+## Phase 4
+
+7. Replace "Thanks — check your email for a link to book your first session. It should arrive within a few minutes." after enquiry submission with "Thanks - check your email for a confirmation. It should arrive within a few minutes." Everything else remains the same.
+8. This is an Astro + Cloudflare Workers project. I want to apply the design system from egac-website to the public-facing pages (enquiry, booking, acknowledgement, membership).
+Copy the following from egac-website into this project:
+
+The Tailwind config — paste contents — into tailwind.config.mjs
+Create src/components/layout/Nav.astro using the Nav below, but replace the nav links with ones appropriate for the public egac site (Join, Book a Taster, Contact)
+Create src/components/layout/Footer.astro using the Footer below, but remove the Directus dependency — use static fallback values only (tagline, email, social links hardcoded)
+Create src/layouts/PublicLayout.astro matching the BaseLayout below, without the Directus site_settings fetch — just Nav, Footer, fonts, dark mode
+Wrap these pages in PublicLayout: [list your public page files]
+
+Nav source: [paste Nav.astro]
+Footer source: [paste Footer.astro]
+BaseLayout source: [paste BaseLayout.astro]

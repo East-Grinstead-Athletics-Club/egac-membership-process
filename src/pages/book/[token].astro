@@ -3,7 +3,7 @@
 // Invite-based taster session booking page.
 // Loads invite server-side, shows available dates with capacity, handles booking.
 
-import Base from '../../layouts/Base.astro';
+import Base from '../../layouts/PublicLayout.astro';
 import { getInviteByToken } from '../../lib/repositories/invites.js';
 import { getEnquiryById } from '../../lib/repositories/enquiries.js';
 import { listAgeGroups } from '../../lib/repositories/age-groups.js';
