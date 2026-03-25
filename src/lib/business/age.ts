@@ -253,6 +253,46 @@ export function validateSessionDate(
 }
 
 // ------------------------------------------------------------
+// ukSchoolYear
+// Returns the UK school year (England) for a given DOB.
+//
+// The UK academic year runs September to August. Children start
+// Reception (Year R) in the September after they turn 4.
+//
+// Returns:
+//   0 = Year R (Reception)
+//   1 = Year 1, ..., 5 = Year 5, 6 = Year 6, etc.
+//   Negative values = not yet in school
+//   null = DOB missing or unparseable
+//
+// Academy applications use this to route:
+//   Year 5–6  → academy waitlist (no taster invite)
+//   Below Year 5 → rejection email
+//   Year 7+  → standard taster routing
+// ------------------------------------------------------------
+export function ukSchoolYear(
+  dobIso: string | null | undefined,
+  today: Date = new Date()
+): number | null {
+  if (!dobIso || !dobIso.trim()) return null;
+  const dob = new Date(dobIso);
+  if (isNaN(dob.getTime())) return null;
+
+  // Current academic year: September starts the year, so if we're in
+  // January–August the academic year started the previous September.
+  const currentMonth = today.getMonth(); // 0-indexed; 8 = September
+  const currentAcademicYear = currentMonth >= 8 ? today.getFullYear() : today.getFullYear() - 1;
+
+  // Birth academic year: the Sept–Aug window containing the DOB.
+  const birthMonth = dob.getMonth();
+  const birthAcademicYear = birthMonth >= 8 ? dob.getFullYear() : dob.getFullYear() - 1;
+
+  // Reception starts in the academic year 5 years after the birth academic year.
+  // Year R = 0, Year 1 = 1, Year 5 = 5, Year 6 = 6, ...
+  return currentAcademicYear - birthAcademicYear - 5;
+}
+
+// ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
 export function toIsoDateString(date: Date): string {

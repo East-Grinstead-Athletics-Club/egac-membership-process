@@ -56,7 +56,8 @@ export type EnquiryEventType =
   | 'attendance_recorded'
   | 'membership_invite_sent'
   | 'membership_form_submitted'
-  | 'reminder_sent';
+  | 'reminder_sent'
+  | 'rejection_sent';
 
 export interface EnquiryFilters {
   status?: 'pending' | 'processed' | 'academy';
@@ -207,6 +208,7 @@ export type EmailTemplateKey =
   | 'booking_reminder'
   | 'academy_waitlist'
   | 'academy_invite'
+  | 'academy_rejection'
   | 'membership_invite';
 
 // ------------------------------------------------------------
@@ -246,6 +248,9 @@ export interface SystemConfig {
   admin_email: string;
   academy_max_age: string;
   capacity_per_slot: string;
+  location_tuesday: string;
+  location_thursday: string;
+  location_saturday: string;
 }
 
 export type SystemConfigKey = keyof SystemConfig;

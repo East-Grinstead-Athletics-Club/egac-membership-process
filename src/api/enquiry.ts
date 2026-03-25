@@ -5,7 +5,7 @@
 
 import { ok, err, corsPreflightResponse, parseBody } from './helpers.js';
 import { validateEnquiryData, routeEnquiry } from '../lib/business/enquiry.js';
-import { getNextNTuesdayDates } from '../lib/business/age.js';
+import { getNextNTuesdayDates, resolveAgeGroup, ukSchoolYear } from '../lib/business/age.js';
 import {
   insertEnquiry,
   appendEnquiryEvent,
@@ -13,11 +13,10 @@ import {
 } from '../lib/repositories/enquiries.js';
 import { createInviteForEnquiry, markInviteSent } from '../lib/repositories/invites.js';
 import { addToWaitlist, markWaitlistInviteSent } from '../lib/repositories/academy.js';
-import { sendBookingInvite, sendAcademyWaitlist } from '../lib/email/templates.js';
+import { sendBookingInvite, sendAcademyWaitlist, sendAcademyRejection } from '../lib/email/templates.js';
 import { getConfig } from '../lib/config.js';
 import { generateId } from '../lib/db/client.js';
 import { listAgeGroups } from '../lib/repositories/age-groups.js';
-import { resolveAgeGroup } from '../lib/business/age.js';
 import type { Env } from '../lib/db/schema.js';
 
 interface PublicEnquiryBody {
@@ -163,7 +162,45 @@ export async function handleEnquiry(request: Request, env: Env): Promise<Respons
     await updateEnquiry(enquiry.id, { age_group_id: ageGroup.id }, env);
   }
 
-  const path = routeEnquiry(ageGroup);
+  // Determine routing based on UK school year.
+  // Year 5–6 → academy waitlist (suppress taster invite).
+  // Below Year 5 → rejection email (too young for the Academy).
+  // Year 7+ → standard age-group routing.
+  const schoolYear = ukSchoolYear(enquiry.dob);
+
+  if (schoolYear !== null && schoolYear < 5) {
+    // Too young — send rejection and stop
+    try {
+      const result = await sendAcademyRejection(enquiry, env);
+      if (result.success) {
+        await appendEnquiryEvent(enquiry.id, { type: 'rejection_sent' }, env);
+      } else {
+        console.error(
+          JSON.stringify({
+            level: 'error',
+            event: 'rejection_email_failed',
+            enquiry_id: enquiry.id,
+            error: result.error,
+          })
+        );
+      }
+    } catch (sendError) {
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          event: 'enquiry_post_processing_failed',
+          enquiry_id: enquiry.id,
+          error: sendError instanceof Error ? sendError.message : String(sendError),
+        })
+      );
+    }
+    await updateEnquiry(enquiry.id, { processed: 1 }, env);
+    return ok({ message: 'Enquiry received' }, 201, true);
+  }
+
+  // Year 5–6: always route to academy waitlist regardless of resolved age group
+  const path =
+    schoolYear !== null && schoolYear <= 6 ? 'waitlist' : routeEnquiry(ageGroup);
 
   try {
     if (path === 'waitlist') {

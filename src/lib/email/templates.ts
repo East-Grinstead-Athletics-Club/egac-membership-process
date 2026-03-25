@@ -187,6 +187,46 @@ export async function sendAcademyWaitlist(
 }
 
 // ------------------------------------------------------------
+// sendAcademyRejection
+// Sent when an applicant is too young for the Academy (below Year 5).
+// Explains the minimum age and invites them to reapply.
+// ------------------------------------------------------------
+export async function sendAcademyRejection(
+  enquiry: Enquiry,
+  env: Env
+): Promise<SendEmailResult> {
+  const template = await getEmailTemplateByKey('academy_rejection', env);
+  if (!template) {
+    return { success: false, error: 'Template academy_rejection not found or inactive' };
+  }
+
+  try {
+    const html = renderTemplate(template.html, {
+      contact_name: enquiry.name || 'there',
+    });
+
+    const text = template.text_content
+      ? renderTemplate(template.text_content, {
+          contact_name: enquiry.name || 'there',
+        })
+      : undefined;
+
+    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'email_render_failed',
+        key: 'academy_rejection',
+        error: message,
+      })
+    );
+    return { success: false, error: message };
+  }
+}
+
+// ------------------------------------------------------------
 // sendMembershipInvite
 // Sent after a successful taster session attendance is recorded.
 // Includes a one-time link to complete club membership.

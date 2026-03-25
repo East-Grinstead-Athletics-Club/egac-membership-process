@@ -27,6 +27,9 @@ const CONFIG_DEFAULTS: SystemConfig = {
   venue_name: 'East Grinstead Leisure Centre',
   venue_address: 'King Street, East Grinstead, RH19 3DJ',
   admin_email: '',
+  location_tuesday: '',
+  location_thursday: '',
+  location_saturday: '',
 };
 
 // Cache key and TTL constants

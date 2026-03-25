@@ -14,6 +14,7 @@ import {
   validateSessionDate,
   getNextNSessionDates,
   formatDateForDisplay,
+  ukSchoolYear,
 } from '../../src/lib/business/age.js';
 import { validateEnquiryData, routeEnquiry } from '../../src/lib/business/enquiry.js';
 import {
@@ -33,8 +34,8 @@ import type { AgeGroupConfig } from '../../src/lib/business/age.js';
 function makeAgeGroup(overrides: Partial<AgeGroupConfig> = {}): AgeGroupConfig {
   return {
     id: 'ag_u13',
-    code: 'u13',
-    label: 'U13',
+    code: 'u14',
+    label: 'U14',
     booking_type: 'taster',
     age_min_aug31: 11,
     age_max_aug31: 12,
@@ -53,8 +54,8 @@ function makeAgeGroup(overrides: Partial<AgeGroupConfig> = {}): AgeGroupConfig {
 const ALL_AGE_GROUPS: AgeGroupConfig[] = [
   makeAgeGroup({
     id: 'ag_u11',
-    code: 'u11',
-    label: 'U11 Academy',
+    code: 'u12',
+    label: 'U12 Academy',
     booking_type: 'waitlist',
     age_min_aug31: 9,
     age_max_aug31: 10,
@@ -63,16 +64,16 @@ const ALL_AGE_GROUPS: AgeGroupConfig[] = [
   }),
   makeAgeGroup({
     id: 'ag_u13',
-    code: 'u13',
-    label: 'U13',
+    code: 'u14',
+    label: 'U14',
     age_min_aug31: 11,
     age_max_aug31: 12,
     sort_order: 2,
   }),
   makeAgeGroup({
     id: 'ag_u15',
-    code: 'u15',
-    label: 'U15',
+    code: 'u16',
+    label: 'U16',
     age_min_aug31: 13,
     age_max_aug31: 14,
     session_time: '18:30',
@@ -80,8 +81,8 @@ const ALL_AGE_GROUPS: AgeGroupConfig[] = [
   }),
   makeAgeGroup({
     id: 'ag_u17',
-    code: 'u17',
-    label: 'U17',
+    code: 'u18',
+    label: 'U18',
     age_min_aug31: 15,
     age_max_aug31: 16,
     session_time: '19:30',
@@ -192,28 +193,28 @@ describe('ageOnDate', () => {
 // ============================================================
 
 describe('resolveAgeGroup', () => {
-  it('resolves U13 for age 11 on 31 Aug (session in Apr)', () => {
-    // DOB: 1 Sep 2014, session Apr 2026 → age on Aug 31 2026 = 11 → U13
+  it('resolves U14 for age 11 on 31 Aug (session in Apr)', () => {
+    // DOB: 1 Sep 2014, session Apr 2026 → age on Aug 31 2026 = 11 → U14
     const group = resolveAgeGroup('2014-09-01', '2026-04-14', ALL_AGE_GROUPS);
-    expect(group?.code).toBe('u13');
+    expect(group?.code).toBe('u14');
   });
 
-  it('resolves U15 for age 13 on 31 Aug', () => {
-    // DOB: 1 Sep 2012, session Apr 2026 → age on Aug 31 2026 = 13 → U15
+  it('resolves U16 for age 13 on 31 Aug', () => {
+    // DOB: 1 Sep 2012, session Apr 2026 → age on Aug 31 2026 = 13 → U16
     const group = resolveAgeGroup('2012-09-01', '2026-04-14', ALL_AGE_GROUPS);
-    expect(group?.code).toBe('u15');
+    expect(group?.code).toBe('u16');
   });
 
-  it('resolves U11 Academy for age 9 on 31 Aug', () => {
-    // DOB: 1 Sep 2016, session Apr 2026 → age on Aug 31 2026 = 9 → U11
+  it('resolves U12 Academy for age 9 on 31 Aug', () => {
+    // DOB: 1 Sep 2016, session Apr 2026 → age on Aug 31 2026 = 9 → U12
     const group = resolveAgeGroup('2016-09-01', '2026-04-14', ALL_AGE_GROUPS);
-    expect(group?.code).toBe('u11');
+    expect(group?.code).toBe('u12');
     expect(group?.booking_type).toBe('waitlist');
   });
 
-  it('resolves U17 for age 15 on 31 Aug', () => {
+  it('resolves U18 for age 15 on 31 Aug', () => {
     const group = resolveAgeGroup('2010-09-01', '2026-04-14', ALL_AGE_GROUPS);
-    expect(group?.code).toBe('u17');
+    expect(group?.code).toBe('u18');
   });
 
   it('resolves U20 for age 17 on 31 Aug', () => {
@@ -494,5 +495,68 @@ describe('formatDateForDisplay', () => {
     const result = formatDateForDisplay('2026-04-14');
     expect(result).toContain('April');
     expect(result).toContain('2026');
+  });
+});
+
+// ============================================================
+// 13. ukSchoolYear
+// ============================================================
+
+describe('ukSchoolYear', () => {
+  // All tests use a fixed "today" of 25 March 2026 (academic year 2025/26)
+  // 2025/26 year groups:
+  //   Year R : born Sept 2020 – Aug 2021
+  //   Year 1 : born Sept 2019 – Aug 2020
+  //   Year 4 : born Sept 2016 – Aug 2017
+  //   Year 5 : born Sept 2015 – Aug 2016
+  //   Year 6 : born Sept 2014 – Aug 2015
+  //   Year 7 : born Sept 2013 – Aug 2014
+
+  const today = new Date('2026-03-25');
+
+  it('returns 5 for a child born in September 2015 (start of Year 5 cohort)', () => {
+    expect(ukSchoolYear('2015-09-01', today)).toBe(5);
+  });
+
+  it('returns 5 for a child born in August 2016 (end of Year 5 cohort)', () => {
+    expect(ukSchoolYear('2016-08-31', today)).toBe(5);
+  });
+
+  it('returns 6 for a child born in September 2014 (start of Year 6 cohort)', () => {
+    expect(ukSchoolYear('2014-09-01', today)).toBe(6);
+  });
+
+  it('returns 6 for a child born in August 2015 (end of Year 6 cohort)', () => {
+    expect(ukSchoolYear('2015-08-31', today)).toBe(6);
+  });
+
+  it('returns 7 for a child born in September 2013 (Year 7)', () => {
+    expect(ukSchoolYear('2013-09-01', today)).toBe(7);
+  });
+
+  it('returns 4 for a child born in September 2016 (Year 4 — below Year 5)', () => {
+    expect(ukSchoolYear('2016-09-01', today)).toBe(4);
+  });
+
+  it('returns 0 for a child in Reception (born September 2020)', () => {
+    expect(ukSchoolYear('2020-09-01', today)).toBe(0);
+  });
+
+  it('returns null for null dob', () => {
+    expect(ukSchoolYear(null, today)).toBeNull();
+  });
+
+  it('returns null for empty dob', () => {
+    expect(ukSchoolYear('', today)).toBeNull();
+  });
+
+  it('returns null for unparseable dob', () => {
+    expect(ukSchoolYear('not-a-date', today)).toBeNull();
+  });
+
+  it('accounts for academic year when today is in September (new school year)', () => {
+    // In October 2026 (academic year 2026/27), born Sept 2015 → Year 6
+    const october2026 = new Date('2026-10-01');
+    expect(ukSchoolYear('2015-09-01', october2026)).toBe(6);
   });
 });

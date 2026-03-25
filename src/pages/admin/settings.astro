@@ -95,6 +95,9 @@ if (Astro.request.method === 'POST') {
       venue_name: String(form.get('venue_name') ?? '').trim(),
       venue_address: String(form.get('venue_address') ?? '').trim(),
       admin_email: String(form.get('admin_email') ?? '').trim(),
+      location_tuesday: String(form.get('location_tuesday') ?? '').trim(),
+      location_thursday: String(form.get('location_thursday') ?? '').trim(),
+      location_saturday: String(form.get('location_saturday') ?? '').trim(),
     };
 
     errors = validateConfigUpdate(updates);
@@ -216,6 +219,27 @@ const appEnv = env.APP_ENV ?? 'development';
           <div>
             <label for="admin_email" class="mb-1 block text-sm font-medium text-slate-700">Admin email</label>
             <input id="admin_email" name="admin_email" value={config.admin_email} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="mb-4">
+          <h2 class="text-lg font-medium text-slate-900">Training locations</h2>
+          <p class="mt-1 text-sm text-slate-500">Set the training location for each session day. Leave blank to use the default venue.</p>
+        </div>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div>
+            <label for="location_tuesday" class="mb-1 block text-sm font-medium text-slate-700">Tuesday</label>
+            <input id="location_tuesday" name="location_tuesday" value={config.location_tuesday} placeholder={config.venue_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+          <div>
+            <label for="location_thursday" class="mb-1 block text-sm font-medium text-slate-700">Thursday</label>
+            <input id="location_thursday" name="location_thursday" value={config.location_thursday} placeholder={config.venue_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+          </div>
+          <div>
+            <label for="location_saturday" class="mb-1 block text-sm font-medium text-slate-700">Saturday</label>
+            <input id="location_saturday" name="location_saturday" value={config.location_saturday} placeholder={config.venue_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
           </div>
         </div>
       </section>

@@ -51,12 +51,14 @@ vi.mock('../../src/lib/business/age.js', () => ({
   isAgeGroupEligible: vi.fn().mockReturnValue(true),
   formatDateForDisplay: vi.fn().mockReturnValue('Tuesday 10 June 2026'),
   ageForAthletics: vi.fn().mockReturnValue(12),
+  ukSchoolYear: vi.fn().mockReturnValue(13), // default: Year 13 → standard taster routing
 }));
 
 vi.mock('../../src/lib/email/templates.js', () => ({
   sendBookingInvite: vi.fn(),
   sendBookingConfirmation: vi.fn(),
   sendAcademyWaitlist: vi.fn(),
+  sendAcademyRejection: vi.fn(),
 }));
 
 vi.mock('../../src/lib/config.js', () => ({
@@ -76,6 +78,7 @@ import * as emailTemplates from '../../src/lib/email/templates.js';
 import { getConfig } from '../../src/lib/config.js';
 import * as ageGroupsRepo from '../../src/lib/repositories/age-groups.js';
 import * as ageBusiness from '../../src/lib/business/age.js';
+// ukSchoolYear is included in the ageBusiness mock above
 
 import type { Env } from '../../src/lib/db/schema.js';
 
@@ -168,8 +171,8 @@ const mockBooking = {
 
 const mockAgeGroup = {
   id: 'ag_u13',
-  code: 'u13',
-  label: 'U13',
+  code: 'u14',
+  label: 'U14',
   booking_type: 'taster' as const,
   age_min_aug31: 11,
   age_max_aug31: 12,
@@ -338,8 +341,8 @@ describe('POST /api/enquiry', () => {
     const mockWaitlistAgeGroup = {
       ...mockAgeGroup,
       id: 'ag_u11',
-      code: 'u11',
-      label: 'U11 Academy',
+      code: 'u12',
+      label: 'U12 Academy',
       booking_type: 'waitlist' as const,
       age_min_aug31: 9,
       age_max_aug31: 10,
@@ -402,6 +405,149 @@ describe('POST /api/enquiry', () => {
     const req = new Request('https://egac.pages.dev/api/enquiry', { method: 'OPTIONS' });
     const res = await handleEnquiry(req, makeEnv());
     expect(res.status).toBe(204);
+  });
+
+  // ── School-year routing (a) Year 5/6 → waitlist, no taster email ──
+
+  it('(a) year 5 applicant is added to academy waitlist', async () => {
+    vi.mocked(ageBusiness.ukSchoolYear).mockReturnValueOnce(5);
+    vi.mocked(academyRepo.addToWaitlist).mockResolvedValue({
+      id: 'awl_001',
+      enquiry_id: 'enq_001',
+      season_id: null,
+      token: 'waitlist_token_xyz',
+      position: null,
+      status: 'waiting' as const,
+      is_returning: 0,
+      rolled_over_from_season_id: null,
+      invited_at: null,
+      responded_at: null,
+      response: null,
+      send_attempts: 0,
+      last_send_error: null,
+      created_at: new Date().toISOString(),
+      environment: 'development' as const,
+    });
+    vi.mocked(emailTemplates.sendAcademyWaitlist).mockResolvedValue({ success: true, id: 'e1' });
+
+    const req = postRequest('/api/enquiry', {
+      name: 'Parent',
+      email: 'parent@example.com',
+      dob: '2016-05-01',
+    });
+
+    const { status } = await parseResponse(await handleEnquiry(req, makeEnv()));
+
+    expect(status).toBe(201);
+    expect(academyRepo.addToWaitlist).toHaveBeenCalled();
+    expect(emailTemplates.sendBookingInvite).not.toHaveBeenCalled();
+  });
+
+  it('(a) year 6 applicant is added to academy waitlist', async () => {
+    vi.mocked(ageBusiness.ukSchoolYear).mockReturnValueOnce(6);
+    vi.mocked(academyRepo.addToWaitlist).mockResolvedValue({
+      id: 'awl_002',
+      enquiry_id: 'enq_001',
+      season_id: null,
+      token: 'waitlist_token_abc',
+      position: null,
+      status: 'waiting' as const,
+      is_returning: 0,
+      rolled_over_from_season_id: null,
+      invited_at: null,
+      responded_at: null,
+      response: null,
+      send_attempts: 0,
+      last_send_error: null,
+      created_at: new Date().toISOString(),
+      environment: 'development' as const,
+    });
+    vi.mocked(emailTemplates.sendAcademyWaitlist).mockResolvedValue({ success: true, id: 'e2' });
+
+    const req = postRequest('/api/enquiry', {
+      name: 'Parent2',
+      email: 'parent2@example.com',
+      dob: '2014-11-15',
+    });
+
+    const { status } = await parseResponse(await handleEnquiry(req, makeEnv()));
+
+    expect(status).toBe(201);
+    expect(academyRepo.addToWaitlist).toHaveBeenCalled();
+    expect(emailTemplates.sendBookingInvite).not.toHaveBeenCalled();
+  });
+
+  // ── School-year routing (b) Below Year 5 → rejection email ──
+
+  it('(b) below year 5 applicant receives rejection email', async () => {
+    vi.mocked(ageBusiness.ukSchoolYear).mockReturnValueOnce(3);
+    vi.mocked(emailTemplates.sendAcademyRejection).mockResolvedValue({ success: true, id: 'e3' });
+
+    const req = postRequest('/api/enquiry', {
+      name: 'Parent3',
+      email: 'parent3@example.com',
+      dob: '2018-06-01',
+    });
+
+    const { status } = await parseResponse(await handleEnquiry(req, makeEnv()));
+
+    expect(status).toBe(201);
+    expect(emailTemplates.sendAcademyRejection).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'enq_001' }),
+      expect.anything()
+    );
+    expect(academyRepo.addToWaitlist).not.toHaveBeenCalled();
+    expect(inviteRepo.createInviteForEnquiry).not.toHaveBeenCalled();
+  });
+
+  it('(b) year 4 applicant receives rejection email, not taster invite', async () => {
+    vi.mocked(ageBusiness.ukSchoolYear).mockReturnValueOnce(4);
+    vi.mocked(emailTemplates.sendAcademyRejection).mockResolvedValue({ success: true, id: 'e4' });
+
+    const req = postRequest('/api/enquiry', {
+      name: 'Parent4',
+      email: 'parent4@example.com',
+      dob: '2017-03-10',
+    });
+
+    await handleEnquiry(req, makeEnv());
+
+    expect(emailTemplates.sendAcademyRejection).toHaveBeenCalled();
+    expect(emailTemplates.sendBookingInvite).not.toHaveBeenCalled();
+  });
+
+  // ── School-year routing (c) taster email NOT sent to year 5/6 ──
+
+  it('(c) taster invite email is not sent to a year 5 applicant', async () => {
+    vi.mocked(ageBusiness.ukSchoolYear).mockReturnValueOnce(5);
+    vi.mocked(academyRepo.addToWaitlist).mockResolvedValue({
+      id: 'awl_003',
+      enquiry_id: 'enq_001',
+      season_id: null,
+      token: 'waitlist_token_def',
+      position: null,
+      status: 'waiting' as const,
+      is_returning: 0,
+      rolled_over_from_season_id: null,
+      invited_at: null,
+      responded_at: null,
+      response: null,
+      send_attempts: 0,
+      last_send_error: null,
+      created_at: new Date().toISOString(),
+      environment: 'development' as const,
+    });
+    vi.mocked(emailTemplates.sendAcademyWaitlist).mockResolvedValue({ success: true });
+
+    const req = postRequest('/api/enquiry', {
+      name: 'Parent5',
+      email: 'parent5@example.com',
+      dob: '2015-07-20',
+    });
+
+    await handleEnquiry(req, makeEnv());
+
+    expect(emailTemplates.sendBookingInvite).not.toHaveBeenCalled();
   });
 });
 

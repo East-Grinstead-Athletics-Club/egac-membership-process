@@ -4,9 +4,10 @@
 -- All INSERT OR IGNORE — fully idempotent, safe to re-run.
 --
 -- Age group ages are on 31 August of the athletics season:
---   U11 Academy    : 9–10   waitlist, Sat + Tue, Apr–Aug (inactive)
---   U13            : 11–12  taster,   Tuesday (2 places)
---   U15 and older  : 13+    taster,   Tuesday (2 places)
+--   U12 Academy    : 9–10   waitlist, Sat + Tue, Apr–Aug (school years 5–6)
+--   U14            : 11–12  taster,   Tuesday (2 places, school years 7–8)
+--   U16 and older  : 13+    taster,   Tuesday (2 places, school years 9–10+)
+--   U18            : 15–16  taster,   Tuesday (2 places, school years 11–12)
 -- ============================================================
 
 INSERT OR REPLACE INTO age_groups
@@ -17,28 +18,28 @@ INSERT OR REPLACE INTO age_groups
    season_start_month, season_end_month,
    active, sort_order, created_at)
 VALUES
-  ('ag_u11', 'u11', 'U11 Academy', 'waitlist',
+  ('ag_u11', 'u12', 'U12 Academy', 'waitlist',
    9, 10,
    '["Saturday","Tuesday"]', NULL,
    NULL, 40,
    4, 8,
     1, 1, datetime('now')),
 
-  ('ag_u13', 'u13', 'U13', 'taster',
+  ('ag_u13', 'u14', 'U14', 'taster',
    11, 12,
    '["Tuesday"]', '18:30',
    2, NULL,
    NULL, NULL,
    1, 2, datetime('now')),
 
-  ('ag_u15', 'u15', 'U15 and older', 'taster',
+  ('ag_u15', 'u16', 'U16 and older', 'taster',
    13, 120,
    '["Tuesday"]', '18:30',
    2, NULL,
    NULL, NULL,
    1, 3, datetime('now')),
 
-  ('ag_u17', 'u17', 'U17', 'taster',
+  ('ag_u17', 'u18', 'U18', 'taster',
    15, 16,
    '["Tuesday"]', '19:30',
    2, NULL,
@@ -137,6 +138,31 @@ We run an Academy for U11 children and operate a waiting list for those interest
 
 The EGAC Team',
   '["parent_name","child_name"]',
+  1, datetime('now')
+);
+
+INSERT OR IGNORE INTO email_templates
+  (id, key, name, subject, html, text_content, variables, active, created_at)
+VALUES (
+  'tmpl_academy_rejection', 'academy_rejection', 'Academy Application - Too Young',
+  'Thank you for your interest in EGAC',
+  '<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+<h2>Hi {{contact_name}},</h2>
+<p>Thank you for your interest in East Grinstead Athletics Club.</p>
+<p>Our Junior Academy accepts children from <strong>Year 5</strong> upwards (age 9–10). Unfortunately the child you have applied for is not yet old enough to join.</p>
+<p>We would love to welcome them when they reach Year 5 — please do reapply at that point and we will be happy to add them to the waiting list.</p>
+<p>The EGAC Team</p>
+</body></html>',
+  'Hi {{contact_name}},
+
+Thank you for your interest in East Grinstead Athletics Club.
+
+Our Junior Academy accepts children from Year 5 upwards (age 9-10). Unfortunately the child you have applied for is not yet old enough to join.
+
+We would love to welcome them when they reach Year 5 — please do reapply at that point and we will be happy to add them to the waiting list.
+
+The EGAC Team',
+  '["contact_name"]',
   1, datetime('now')
 );
 

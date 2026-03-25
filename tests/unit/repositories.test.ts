@@ -133,17 +133,17 @@ describe('age groups repository', () => {
     expect(groups.length).toBeGreaterThanOrEqual(5);
   });
 
-  it('retrieves U13 group by code', async () => {
-    const group = await getAgeGroupByCode('u13', env);
+  it('retrieves U14 group by code', async () => {
+    const group = await getAgeGroupByCode('u14', env);
     expect(group).not.toBeNull();
-    expect(group?.label).toBe('U13');
+    expect(group?.label).toBe('U14');
     expect(group?.booking_type).toBe('taster');
     expect(group?.age_min_aug31).toBe(11);
     expect(group?.age_max_aug31).toBe(12);
   });
 
-  it('retrieves U11 Academy group with waitlist booking type', async () => {
-    const group = await getAgeGroupByCode('u11', env);
+  it('retrieves U12 Academy group with waitlist booking type', async () => {
+    const group = await getAgeGroupByCode('u12', env);
     expect(group).not.toBeNull();
     expect(group?.booking_type).toBe('waitlist');
     expect(group?.season_capacity).toBe(40);
@@ -151,8 +151,8 @@ describe('age groups repository', () => {
     expect(group?.season_end_month).toBe(8);
   });
 
-  it('U11 session_days includes Saturday and Tuesday', async () => {
-    const group = await getAgeGroupByCode('u11', env);
+  it('U12 Academy session_days includes Saturday and Tuesday', async () => {
+    const group = await getAgeGroupByCode('u12', env);
     const days = JSON.parse(group?.session_days ?? '[]');
     expect(days).toContain('Saturday');
     expect(days).toContain('Tuesday');
