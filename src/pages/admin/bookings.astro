@@ -214,14 +214,14 @@ const calendarDays: DayData[] = nextTuesdays.map((date) => ({
           body: JSON.stringify({ status, send_membership_link: sendMembership }),
         });
 
-          const data = (await resp.json()) as { error?: string };
+        const data = (await resp.json()) as { error?: string };
 
         if (resp.ok) {
           // Update UI inline — swap badge and hide buttons
-            const row = target.closest<HTMLElement>('[data-booking-id]');
+          const row = target.closest<HTMLElement>('[data-booking-id]');
           if (row) {
-              const badge = row.querySelector<HTMLElement>('.booking-status-badge');
-              const controls = row.querySelector<HTMLElement>('.attendance-controls');
+            const badge = row.querySelector<HTMLElement>('.booking-status-badge');
+            const controls = row.querySelector<HTMLElement>('.attendance-controls');
 
             if (badge) {
               badge.textContent = status === 'attended' ? 'Attended' : 'No show';

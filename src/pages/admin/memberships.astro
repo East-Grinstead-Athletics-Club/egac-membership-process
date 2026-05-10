@@ -84,37 +84,44 @@ function formatDateTime(iso: string): string {
                 </tr>
               </thead>
               <tbody>
-                {
-                  submissions.map((s) => {
-                    const payload = parsePayload(s.payload_json);
-                    const athleteName = [payload.first_name ?? '', payload.last_name ?? '']
-                      .join(' ')
-                      .trim();
-                    return (
-                      <tr class="border-t border-slate-100 align-top">
-                        <td class="px-4 py-3 whitespace-nowrap text-slate-600">{formatDateTime(s.submitted_at)}</td>
-                        <td class="px-4 py-3">
-                          <p class="font-medium text-slate-900">{athleteName || s.enquiry_name || '—'}</p>
-                          <p class="text-xs text-slate-500">Enquiry: {s.enquiry_email}</p>
-                        </td>
-                        <td class="px-4 py-3 text-slate-700">{payload.dob || '—'}</td>
-                        <td class="px-4 py-3 text-slate-700">{payload.email || s.enquiry_email}</td>
-                        <td class="px-4 py-3 text-slate-700">{payload.mobile_phone || '—'}</td>
-                        <td class="px-4 py-3 text-slate-700">
-                          <p>{payload.emergency_contact_name || '—'}</p>
-                          <p class="text-xs text-slate-500">{payload.emergency_contact_mobile || '—'}</p>
-                        </td>
-                        <td class="px-4 py-3 text-slate-700">
-                          <span class={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${payload.consent_data_processing === 'yes' && payload.consent_policies === 'yes' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {payload.consent_data_processing === 'yes' && payload.consent_policies === 'yes'
-                              ? 'Complete'
-                              : 'Review'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                }
+                {submissions.map((s) => {
+                  const payload = parsePayload(s.payload_json);
+                  const athleteName = [payload.first_name ?? '', payload.last_name ?? '']
+                    .join(' ')
+                    .trim();
+                  return (
+                    <tr class="border-t border-slate-100 align-top">
+                      <td class="px-4 py-3 whitespace-nowrap text-slate-600">
+                        {formatDateTime(s.submitted_at)}
+                      </td>
+                      <td class="px-4 py-3">
+                        <p class="font-medium text-slate-900">
+                          {athleteName || s.enquiry_name || '—'}
+                        </p>
+                        <p class="text-xs text-slate-500">Enquiry: {s.enquiry_email}</p>
+                      </td>
+                      <td class="px-4 py-3 text-slate-700">{payload.dob || '—'}</td>
+                      <td class="px-4 py-3 text-slate-700">{payload.email || s.enquiry_email}</td>
+                      <td class="px-4 py-3 text-slate-700">{payload.mobile_phone || '—'}</td>
+                      <td class="px-4 py-3 text-slate-700">
+                        <p>{payload.emergency_contact_name || '—'}</p>
+                        <p class="text-xs text-slate-500">
+                          {payload.emergency_contact_mobile || '—'}
+                        </p>
+                      </td>
+                      <td class="px-4 py-3 text-slate-700">
+                        <span
+                          class={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${payload.consent_data_processing === 'yes' && payload.consent_policies === 'yes' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}
+                        >
+                          {payload.consent_data_processing === 'yes' &&
+                          payload.consent_policies === 'yes'
+                            ? 'Complete'
+                            : 'Review'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

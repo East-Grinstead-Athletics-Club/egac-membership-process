@@ -30,7 +30,10 @@ const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
   <body class="min-h-screen bg-background text-on-surface font-body antialiased">
     <header class="bg-white/90 backdrop-blur-xl border-b border-outline-variant">
       <div class="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-        <a href="/" class="font-headline font-black tracking-tighter text-primary text-lg hover:text-primary-container transition-colors">
+        <a
+          href="/"
+          class="font-headline font-black tracking-tighter text-primary text-lg hover:text-primary-container transition-colors"
+        >
           EGAC
         </a>
         <span class="text-outline-variant">|</span>
@@ -42,7 +45,9 @@ const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
       <slot />
     </main>
 
-    <footer class="mt-16 border-t border-outline-variant py-6 text-center text-xs text-on-surface-variant">
+    <footer
+      class="mt-16 border-t border-outline-variant py-6 text-center text-xs text-on-surface-variant"
+    >
       &copy; {new Date().getFullYear()} East Grinstead Athletics Club
     </footer>
   </body>

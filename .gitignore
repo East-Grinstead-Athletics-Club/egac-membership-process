@@ -41,3 +41,4 @@ index.md
 
 # TypeScript
 *.tsbuildinfo
+.claude/

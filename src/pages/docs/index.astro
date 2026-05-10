@@ -7,48 +7,46 @@ import DocsBase from '../../layouts/DocsBase.astro';
 ---
 
 <DocsBase title="Overview" section="Getting started">
-
   <h1>EGAC Platform</h1>
 
   <p>
-    This is the internal developer and operator wiki for the East Grinstead Athletics Club
-    platform. It covers how the system is built, why key decisions were made, and how to
-    run, deploy, and extend it.
+    This is the internal developer and operator wiki for the East Grinstead Athletics Club platform.
+    It covers how the system is built, why key decisions were made, and how to run, deploy, and
+    extend it.
   </p>
 
   <blockquote>
     <p>
-      <strong>Internal only.</strong> This documentation is not publicly indexed. Do not share
-      direct links outside the club.
+      <strong>Internal only.</strong> This documentation is not publicly indexed. Do not share direct
+      links outside the club.
     </p>
   </blockquote>
 
   <h2>What the platform does</h2>
 
   <p>
-    The platform manages the full lifecycle of an athlete enquiry — from a parent filling in
-    the website form through to a confirmed taster session or an Academy waitlist place.
+    The platform manages the full lifecycle of an athlete enquiry — from a parent filling in the
+    website form through to a confirmed taster session or an Academy waitlist place.
   </p>
 
   <p>There are two journeys, determined automatically by the athlete's age group:</p>
 
   <ul>
     <li>
-      <strong>Taster booking</strong> — the enquirer receives a tokenised invite link by email,
-      picks a session date from the next available Tuesdays, and gets a confirmation with a
-      Google Calendar link.
+      <strong>Taster booking</strong> — the enquirer receives a tokenised invite link by email, picks
+      a session date from the next available Tuesdays, and gets a confirmation with a Google Calendar
+      link.
     </li>
     <li>
-      <strong>Academy waitlist</strong> — the enquirer is placed on the waitlist for the current
-      Academy season. When a place becomes available, an invite is sent and they respond via a
-      dedicated page.
+      <strong>Academy waitlist</strong> — the enquirer is placed on the waitlist for the current Academy
+      season. When a place becomes available, an invite is sent and they respond via a dedicated page.
     </li>
   </ul>
 
   <p>
-    Age group assignment follows UK Athletics rules: an athlete's group is determined by their
-    age on <strong>31 August</strong> at the end of the relevant athletics season, not by their
-    birthday or the session date.
+    Age group assignment follows UK Athletics rules: an athlete's group is determined by their age
+    on <strong>31 August</strong> at the end of the relevant athletics season, not by their birthday or
+    the session date.
   </p>
 
   <h2>Technology stack</h2>
@@ -98,12 +96,18 @@ tests/
   <h3>Enquiry → taster invite</h3>
   <ol>
     <li>Parent submits the public enquiry form (<code>POST /api/enquiry</code>).</li>
-    <li>Age group is resolved from D1 using the athlete's date of birth and the UK Athletics
-      31 August rule.</li>
-    <li>If the age group's <code>booking_type</code> is <code>taster</code>, a tokenised invite
-      record is created and a booking invite email is sent via Resend.</li>
-    <li>Parent clicks the link, lands on <code>/book/[token]</code>, picks a date, and
-      <code>POST /api/booking</code> confirms the session.</li>
+    <li>
+      Age group is resolved from D1 using the athlete's date of birth and the UK Athletics 31 August
+      rule.
+    </li>
+    <li>
+      If the age group's <code>booking_type</code> is <code>taster</code>, a tokenised invite record
+      is created and a booking invite email is sent via Resend.
+    </li>
+    <li>
+      Parent clicks the link, lands on <code>/book/[token]</code>, picks a date, and
+      <code>POST /api/booking</code> confirms the session.
+    </li>
     <li>A confirmation email with venue details and a Google Calendar link is sent.</li>
     <li>Seven days before the session a reminder email is sent by the Tuesday-evening cron job.</li>
   </ol>
@@ -114,10 +118,14 @@ tests/
     <li>Age group resolves to <code>booking_type: waitlist</code>.</li>
     <li>Enquiry is added to <code>academy_waitlist</code> for the current open season.</li>
     <li>An Academy waitlist confirmation email is sent.</li>
-    <li>When a place opens, an Academy invite is sent. Parent responds via
-      <code>/academy/respond/[token]</code>.</li>
-    <li>On the 1st of each month the academy-rollover cron carries returning athletes
-      forward to the next season.</li>
+    <li>
+      When a place opens, an Academy invite is sent. Parent responds via
+      <code>/academy/respond/[token]</code>.
+    </li>
+    <li>
+      On the 1st of each month the academy-rollover cron carries returning athletes forward to the
+      next season.
+    </li>
   </ol>
 
   <h2>Database tables</h2>
@@ -125,14 +133,50 @@ tests/
   <table>
     <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
     <tbody>
-      <tr><td><code>enquiries</code></td><td>Central record for every inbound enquiry. Holds the event log (JSON array) tracking every status change.</td></tr>
-      <tr><td><code>invites</code></td><td>Tokenised booking invites for taster sessions. One per enquiry, status: pending → sent → accepted → expired.</td></tr>
-      <tr><td><code>bookings</code></td><td>Confirmed taster sessions. Status: confirmed → attended / no_show / cancelled.</td></tr>
-      <tr><td><code>age_groups</code></td><td>Fully configurable in D1 — no age group codes are hardcoded in application logic. Drives routing and session scheduling.</td></tr>
-      <tr><td><code>academy_seasons</code></td><td>Each Academy intake season with capacity, dates, and status (upcoming / open / closed / archived).</td></tr>
-      <tr><td><code>academy_waitlist</code></td><td>One entry per enquiry per season. Tracks position, invite status, and response.</td></tr>
-      <tr><td><code>email_templates</code></td><td>Editable email templates stored in D1. Rendered at send time with simple template variable substitution.</td></tr>
-      <tr><td><code>membership_otps</code></td><td>One-time tokens for the membership form flow.</td></tr>
+      <tr
+        ><td><code>enquiries</code></td><td
+          >Central record for every inbound enquiry. Holds the event log (JSON array) tracking every
+          status change.</td
+        ></tr
+      >
+      <tr
+        ><td><code>invites</code></td><td
+          >Tokenised booking invites for taster sessions. One per enquiry, status: pending → sent →
+          accepted → expired.</td
+        ></tr
+      >
+      <tr
+        ><td><code>bookings</code></td><td
+          >Confirmed taster sessions. Status: confirmed → attended / no_show / cancelled.</td
+        ></tr
+      >
+      <tr
+        ><td><code>age_groups</code></td><td
+          >Fully configurable in D1 — no age group codes are hardcoded in application logic. Drives
+          routing and session scheduling.</td
+        ></tr
+      >
+      <tr
+        ><td><code>academy_seasons</code></td><td
+          >Each Academy intake season with capacity, dates, and status (upcoming / open / closed /
+          archived).</td
+        ></tr
+      >
+      <tr
+        ><td><code>academy_waitlist</code></td><td
+          >One entry per enquiry per season. Tracks position, invite status, and response.</td
+        ></tr
+      >
+      <tr
+        ><td><code>email_templates</code></td><td
+          >Editable email templates stored in D1. Rendered at send time with simple template
+          variable substitution.</td
+        ></tr
+      >
+      <tr
+        ><td><code>membership_otps</code></td><td>One-time tokens for the membership form flow.</td
+        ></tr
+      >
     </tbody>
   </table>
 
@@ -141,10 +185,26 @@ tests/
   <table>
     <thead><tr><th>Schedule</th><th>Job</th><th>What it does</th></tr></thead>
     <tbody>
-      <tr><td><code>0 9 * * *</code></td><td>expire-invites</td><td>Marks stale pending invites as expired.</td></tr>
-      <tr><td><code>0 18 * * 2</code></td><td>send-reminders</td><td>Sends reminder emails for sessions 7 days ahead (Tuesday evenings).</td></tr>
-      <tr><td><code>*/30 * * * *</code></td><td>retry-invites</td><td>Retries invite sends that previously failed due to email errors.</td></tr>
-      <tr><td><code>0 9 1 * *</code></td><td>academy-rollover</td><td>Carries returning Academy athletes forward to the next season on the 1st of each month.</td></tr>
+      <tr
+        ><td><code>0 9 * * *</code></td><td>expire-invites</td><td
+          >Marks stale pending invites as expired.</td
+        ></tr
+      >
+      <tr
+        ><td><code>0 18 * * 2</code></td><td>send-reminders</td><td
+          >Sends reminder emails for sessions 7 days ahead (Tuesday evenings).</td
+        ></tr
+      >
+      <tr
+        ><td><code>*/30 * * * *</code></td><td>retry-invites</td><td
+          >Retries invite sends that previously failed due to email errors.</td
+        ></tr
+      >
+      <tr
+        ><td><code>0 9 1 * *</code></td><td>academy-rollover</td><td
+          >Carries returning Academy athletes forward to the next season on the 1st of each month.</td
+        ></tr
+      >
     </tbody>
   </table>
 
@@ -158,16 +218,37 @@ tests/
   <table>
     <thead><tr><th>Route group</th><th>Mechanism</th></tr></thead>
     <tbody>
-      <tr><td>Public routes (<code>/api/enquiry</code>, <code>/api/booking</code>, <code>/api/academy/respond</code>)</td><td>No authentication. Rate limiting is handled at the Cloudflare edge.</td></tr>
-      <tr><td>Admin portal pages (<code>/admin/*</code>)</td><td>HttpOnly cookie <code>egac_admin_token</code>, set on login. Checked server-side in every page's frontmatter.</td></tr>
-      <tr><td>Admin API (<code>/api/admin/*</code>)</td><td><code>Authorization: Bearer &lt;ADMIN_TOKEN&gt;</code> or <code>x-admin-token</code> header.</td></tr>
-      <tr><td>Cron routes (<code>/api/cron/*</code>)</td><td><code>Authorization: Bearer &lt;CRON_SECRET&gt;</code> — a separate secret from <code>ADMIN_TOKEN</code>.</td></tr>
+      <tr
+        ><td
+          >Public routes (<code>/api/enquiry</code>, <code>/api/booking</code>, <code
+            >/api/academy/respond</code
+          >)</td
+        ><td>No authentication. Rate limiting is handled at the Cloudflare edge.</td></tr
+      >
+      <tr
+        ><td>Admin portal pages (<code>/admin/*</code>)</td><td
+          >HttpOnly cookie <code>egac_admin_token</code>, set on login. Checked server-side in every
+          page's frontmatter.</td
+        ></tr
+      >
+      <tr
+        ><td>Admin API (<code>/api/admin/*</code>)</td><td
+          ><code>Authorization: Bearer &lt;ADMIN_TOKEN&gt;</code> or <code>x-admin-token</code> header.</td
+        ></tr
+      >
+      <tr
+        ><td>Cron routes (<code>/api/cron/*</code>)</td><td
+          ><code>Authorization: Bearer &lt;CRON_SECRET&gt;</code> — a separate secret from <code
+            >ADMIN_TOKEN</code
+          >.</td
+        ></tr
+      >
     </tbody>
   </table>
 
   <p>
-    In local development only, the token <code>dev</code> is accepted for both admin and cron
-    routes. This shorthand is rejected if <code>APP_ENV</code> is anything other than
+    In local development only, the token <code>dev</code> is accepted for both admin and cron routes.
+    This shorthand is rejected if <code>APP_ENV</code> is anything other than
     <code>development</code>.
   </p>
 
@@ -176,11 +257,31 @@ tests/
   <table>
     <thead><tr><th>Variable</th><th>How set</th><th>Purpose</th></tr></thead>
     <tbody>
-      <tr><td><code>APP_ENV</code></td><td><code>wrangler.toml [vars]</code></td><td><code>production</code> | <code>staging</code> | <code>development</code></td></tr>
-      <tr><td><code>EMAIL_FROM</code></td><td><code>wrangler.toml [vars]</code></td><td>Sender address for all outbound email</td></tr>
-      <tr><td><code>RESEND_API_KEY</code></td><td><code>wrangler secret put</code></td><td>Resend authentication</td></tr>
-      <tr><td><code>ADMIN_TOKEN</code></td><td><code>wrangler secret put</code></td><td>Admin portal and API authentication</td></tr>
-      <tr><td><code>CRON_SECRET</code></td><td><code>wrangler secret put</code></td><td>Cron job HTTP authentication</td></tr>
+      <tr
+        ><td><code>APP_ENV</code></td><td><code>wrangler.toml [vars]</code></td><td
+          ><code>production</code> | <code>staging</code> | <code>development</code></td
+        ></tr
+      >
+      <tr
+        ><td><code>EMAIL_FROM</code></td><td><code>wrangler.toml [vars]</code></td><td
+          >Sender address for all outbound email</td
+        ></tr
+      >
+      <tr
+        ><td><code>RESEND_API_KEY</code></td><td><code>wrangler secret put</code></td><td
+          >Resend authentication</td
+        ></tr
+      >
+      <tr
+        ><td><code>ADMIN_TOKEN</code></td><td><code>wrangler secret put</code></td><td
+          >Admin portal and API authentication</td
+        ></tr
+      >
+      <tr
+        ><td><code>CRON_SECRET</code></td><td><code>wrangler secret put</code></td><td
+          >Cron job HTTP authentication</td
+        ></tr
+      >
     </tbody>
   </table>
 
@@ -232,9 +333,8 @@ wrangler secret put ADMIN_TOKEN</code></pre>
   <hr />
 
   <p>
-    Use the sidebar to navigate to more detailed pages on specific topics. If a page shows
-    "coming soon", the content hasn't been written yet — add it to <code>src/pages/docs/</code>
+    Use the sidebar to navigate to more detailed pages on specific topics. If a page shows "coming
+    soon", the content hasn't been written yet — add it to <code>src/pages/docs/</code>
     using the <code>DocsBase</code> layout.
   </p>
-
 </DocsBase>

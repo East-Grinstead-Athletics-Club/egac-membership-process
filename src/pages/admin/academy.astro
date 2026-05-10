@@ -9,7 +9,11 @@ import {
   updateWaitlistStatus,
 } from '../../lib/repositories/academy.js';
 import { getEnquiryById } from '../../lib/repositories/enquiries.js';
-import type { AcademySeason, AcademyWaitlistEntry, AcademyWaitlistStatus } from '../../lib/db/schema.js';
+import type {
+  AcademySeason,
+  AcademyWaitlistEntry,
+  AcademyWaitlistStatus,
+} from '../../lib/db/schema.js';
 
 const env = Astro.locals.runtime.env;
 const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
@@ -66,7 +70,9 @@ const waitlistBySeason = await Promise.all(
 );
 
 const enquiryCache = new Map<string, { name: string | null; email: string }>();
-async function getEnquiryDetails(enquiryId: string): Promise<{ name: string | null; email: string }> {
+async function getEnquiryDetails(
+  enquiryId: string
+): Promise<{ name: string | null; email: string }> {
   const cached = enquiryCache.get(enquiryId);
   if (cached) return cached;
   const enquiry = await getEnquiryById(enquiryId, env);
@@ -75,7 +81,10 @@ async function getEnquiryDetails(enquiryId: string): Promise<{ name: string | nu
   return details;
 }
 
-type EnrichedWaitlist = AcademyWaitlistEntry & { enquiry_name: string | null; enquiry_email: string };
+type EnrichedWaitlist = AcademyWaitlistEntry & {
+  enquiry_name: string | null;
+  enquiry_email: string;
+};
 
 async function enrich(entries: AcademyWaitlistEntry[]): Promise<EnrichedWaitlist[]> {
   return Promise.all(
@@ -197,7 +206,9 @@ function statusBadge(status: string): string {
                     <td class="py-2 text-slate-600">{entry.enquiry_email || '—'}</td>
                     <td class="py-2 text-slate-600">{formatDate(entry.created_at)}</td>
                     <td class="py-2">
-                      <span class={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge(entry.status)}`}>
+                      <span
+                        class={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge(entry.status)}`}
+                      >
                         {entry.status}
                       </span>
                     </td>
@@ -205,15 +216,33 @@ function statusBadge(status: string): string {
                       <form method="POST" class="flex items-center gap-2">
                         <input type="hidden" name="action" value="waitlist-status" />
                         <input type="hidden" name="waitlist_id" value={entry.id} />
-                        <select name="status" class="rounded-md border border-slate-300 px-2 py-1 text-xs">
-                          <option selected={entry.status === 'waiting'} value="waiting">Waiting</option>
-                          <option selected={entry.status === 'invited'} value="invited">Invited</option>
-                          <option selected={entry.status === 'accepted'} value="accepted">Accepted</option>
-                          <option selected={entry.status === 'declined'} value="declined">Declined</option>
-                          <option selected={entry.status === 'ineligible'} value="ineligible">Ineligible</option>
-                          <option selected={entry.status === 'withdrawn'} value="withdrawn">Withdrawn</option>
+                        <select
+                          name="status"
+                          class="rounded-md border border-slate-300 px-2 py-1 text-xs"
+                        >
+                          <option selected={entry.status === 'waiting'} value="waiting">
+                            Waiting
+                          </option>
+                          <option selected={entry.status === 'invited'} value="invited">
+                            Invited
+                          </option>
+                          <option selected={entry.status === 'accepted'} value="accepted">
+                            Accepted
+                          </option>
+                          <option selected={entry.status === 'declined'} value="declined">
+                            Declined
+                          </option>
+                          <option selected={entry.status === 'ineligible'} value="ineligible">
+                            Ineligible
+                          </option>
+                          <option selected={entry.status === 'withdrawn'} value="withdrawn">
+                            Withdrawn
+                          </option>
                         </select>
-                        <button class="rounded-md bg-[#2d5ea5] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#254f89]" type="submit">
+                        <button
+                          class="rounded-md bg-[#2d5ea5] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#254f89]"
+                          type="submit"
+                        >
                           Save
                         </button>
                       </form>
@@ -234,63 +263,88 @@ function statusBadge(status: string): string {
       </div>
 
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      {
-        seasonBlocks.map((block) => {
-          const acceptedCount = block.entries.filter((e) => e.status === 'accepted').length;
-          const fillRate = block.season.capacity > 0 ? Math.min(100, Math.round((acceptedCount / block.season.capacity) * 100)) : 0;
-          return (
-            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div class="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <h3 class="text-lg font-semibold text-slate-900">{block.season.label}</h3>
-                  <p class="text-xs text-slate-500">{formatDate(block.season.start_date)} to {formatDate(block.season.end_date)}</p>
-                  <p class="mt-1 text-xs text-slate-500">{acceptedCount} accepted / {block.season.capacity} capacity</p>
+        {
+          seasonBlocks.map((block) => {
+            const acceptedCount = block.entries.filter((e) => e.status === 'accepted').length;
+            const fillRate =
+              block.season.capacity > 0
+                ? Math.min(100, Math.round((acceptedCount / block.season.capacity) * 100))
+                : 0;
+            return (
+              <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 class="text-lg font-semibold text-slate-900">{block.season.label}</h3>
+                    <p class="text-xs text-slate-500">
+                      {formatDate(block.season.start_date)} to {formatDate(block.season.end_date)}
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                      {acceptedCount} accepted / {block.season.capacity} capacity
+                    </p>
+                  </div>
+                  <form method="POST" class="flex items-center gap-2">
+                    <input type="hidden" name="action" value="season-status" />
+                    <input type="hidden" name="season_id" value={block.season.id} />
+                    <select
+                      name="status"
+                      class="rounded-md border border-slate-300 px-2 py-1 text-xs"
+                    >
+                      <option selected={block.season.status === 'upcoming'} value="upcoming">
+                        Upcoming
+                      </option>
+                      <option selected={block.season.status === 'open'} value="open">
+                        Open
+                      </option>
+                      <option selected={block.season.status === 'closed'} value="closed">
+                        Closed
+                      </option>
+                      <option selected={block.season.status === 'archived'} value="archived">
+                        Archived
+                      </option>
+                    </select>
+                    <button
+                      class="rounded-md border border-[#2d5ea5] px-2.5 py-1 text-xs font-medium text-[#2d5ea5] hover:bg-blue-50"
+                      type="submit"
+                    >
+                      Update
+                    </button>
+                  </form>
                 </div>
-                <form method="POST" class="flex items-center gap-2">
-                  <input type="hidden" name="action" value="season-status" />
-                  <input type="hidden" name="season_id" value={block.season.id} />
-                  <select name="status" class="rounded-md border border-slate-300 px-2 py-1 text-xs">
-                    <option selected={block.season.status === 'upcoming'} value="upcoming">Upcoming</option>
-                    <option selected={block.season.status === 'open'} value="open">Open</option>
-                    <option selected={block.season.status === 'closed'} value="closed">Closed</option>
-                    <option selected={block.season.status === 'archived'} value="archived">Archived</option>
-                  </select>
-                  <button class="rounded-md border border-[#2d5ea5] px-2.5 py-1 text-xs font-medium text-[#2d5ea5] hover:bg-blue-50" type="submit">
-                    Update
-                  </button>
-                </form>
-              </div>
 
-              <div class="mb-3 h-2 w-full rounded-full bg-slate-200">
-                <div class="h-2 rounded-full bg-[#2d5ea5]" style={`width: ${fillRate}%`}></div>
-              </div>
+                <div class="mb-3 h-2 w-full rounded-full bg-slate-200">
+                  <div class="h-2 rounded-full bg-[#2d5ea5]" style={`width: ${fillRate}%`} />
+                </div>
 
-              {
-                block.entries.length === 0 ? (
+                {block.entries.length === 0 ? (
                   <p class="text-sm italic text-slate-400">No entries in this season.</p>
                 ) : (
                   <div class="space-y-2">
                     {block.entries.slice(0, 8).map((entry) => (
                       <div class="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm">
                         <div>
-                          <p class="font-medium text-slate-800">{entry.enquiry_name || 'Unknown'}</p>
+                          <p class="font-medium text-slate-800">
+                            {entry.enquiry_name || 'Unknown'}
+                          </p>
                           <p class="text-xs text-slate-500">{entry.enquiry_email || '—'}</p>
                         </div>
-                        <span class={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge(entry.status)}`}>
+                        <span
+                          class={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge(entry.status)}`}
+                        >
                           {entry.status}
                         </span>
                       </div>
                     ))}
                     {block.entries.length > 8 && (
-                      <p class="text-xs text-slate-400">Showing first 8 of {block.entries.length} entries.</p>
+                      <p class="text-xs text-slate-400">
+                        Showing first 8 of {block.entries.length} entries.
+                      </p>
                     )}
                   </div>
-                )
-              }
-            </article>
-          );
-        })
-      }
+                )}
+              </article>
+            );
+          })
+        }
       </div>
     </section>
   </div>

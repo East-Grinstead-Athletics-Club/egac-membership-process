@@ -128,7 +128,6 @@ const tabs: { id: string; label: string }[] = [
   { id: 'processed', label: 'Processed' },
   { id: 'academy', label: 'Academy' },
 ];
-
 ---
 
 <AdminBase title="Enquiries" activeNav="enquiries">
@@ -146,7 +145,11 @@ const tabs: { id: string; label: string }[] = [
             class="w-64 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
           />
         </form>
-        <a href="/admin/enquiries" class="rounded-xl bg-[#2d5ea5] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#254f89]">New enquiry</a>
+        <a
+          href="/admin/enquiries"
+          class="rounded-xl bg-[#2d5ea5] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#254f89]"
+          >New enquiry</a
+        >
       </div>
     </div>
 
@@ -201,7 +204,9 @@ const tabs: { id: string; label: string }[] = [
                   <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Booking
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 bg-white">
@@ -209,7 +214,9 @@ const tabs: { id: string; label: string }[] = [
                   const invite = inviteMap.get(enq.id);
                   const ageGroup = enq.age_group_id ? ageGroupMap.get(enq.age_group_id) : null;
                   const badge = inviteStatusBadge(invite?.status);
-                  const isAcademy = ageGroup?.booking_type === 'waitlist' || enq.source.toLowerCase().includes('academy');
+                  const isAcademy =
+                    ageGroup?.booking_type === 'waitlist' ||
+                    enq.source.toLowerCase().includes('academy');
                   const latestBookingStatus = latestBookingStatusMap.get(enq.id);
                   return (
                     <tr class="transition-colors hover:bg-slate-50">
@@ -224,7 +231,9 @@ const tabs: { id: string; label: string }[] = [
                         {enq.dob ? formatDate(enq.dob) : <span class="text-slate-400">—</span>}
                       </td>
                       <td class="px-4 py-3 text-sm text-slate-600">
-                        <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${isAcademy ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'}`}>
+                        <span
+                          class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${isAcademy ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'}`}
+                        >
                           {isAcademy ? 'Academy' : 'Taster'}
                         </span>
                       </td>
@@ -250,7 +259,8 @@ const tabs: { id: string; label: string }[] = [
                           >
                             {latestBookingStatus === 'no_show'
                               ? 'No show'
-                              : latestBookingStatus.charAt(0).toUpperCase() + latestBookingStatus.slice(1)}
+                              : latestBookingStatus.charAt(0).toUpperCase() +
+                                latestBookingStatus.slice(1)}
                           </span>
                         ) : (
                           <span class="text-slate-400">—</span>
@@ -264,7 +274,10 @@ const tabs: { id: string; label: string }[] = [
                           View
                         </a>
                         <span class="mx-2 text-slate-300"> </span>
-                        <a href={`/admin/enquiries/${enq.id}`} class="font-medium text-[#2d5ea5] hover:underline">
+                        <a
+                          href={`/admin/enquiries/${enq.id}`}
+                          class="font-medium text-[#2d5ea5] hover:underline"
+                        >
                           Resend
                         </a>
                       </td>

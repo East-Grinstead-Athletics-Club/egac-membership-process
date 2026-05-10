@@ -157,7 +157,9 @@ if (!token) {
             />
           </svg>
         </div>
-        <h1 class="text-xl font-headline font-bold text-on-surface mb-2">You're already booked in</h1>
+        <h1 class="text-xl font-headline font-bold text-on-surface mb-2">
+          You're already booked in
+        </h1>
         <p class="text-on-surface-variant max-w-sm mx-auto">
           This booking link has already been used. Check your email for your session confirmation.
         </p>
@@ -175,8 +177,10 @@ if (!token) {
       <div>
         <h1 class="text-2xl font-headline font-bold text-primary mb-1">Book your taster session</h1>
         <p class="text-on-surface-variant mb-2">
-          Hi <strong class="text-on-surface">{enquiryName}</strong> — choose a date below to book your
-          <strong class="text-on-surface">{ageGroupLabel}</strong> taster session{sessionTime ? ` (${sessionTime})` : ''}.
+          Hi <strong class="text-on-surface">{enquiryName}</strong> — choose a date below to book
+          your
+          <strong class="text-on-surface">{ageGroupLabel}</strong> taster session
+          {sessionTime ? ` (${sessionTime})` : ''}.
         </p>
         <p class="text-sm text-on-surface-variant mb-8">Sessions are held at {venueName}.</p>
 
@@ -218,7 +222,9 @@ if (!token) {
                   required
                 />
                 <div class="flex-1 min-w-0">
-                  <p class={`font-medium text-sm ${slot.full ? 'text-on-surface-variant' : 'text-on-surface'}`}>
+                  <p
+                    class={`font-medium text-sm ${slot.full ? 'text-on-surface-variant' : 'text-on-surface'}`}
+                  >
                     {slot.displayDate}
                   </p>
                 </div>
@@ -259,11 +265,18 @@ if (!token) {
                 stroke="currentColor"
                 aria-hidden="true"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">You're booked in!</h2>
-            <p id="confirmation-detail" class="text-on-surface-variant dark:text-slate-300 mb-6"></p>
+            <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">
+              You're booked in!
+            </h2>
+            <p id="confirmation-detail" class="text-on-surface-variant dark:text-slate-300 mb-6" />
             <a
               id="calendar-link"
               href="#"
@@ -333,7 +346,7 @@ if (!token) {
           gcal.searchParams.set('text', `EGAC ${ageGroupLabel} Taster Session`);
           gcal.searchParams.set('dates', `${fmt(start)}/${fmt(end)}`);
           // Use venue from API response — it resolves the per-day Training Location from Settings
-          const venue = (json.venue || venueName);
+          const venue = json.venue || venueName;
           gcal.searchParams.set('location', venue);
           gcal.searchParams.set('details', 'East Grinstead Athletics Club taster session');
 
@@ -357,7 +370,8 @@ if (!token) {
           bookBtn.disabled = false;
           bookBtn.textContent = 'Book this session';
         } else {
-          errorEl.textContent = json.error ?? json.message ?? 'Something went wrong. Please try again.';
+          errorEl.textContent =
+            json.error ?? json.message ?? 'Something went wrong. Please try again.';
           errorEl.classList.remove('hidden');
           bookBtn.disabled = false;
           bookBtn.textContent = 'Book this session';

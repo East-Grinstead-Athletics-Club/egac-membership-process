@@ -123,7 +123,7 @@ export async function sendBookingConfirmation(
         })
       : undefined;
 
-      return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -171,7 +171,7 @@ export async function sendAcademyWaitlist(
         })
       : undefined;
 
-      return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -191,10 +191,7 @@ export async function sendAcademyWaitlist(
 // Sent when an applicant is too young for the Academy (below Year 5).
 // Explains the minimum age and invites them to reapply.
 // ------------------------------------------------------------
-export async function sendAcademyRejection(
-  enquiry: Enquiry,
-  env: Env
-): Promise<SendEmailResult> {
+export async function sendAcademyRejection(enquiry: Enquiry, env: Env): Promise<SendEmailResult> {
   const template = await getEmailTemplateByKey('academy_rejection', env);
   if (!template) {
     return { success: false, error: 'Template academy_rejection not found or inactive' };
@@ -264,7 +261,7 @@ export async function sendMembershipInvite(
         })
       : undefined;
 
-      return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -316,7 +313,7 @@ export async function sendBookingReminder(
         })
       : undefined;
 
-      return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(

@@ -6,14 +6,14 @@
 import { ok, err, corsPreflightResponse, parseBody } from './helpers.js';
 import { validateEnquiryData, routeEnquiry } from '../lib/business/enquiry.js';
 import { getNextNTuesdayDates, resolveAgeGroup, ukSchoolYear } from '../lib/business/age.js';
-import {
-  insertEnquiry,
-  appendEnquiryEvent,
-  updateEnquiry,
-} from '../lib/repositories/enquiries.js';
+import { insertEnquiry, appendEnquiryEvent, updateEnquiry } from '../lib/repositories/enquiries.js';
 import { createInviteForEnquiry, markInviteSent } from '../lib/repositories/invites.js';
 import { addToWaitlist } from '../lib/repositories/academy.js';
-import { sendBookingInvite, sendAcademyWaitlist, sendAcademyRejection } from '../lib/email/templates.js';
+import {
+  sendBookingInvite,
+  sendAcademyWaitlist,
+  sendAcademyRejection,
+} from '../lib/email/templates.js';
 import { getConfig } from '../lib/config.js';
 import { generateId } from '../lib/db/client.js';
 import { listAgeGroups } from '../lib/repositories/age-groups.js';
@@ -199,8 +199,7 @@ export async function handleEnquiry(request: Request, env: Env): Promise<Respons
   }
 
   // Year 5–6: always route to academy waitlist regardless of resolved age group
-  const path =
-    schoolYear !== null && schoolYear <= 6 ? 'waitlist' : routeEnquiry(ageGroup);
+  const path = schoolYear !== null && schoolYear <= 6 ? 'waitlist' : routeEnquiry(ageGroup);
 
   try {
     if (path === 'waitlist') {

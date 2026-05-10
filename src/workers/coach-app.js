@@ -149,15 +149,7 @@ export default {
                 `INSERT OR IGNORE INTO attendance_log
                  (id, person_id, person_type, person_name, session_date, status, marked_by, created_at, environment)
                  VALUES (?, ?, 'taster', ?, ?, 'P', ?, ?, ?)`
-              ).bind(
-                newId('att'),
-                id,
-                enq?.name ?? null,
-                targetDate,
-                coachEmail,
-                now,
-                APP_ENV
-              )
+              ).bind(newId('att'), id, enq?.name ?? null, targetDate, coachEmail, now, APP_ENV)
             );
           } else {
             // Un-check: remove from attendance_log
@@ -193,15 +185,7 @@ export default {
                 `INSERT OR IGNORE INTO attendance_log
                  (id, person_id, person_type, person_name, session_date, status, marked_by, created_at, environment)
                  VALUES (?, ?, 'member', ?, ?, 'P', ?, ?, ?)`
-              ).bind(
-                newId('att'),
-                id,
-                athlete?.name ?? null,
-                targetDate,
-                coachEmail,
-                now,
-                APP_ENV
-              )
+              ).bind(newId('att'), id, athlete?.name ?? null, targetDate, coachEmail, now, APP_ENV)
             );
 
             // Update last_attended_at on the athlete record
@@ -309,7 +293,16 @@ export default {
 // ============================================================
 // HTML renderer
 // ============================================================
-function renderPage({ tasters, members, viewDate, prevDate, nextDate, coachEmail, checkedInCount, totalCount }) {
+function renderPage({
+  tasters,
+  members,
+  viewDate,
+  prevDate,
+  nextDate,
+  coachEmail,
+  checkedInCount,
+  totalCount,
+}) {
   const displayDate = formatDisplayDate(viewDate);
 
   function athleteRow(a) {
@@ -322,10 +315,9 @@ function renderPage({ tasters, members, viewDate, prevDate, nextDate, coachEmail
         ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-400 text-amber-900 tracking-widest">TASTER</span>'
         : '';
     const ageBadge = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-100 text-blue-700 uppercase">${a.age_group}</span>`;
-    const medicalIcon =
-      a.medical_info
-        ? '<span title="Medical info recorded" class="text-red-500 text-sm font-black">⚕</span>'
-        : '';
+    const medicalIcon = a.medical_info
+      ? '<span title="Medical info recorded" class="text-red-500 text-sm font-black">⚕</span>'
+      : '';
     const escapedName = (a.name ?? '').replace(/'/g, "\\'");
     const escapedId = String(a.id).replace(/'/g, "\\'");
 

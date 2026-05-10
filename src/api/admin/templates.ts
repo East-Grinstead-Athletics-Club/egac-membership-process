@@ -15,9 +15,7 @@ import {
   createEmailTemplate,
   getEmailTemplateByKey,
 } from '../../lib/repositories/templates.js';
-import {
-  extractTemplateVariables,
-} from '../../lib/business/templates.js';
+import { extractTemplateVariables } from '../../lib/business/templates.js';
 import { generateId, now } from '../../lib/db/client.js';
 import type { Env } from '../../lib/db/schema.js';
 

@@ -244,8 +244,20 @@ describe('resolveAgeGroup', () => {
 
   it('treats string active flags from D1 as active', () => {
     const d1Like = [
-      makeAgeGroup({ id: 'ag_u13', code: 'u13', age_min_aug31: 11, age_max_aug31: 12, active: '1' as unknown as number }),
-      makeAgeGroup({ id: 'ag_u15', code: 'u15', age_min_aug31: 13, age_max_aug31: 120, active: '1' as unknown as number }),
+      makeAgeGroup({
+        id: 'ag_u13',
+        code: 'u13',
+        age_min_aug31: 11,
+        age_max_aug31: 12,
+        active: '1' as unknown as number,
+      }),
+      makeAgeGroup({
+        id: 'ag_u15',
+        code: 'u15',
+        age_min_aug31: 13,
+        age_max_aug31: 120,
+        active: '1' as unknown as number,
+      }),
     ];
     const group = resolveAgeGroup('1975-08-04', '2026-04-14', d1Like);
     expect(group?.code).toBe('u15');

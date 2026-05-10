@@ -39,9 +39,14 @@ const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href
   </head>
   <body class="min-h-screen bg-[#eff2f7] text-slate-900 antialiased">
     <div class="relative min-h-screen lg:flex">
-      <aside class="w-full border-b border-[#1f457f] bg-[#214c8f] text-slate-100 lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-60 lg:flex-col lg:border-b-0 lg:border-r lg:border-[#1f457f]">
+      <aside
+        class="w-full border-b border-[#1f457f] bg-[#214c8f] text-slate-100 lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-60 lg:flex-col lg:border-b-0 lg:border-r lg:border-[#1f457f]"
+      >
         <div class="px-5 py-7 border-b border-[#2f5ca0]">
-          <a href="/admin/enquiries" class="text-2xl font-bold tracking-tight text-white hover:text-slate-100">
+          <a
+            href="/admin/enquiries"
+            class="text-2xl font-bold tracking-tight text-white hover:text-slate-100"
+          >
             EGAC
           </a>
         </div>
@@ -59,7 +64,10 @@ const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href
                         : 'text-[#d9e4f6] hover:bg-[#2d5ea5] hover:text-white'
                     }`}
                   >
-                    <span class="inline-block h-2 w-2 rounded-full bg-current opacity-80" aria-hidden="true"></span>
+                    <span
+                      class="inline-block h-2 w-2 rounded-full bg-current opacity-80"
+                      aria-hidden="true"
+                    />
                     {item.label}
                   </a>
                 </li>
@@ -68,10 +76,17 @@ const navItems: Array<{ id: NonNullable<Props['activeNav']>; label: string; href
           </ul>
         </nav>
 
-        <div class="hidden lg:block lg:mt-auto border-t border-[#2f5ca0] px-5 py-5 text-xs text-[#d9e4f6]">
+        <div
+          class="hidden lg:block lg:mt-auto border-t border-[#2f5ca0] px-5 py-5 text-xs text-[#d9e4f6]"
+        >
           <p class="font-medium">EGAC Admin</p>
-          <p class="mt-2 flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>Production</p>
-          <a href="/admin/logout" class="mt-4 inline-block text-[#d9e4f6] underline-offset-2 hover:underline">Log out</a>
+          <p class="mt-2 flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>Production
+          </p>
+          <a
+            href="/admin/logout"
+            class="mt-4 inline-block text-[#d9e4f6] underline-offset-2 hover:underline">Log out</a
+          >
         </div>
       </aside>
 

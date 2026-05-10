@@ -1,32 +1,39 @@
 ---
 const navLinks = [
-  { label: "Join", href: "/" },
-  { label: "Contact", href: "mailto:secretary@eastgrinsteadac.co.uk" },
+  { label: 'Join', href: '/' },
+  { label: 'Contact', href: 'mailto:secretary@eastgrinsteadac.co.uk' },
 ];
 
 const currentPath = Astro.url.pathname;
 ---
 
-<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none">
+<nav
+  class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none"
+>
   <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
-    <a href="https://eastgrinsteadac.co.uk" class="text-2xl font-black text-blue-700 dark:text-blue-400 tracking-tighter font-headline">
+    <a
+      href="https://eastgrinsteadac.co.uk"
+      class="text-2xl font-black text-blue-700 dark:text-blue-400 tracking-tighter font-headline"
+    >
       East Grinstead AC
     </a>
 
     <!-- Desktop nav -->
     <div class="hidden md:flex items-center gap-8" role="navigation" aria-label="Main navigation">
-      {navLinks.map(link => (
-        <a
-          href={link.href}
-          class={`font-headline font-bold tracking-tight text-sm uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-            currentPath === link.href
-              ? "text-blue-700 dark:text-yellow-400 border-b-2 border-yellow-400 pb-1"
-              : "text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-yellow-400"
-          }`}
-        >
-          {link.label}
-        </a>
-      ))}
+      {
+        navLinks.map((link) => (
+          <a
+            href={link.href}
+            class={`font-headline font-bold tracking-tight text-sm uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+              currentPath === link.href
+                ? 'text-blue-700 dark:text-yellow-400 border-b-2 border-yellow-400 pb-1'
+                : 'text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-yellow-400'
+            }`}
+          >
+            {link.label}
+          </a>
+        ))
+      }
     </div>
 
     <div class="flex items-center gap-4">
@@ -37,20 +44,40 @@ const currentPath = Astro.url.pathname;
         aria-label="Toggle dark mode"
       >
         <!-- Moon: shown in light mode -->
-        <svg id="icon-moon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        <svg
+          id="icon-moon"
+          class="w-5 h-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
         <!-- Sun: shown in dark mode -->
-        <svg id="icon-sun" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="5"/>
-          <line x1="12" y1="1" x2="12" y2="3"/>
-          <line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/>
-          <line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        <svg
+          id="icon-sun"
+          class="w-5 h-5 hidden"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
         </svg>
       </button>
 
@@ -68,10 +95,18 @@ const currentPath = Astro.url.pathname;
         aria-label="Open mobile menu"
         aria-expanded="false"
       >
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
+        <svg
+          class="w-5 h-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
         </svg>
       </button>
     </div>
@@ -85,15 +120,21 @@ const currentPath = Astro.url.pathname;
     aria-label="Mobile navigation"
   >
     <div class="flex flex-col px-6 py-4 gap-4">
-      {navLinks.map(link => (
-        <a
-          href={link.href}
-          class="font-headline font-bold tracking-tight text-sm uppercase text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-yellow-400 transition-colors py-2"
-        >
-          {link.label}
-        </a>
-      ))}
-      <a href="/" class="font-headline font-bold tracking-tight text-sm uppercase text-blue-700 dark:text-yellow-400 py-2">Register</a>
+      {
+        navLinks.map((link) => (
+          <a
+            href={link.href}
+            class="font-headline font-bold tracking-tight text-sm uppercase text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-yellow-400 transition-colors py-2"
+          >
+            {link.label}
+          </a>
+        ))
+      }
+      <a
+        href="/"
+        class="font-headline font-bold tracking-tight text-sm uppercase text-blue-700 dark:text-yellow-400 py-2"
+        >Register</a
+      >
     </div>
   </div>
 </nav>

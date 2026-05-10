@@ -38,12 +38,11 @@ const adminEmail = (env as typeof env & { ADMIN_EMAIL?: string }).ADMIN_EMAIL ??
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="/admin/templates" class="text-sm text-[#2d5ea5] hover:underline">
-          ← Templates
-        </a>
+        <a href="/admin/templates" class="text-sm text-[#2d5ea5] hover:underline"> ← Templates </a>
         <span class="text-slate-300">/</span>
         <h1 class="text-2xl font-semibold text-slate-900">{template.name}</h1>
-        <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">{template.key}</code>
+        <code class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">{template.key}</code
+        >
       </div>
       <div class="flex items-center gap-2">
         <span id="save-indicator" class="hidden text-xs text-slate-400">Unsaved changes</span>

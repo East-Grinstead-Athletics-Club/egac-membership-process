@@ -25,14 +25,19 @@ import Base from '../layouts/PublicLayout.astro';
       aria-live="assertive"
     >
       <p class="font-semibold text-on-error-container mb-1">Please fix the following:</p>
-      <ul id="error-list" class="list-disc list-inside text-on-error-container text-sm space-y-1"></ul>
+      <ul id="error-list" class="list-disc list-inside text-on-error-container text-sm space-y-1">
+      </ul>
     </div>
 
     <form id="enquiry-form" method="POST" action="/api/enquiry" novalidate class="space-y-5">
       <fieldset>
-        <legend class="block text-sm font-medium text-on-surface mb-2">Who is this enquiry for?</legend>
+        <legend class="block text-sm font-medium text-on-surface mb-2"
+          >Who is this enquiry for?</legend
+        >
         <div class="grid gap-2 sm:grid-cols-2">
-          <label class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors">
+          <label
+            class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
+          >
             <input
               type="radio"
               name="enquiry_for"
@@ -42,13 +47,10 @@ import Base from '../layouts/PublicLayout.astro';
             />
             <span>I'm enquiring for myself</span>
           </label>
-          <label class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors">
-            <input
-              type="radio"
-              name="enquiry_for"
-              value="other"
-              class="mt-0.5 accent-primary"
-            />
+          <label
+            class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
+          >
+            <input type="radio" name="enquiry_for" value="other" class="mt-0.5 accent-primary" />
             <span>I'm enquiring on behalf of someone else</span>
           </label>
         </div>
@@ -107,7 +109,11 @@ import Base from '../layouts/PublicLayout.astro';
       </div>
 
       <div id="athlete-name-wrap" class="hidden">
-        <label id="athlete-name-label" for="athlete_name" class="block text-sm font-medium text-on-surface mb-1">
+        <label
+          id="athlete-name-label"
+          for="athlete_name"
+          class="block text-sm font-medium text-on-surface mb-1"
+        >
           Athlete's name <span class="text-error" aria-hidden="true">*</span>
         </label>
         <input
@@ -151,8 +157,12 @@ import Base from '../layouts/PublicLayout.astro';
 
   <!-- Confirmation (shown after successful submission) -->
   <div id="confirmation" class="hidden">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-outline-variant shadow-sm p-8 text-center">
-      <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 mb-5">
+    <div
+      class="bg-white dark:bg-slate-800 rounded-2xl border border-outline-variant shadow-sm p-8 text-center"
+    >
+      <div
+        class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 mb-5"
+      >
         <svg
           class="w-7 h-7 text-green-600 dark:text-green-400"
           fill="none"
@@ -160,11 +170,18 @@ import Base from '../layouts/PublicLayout.astro';
           stroke="currentColor"
           aria-hidden="true"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
+          ></path>
         </svg>
       </div>
-      <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">Enquiry received</h2>
-      <p id="confirmation-message" class="text-on-surface-variant dark:text-slate-300 max-w-sm mx-auto mb-6"></p>
+      <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">
+        Enquiry received
+      </h2>
+      <p
+        id="confirmation-message"
+        class="text-on-surface-variant dark:text-slate-300 max-w-sm mx-auto mb-6"
+      >
+      </p>
       <p class="text-sm text-on-surface-variant dark:text-slate-400">
         Can't find our email? Check your spam folder or contact us at
         <a href="mailto:secretary@eastgrinsteadac.co.uk" class="text-primary underline">
@@ -211,7 +228,9 @@ import Base from '../layouts/PublicLayout.astro';
   }
 
   enquiryForInputs.forEach((input) => input.addEventListener('change', syncEnquiryMode));
-  const selfEnquiryInput = document.querySelector<HTMLInputElement>('input[name="enquiry_for"][value="self"]');
+  const selfEnquiryInput = document.querySelector<HTMLInputElement>(
+    'input[name="enquiry_for"][value="self"]'
+  );
   if (selfEnquiryInput) selfEnquiryInput.checked = true;
   syncEnquiryMode();
 

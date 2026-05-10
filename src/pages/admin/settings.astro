@@ -1,11 +1,7 @@
 ---
 import AdminBase from '../../layouts/AdminBase.astro';
 import { checkAdminToken } from '../../lib/auth/admin.js';
-import {
-  getSystemConfig,
-  setSystemConfig,
-  validateConfigUpdate,
-} from '../../lib/config.js';
+import { getSystemConfig, setSystemConfig, validateConfigUpdate } from '../../lib/config.js';
 import { listAgeGroups, updateAgeGroup } from '../../lib/repositories/age-groups.js';
 import type { SystemConfig } from '../../lib/db/schema.js';
 
@@ -117,7 +113,9 @@ const appEnv = env.APP_ENV ?? 'development';
   <div class="space-y-5">
     <div class="flex items-center justify-between">
       <h1 class="text-4xl font-semibold text-slate-900">Settings</h1>
-      <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+      <span
+        class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+      >
         Environment: {appEnv}
       </span>
     </div>
@@ -135,7 +133,9 @@ const appEnv = env.APP_ENV ?? 'development';
         <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           <p class="mb-1 font-medium">Please fix the following:</p>
           <ul class="list-disc pl-5">
-            {errors.map((e) => <li>{e}</li>)}
+            {errors.map((e) => (
+              <li>{e}</li>
+            ))}
           </ul>
         </div>
       )
@@ -161,20 +161,43 @@ const appEnv = env.APP_ENV ?? 'development';
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-4">
           <h2 class="text-lg font-medium text-slate-900">Booking defaults</h2>
-          <p class="mt-1 text-sm text-slate-500">Controls how many sessions are offered and how capacity is applied.</p>
+          <p class="mt-1 text-sm text-slate-500">
+            Controls how many sessions are offered and how capacity is applied.
+          </p>
         </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label for="weeks_ahead_booking" class="mb-1 block text-sm font-medium text-slate-700">Weeks ahead booking</label>
-            <input id="weeks_ahead_booking" name="weeks_ahead_booking" value={config.weeks_ahead_booking} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="weeks_ahead_booking" class="mb-1 block text-sm font-medium text-slate-700"
+              >Weeks ahead booking</label
+            >
+            <input
+              id="weeks_ahead_booking"
+              name="weeks_ahead_booking"
+              value={config.weeks_ahead_booking}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
           <div>
-            <label for="capacity_per_slot" class="mb-1 block text-sm font-medium text-slate-700">Capacity per slot</label>
-            <input id="capacity_per_slot" name="capacity_per_slot" value={config.capacity_per_slot} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="capacity_per_slot" class="mb-1 block text-sm font-medium text-slate-700"
+              >Capacity per slot</label
+            >
+            <input
+              id="capacity_per_slot"
+              name="capacity_per_slot"
+              value={config.capacity_per_slot}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
           <div>
-            <label for="academy_max_age" class="mb-1 block text-sm font-medium text-slate-700">Academy max age</label>
-            <input id="academy_max_age" name="academy_max_age" value={config.academy_max_age} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="academy_max_age" class="mb-1 block text-sm font-medium text-slate-700"
+              >Academy max age</label
+            >
+            <input
+              id="academy_max_age"
+              name="academy_max_age"
+              value={config.academy_max_age}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
         </div>
       </section>
@@ -182,24 +205,54 @@ const appEnv = env.APP_ENV ?? 'development';
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-4">
           <h2 class="text-lg font-medium text-slate-900">Site and venue</h2>
-          <p class="mt-1 text-sm text-slate-500">Used in links, emails, and confirmation details.</p>
+          <p class="mt-1 text-sm text-slate-500">
+            Used in links, emails, and confirmation details.
+          </p>
         </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label for="site_name" class="mb-1 block text-sm font-medium text-slate-700">Site name</label>
-            <input id="site_name" name="site_name" value={config.site_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="site_name" class="mb-1 block text-sm font-medium text-slate-700"
+              >Site name</label
+            >
+            <input
+              id="site_name"
+              name="site_name"
+              value={config.site_name}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
           <div>
-            <label for="site_url" class="mb-1 block text-sm font-medium text-slate-700">Site URL</label>
-            <input id="site_url" name="site_url" value={config.site_url} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="site_url" class="mb-1 block text-sm font-medium text-slate-700"
+              >Site URL</label
+            >
+            <input
+              id="site_url"
+              name="site_url"
+              value={config.site_url}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
           <div>
-            <label for="venue_name" class="mb-1 block text-sm font-medium text-slate-700">Venue name</label>
-            <input id="venue_name" name="venue_name" value={config.venue_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="venue_name" class="mb-1 block text-sm font-medium text-slate-700"
+              >Venue name</label
+            >
+            <input
+              id="venue_name"
+              name="venue_name"
+              value={config.venue_name}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
           <div>
-            <label for="venue_address" class="mb-1 block text-sm font-medium text-slate-700">Venue address</label>
-            <input id="venue_address" name="venue_address" value={config.venue_address} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="venue_address" class="mb-1 block text-sm font-medium text-slate-700"
+              >Venue address</label
+            >
+            <input
+              id="venue_address"
+              name="venue_address"
+              value={config.venue_address}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
         </div>
       </section>
@@ -207,16 +260,32 @@ const appEnv = env.APP_ENV ?? 'development';
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-4">
           <h2 class="text-lg font-medium text-slate-900">Email settings</h2>
-          <p class="mt-1 text-sm text-slate-500">Sender and admin mailbox for alerts and test messages.</p>
+          <p class="mt-1 text-sm text-slate-500">
+            Sender and admin mailbox for alerts and test messages.
+          </p>
         </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label for="email_from" class="mb-1 block text-sm font-medium text-slate-700">Email from</label>
-            <input id="email_from" name="email_from" value={config.email_from} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="email_from" class="mb-1 block text-sm font-medium text-slate-700"
+              >Email from</label
+            >
+            <input
+              id="email_from"
+              name="email_from"
+              value={config.email_from}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
           <div>
-            <label for="admin_email" class="mb-1 block text-sm font-medium text-slate-700">Admin email</label>
-            <input id="admin_email" name="admin_email" value={config.admin_email} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="admin_email" class="mb-1 block text-sm font-medium text-slate-700"
+              >Admin email</label
+            >
+            <input
+              id="admin_email"
+              name="admin_email"
+              value={config.admin_email}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
         </div>
       </section>
@@ -224,26 +293,55 @@ const appEnv = env.APP_ENV ?? 'development';
       <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-4">
           <h2 class="text-lg font-medium text-slate-900">Training locations</h2>
-          <p class="mt-1 text-sm text-slate-500">Set the training location for each session day. Leave blank to use the default venue.</p>
+          <p class="mt-1 text-sm text-slate-500">
+            Set the training location for each session day. Leave blank to use the default venue.
+          </p>
         </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label for="location_tuesday" class="mb-1 block text-sm font-medium text-slate-700">Tuesday</label>
-            <input id="location_tuesday" name="location_tuesday" value={config.location_tuesday} placeholder={config.venue_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="location_tuesday" class="mb-1 block text-sm font-medium text-slate-700"
+              >Tuesday</label
+            >
+            <input
+              id="location_tuesday"
+              name="location_tuesday"
+              value={config.location_tuesday}
+              placeholder={config.venue_name}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
           <div>
-            <label for="location_thursday" class="mb-1 block text-sm font-medium text-slate-700">Thursday</label>
-            <input id="location_thursday" name="location_thursday" value={config.location_thursday} placeholder={config.venue_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="location_thursday" class="mb-1 block text-sm font-medium text-slate-700"
+              >Thursday</label
+            >
+            <input
+              id="location_thursday"
+              name="location_thursday"
+              value={config.location_thursday}
+              placeholder={config.venue_name}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
           <div>
-            <label for="location_saturday" class="mb-1 block text-sm font-medium text-slate-700">Saturday</label>
-            <input id="location_saturday" name="location_saturday" value={config.location_saturday} placeholder={config.venue_name} class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100" />
+            <label for="location_saturday" class="mb-1 block text-sm font-medium text-slate-700"
+              >Saturday</label
+            >
+            <input
+              id="location_saturday"
+              name="location_saturday"
+              value={config.location_saturday}
+              placeholder={config.venue_name}
+              class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#2d5ea5] focus:ring-2 focus:ring-blue-100"
+            />
           </div>
         </div>
       </section>
 
       <div class="flex justify-end">
-        <button type="submit" class="rounded-md bg-[#2d5ea5] px-5 py-2 text-sm font-medium text-white hover:bg-[#254f89]">
+        <button
+          type="submit"
+          class="rounded-md bg-[#2d5ea5] px-5 py-2 text-sm font-medium text-white hover:bg-[#254f89]"
+        >
           Save settings
         </button>
       </div>
@@ -252,7 +350,9 @@ const appEnv = env.APP_ENV ?? 'development';
     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div class="mb-4">
         <h2 class="text-lg font-medium text-slate-900">Age groups</h2>
-        <p class="mt-1 text-sm text-slate-500">Adjust age-group ranges and session settings. Changes apply site-wide immediately.</p>
+        <p class="mt-1 text-sm text-slate-500">
+          Adjust age-group ranges and session settings. Changes apply site-wide immediately.
+        </p>
       </div>
       <div class="space-y-3">
         {
@@ -263,48 +363,105 @@ const appEnv = env.APP_ENV ?? 'development';
               <div class="mb-3 flex items-center justify-between">
                 <h3 class="font-semibold text-slate-900">{group.code.toUpperCase()}</h3>
                 <label class="inline-flex items-center gap-2 text-xs text-slate-600">
-                  <input type="checkbox" name="active" value="1" checked={group.active === 1} /> Active
+                  <input type="checkbox" name="active" value="1" checked={group.active === 1} />{' '}
+                  Active
                 </label>
               </div>
               <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
                 <div class="md:col-span-2">
-                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Label</label>
-                  <input name="label" value={group.label} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Label
+                  </label>
+                  <input
+                    name="label"
+                    value={group.label}
+                    class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm"
+                  />
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Booking type</label>
-                  <select name="booking_type" class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm">
-                    <option value="taster" selected={group.booking_type === 'taster'}>Taster</option>
-                    <option value="waitlist" selected={group.booking_type === 'waitlist'}>Waitlist</option>
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Booking type
+                  </label>
+                  <select
+                    name="booking_type"
+                    class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm"
+                  >
+                    <option value="taster" selected={group.booking_type === 'taster'}>
+                      Taster
+                    </option>
+                    <option value="waitlist" selected={group.booking_type === 'waitlist'}>
+                      Waitlist
+                    </option>
                   </select>
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Sort order</label>
-                  <input name="sort_order" value={group.sort_order} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Sort order
+                  </label>
+                  <input
+                    name="sort_order"
+                    value={group.sort_order}
+                    class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm"
+                  />
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Age min</label>
-                  <input name="age_min_aug31" value={group.age_min_aug31} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Age min
+                  </label>
+                  <input
+                    name="age_min_aug31"
+                    value={group.age_min_aug31}
+                    class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm"
+                  />
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Age max</label>
-                  <input name="age_max_aug31" value={group.age_max_aug31} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Age max
+                  </label>
+                  <input
+                    name="age_max_aug31"
+                    value={group.age_max_aug31}
+                    class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm"
+                  />
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Session time</label>
-                  <input name="session_time" value={group.session_time ?? ''} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Session time
+                  </label>
+                  <input
+                    name="session_time"
+                    value={group.session_time ?? ''}
+                    class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm"
+                  />
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Capacity/session</label>
-                  <input name="capacity_per_session" value={group.capacity_per_session ?? ''} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm" />
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Capacity/session
+                  </label>
+                  <input
+                    name="capacity_per_session"
+                    value={group.capacity_per_session ?? ''}
+                    class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm"
+                  />
                 </div>
                 <div class="md:col-span-4">
-                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">Session days (JSON array)</label>
-                  <input name="session_days" value={group.session_days} class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-mono" />
+                  <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Session days (JSON array)
+                  </label>
+                  <input
+                    name="session_days"
+                    value={group.session_days}
+                    class="w-full rounded-md border border-slate-300 px-2.5 py-2 text-sm font-mono"
+                  />
                 </div>
               </div>
               <div class="mt-3 flex justify-end">
-                <button type="submit" class="rounded-md border border-[#2d5ea5] px-3 py-1.5 text-xs font-medium text-[#2d5ea5] hover:bg-blue-50">Save age group</button>
+                <button
+                  type="submit"
+                  class="rounded-md border border-[#2d5ea5] px-3 py-1.5 text-xs font-medium text-[#2d5ea5] hover:bg-blue-50"
+                >
+                  Save age group
+                </button>
               </div>
             </form>
           ))
@@ -326,9 +483,19 @@ const appEnv = env.APP_ENV ?? 'development';
           class="inline-flex items-center gap-1.5 rounded-md border border-[#2d5ea5] px-4 py-2 text-sm font-medium text-[#2d5ea5] hover:bg-blue-50"
         >
           Open docs
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-3.5 w-3.5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"
+            ></path>
+            <path
+              d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"
+            ></path>
           </svg>
         </a>
       </div>
