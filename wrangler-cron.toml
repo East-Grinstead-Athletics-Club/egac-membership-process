@@ -12,7 +12,6 @@
 # ================================================================
 
 name = "egac-scheduled"
-type = "javascript"
 compatibility_date = "2024-09-23"
 main = "src/workers/scheduled.ts"
 

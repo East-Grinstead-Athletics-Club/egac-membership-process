@@ -37,48 +37,12 @@ const currentPath = Astro.url.pathname;
     </div>
 
     <div class="flex items-center gap-4">
-      <!-- Dark mode toggle (SVG icons, no external font dependency) -->
       <button
         id="dark-mode-toggle"
-        class="p-2 text-on-surface-variant hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         aria-label="Toggle dark mode"
       >
-        <!-- Moon: shown in light mode -->
-        <svg
-          id="icon-moon"
-          class="w-5 h-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-        <!-- Sun: shown in dark mode -->
-        <svg
-          id="icon-sun"
-          class="w-5 h-5 hidden"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="5"></circle>
-          <line x1="12" y1="1" x2="12" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="23"></line>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-          <line x1="1" y1="12" x2="3" y2="12"></line>
-          <line x1="21" y1="12" x2="23" y2="12"></line>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-        </svg>
+        dark_mode
       </button>
 
       <a
@@ -95,19 +59,7 @@ const currentPath = Astro.url.pathname;
         aria-label="Open mobile menu"
         aria-expanded="false"
       >
-        <svg
-          class="w-5 h-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          aria-hidden="true"
-        >
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
       </button>
     </div>
   </div>
@@ -141,23 +93,19 @@ const currentPath = Astro.url.pathname;
 
 <script>
   const toggle = document.getElementById('dark-mode-toggle');
-  const iconMoon = document.getElementById('icon-moon');
-  const iconSun = document.getElementById('icon-sun');
   const html = document.documentElement;
 
-  function applyTheme(dark: boolean) {
-    html.classList.toggle('dark', dark);
-    iconMoon?.classList.toggle('hidden', dark);
-    iconSun?.classList.toggle('hidden', !dark);
+  // Set initial icon to match current theme
+  if (toggle instanceof HTMLElement) {
+    toggle.textContent = html.classList.contains('dark') ? 'light_mode' : 'dark_mode';
   }
 
-  // Initialise icon state to match whatever the inline script set
-  applyTheme(html.classList.contains('dark'));
-
   toggle?.addEventListener('click', () => {
-    const isDark = !html.classList.contains('dark');
+    const isDark = html.classList.toggle('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    applyTheme(isDark);
+    if (toggle instanceof HTMLElement) {
+      toggle.textContent = isDark ? 'light_mode' : 'dark_mode';
+    }
   });
 
   // Mobile menu

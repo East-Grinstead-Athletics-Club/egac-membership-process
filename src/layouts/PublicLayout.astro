@@ -30,12 +30,26 @@ const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
 
-    <!-- Apply stored theme before paint — defaults to light if no preference is saved -->
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+    </style>
+    <slot name="head" />
+
+    <!-- Apply stored theme before paint — falls back to OS preference -->
     <script is:inline>
       (function () {
-        if (localStorage.getItem('theme') === 'dark') {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
         }
       })();
     </script>
@@ -44,7 +58,7 @@ const { title, description = 'East Grinstead Athletics Club' } = Astro.props;
     class="min-h-screen bg-surface text-on-surface font-body dark:bg-slate-900 dark:text-slate-100"
   >
     <Nav />
-    <main class="max-w-2xl mx-auto px-4 pt-28 pb-16 min-h-[calc(100vh-4rem)]">
+    <main class="min-h-[calc(100vh-4rem)]">
       <slot />
     </main>
     <Footer />
