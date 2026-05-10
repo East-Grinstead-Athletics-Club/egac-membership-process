@@ -471,6 +471,9 @@ describe('POST /api/admin/invites/resend', () => {
     venue_address: 'King Street',
     admin_email: 'admin@egac.co.uk',
     academy_max_age: '10',
+    location_tuesday: '',
+    location_thursday: '',
+    location_saturday: '',
   };
 
   beforeEach(() => {

@@ -121,195 +121,202 @@ if (!token) {
   </section>
 
   <div class="max-w-2xl mx-auto px-6 py-12">
-  {
-    expired && (
-      <div class="text-center py-10">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 mb-4">
-          <svg
-            class="w-7 h-7 text-amber-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-            />
-          </svg>
-        </div>
-        <h1 class="text-xl font-headline font-bold text-on-surface mb-2">This link has expired</h1>
-        <p class="text-on-surface-variant max-w-sm mx-auto">
-          This booking link has expired or has already been used. Please contact us and we can send
-          you a new one.
-        </p>
-        <p class="mt-4">
-          <a href={`mailto:${adminEmail}`} class="text-primary underline text-sm">
-            {adminEmail}
-          </a>
-        </p>
-      </div>
-    )
-  }
-
-  {
-    alreadyBooked && (
-      <div class="text-center py-10">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
-          <svg
-            class="w-7 h-7 text-green-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
-        <h1 class="text-xl font-headline font-bold text-on-surface mb-2">
-          You're already booked in
-        </h1>
-        <p class="text-on-surface-variant max-w-sm mx-auto">
-          This booking link has already been used. Check your email for your session confirmation.
-        </p>
-        <p class="mt-4">
-          <a href={`mailto:${adminEmail}`} class="text-primary underline text-sm">
-            Contact us if you need to make changes
-          </a>
-        </p>
-      </div>
-    )
-  }
-
-  {
-    !expired && !alreadyBooked && (
-      <div>
-        <h1 class="text-2xl font-headline font-bold text-primary mb-1">Book your taster session</h1>
-        <p class="text-on-surface-variant mb-2">
-          Hi <strong class="text-on-surface">{enquiryName}</strong> — choose a date below to book
-          your
-          <strong class="text-on-surface">{ageGroupLabel}</strong> taster session
-          {sessionTime ? ` (${sessionTime})` : ''}.
-        </p>
-        <p class="text-sm text-on-surface-variant mb-8">Sessions are held at {venueName}.</p>
-
-        <div
-          id="booking-error"
-          class="hidden bg-error-container border border-error/30 rounded-lg p-4 mb-6 text-sm text-on-error-container"
-          role="alert"
-          aria-live="assertive"
-        />
-
-        <form id="booking-form" class="space-y-3" novalidate>
-          <fieldset>
-            <legend class="text-sm font-semibold text-on-surface mb-3">Choose a date</legend>
-
-            {availableDates.length === 0 && (
-              <p class="text-on-surface-variant text-sm">
-                No upcoming sessions found. Please contact us at
-                <a href={`mailto:${adminEmail}`} class="text-primary underline">
-                  {adminEmail}
-                </a>
-                .
-              </p>
-            )}
-
-            {availableDates.map((slot) => (
-              <label
-                class={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors ${
-                  slot.full
-                    ? 'border-outline-variant bg-surface-container opacity-60 cursor-not-allowed'
-                    : 'border-outline bg-surface-container-lowest hover:border-primary/50 hover:bg-primary-fixed/20 has-[:checked]:border-primary has-[:checked]:bg-primary-fixed/20'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="session_date"
-                  value={slot.date}
-                  disabled={slot.full}
-                  class="accent-primary mt-0.5"
-                  required
-                />
-                <div class="flex-1 min-w-0">
-                  <p
-                    class={`font-medium text-sm ${slot.full ? 'text-on-surface-variant' : 'text-on-surface'}`}
-                  >
-                    {slot.displayDate}
-                  </p>
-                </div>
-                <div class="text-xs shrink-0">
-                  {slot.full ? (
-                    <span class="text-error font-medium">Full</span>
-                  ) : (
-                    <span class="text-green-700 font-medium">
-                      {slot.capacity - slot.booked} place
-                      {slot.capacity - slot.booked === 1 ? '' : 's'} left
-                    </span>
-                  )}
-                </div>
-              </label>
-            ))}
-          </fieldset>
-
-          {availableDates.some((s) => !s.full) && (
-            <div class="pt-2">
-              <button
-                id="book-btn"
-                type="submit"
-                class="w-full rounded-lg bg-primary-container px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-95"
-              >
-                Book this session
-              </button>
-            </div>
-          )}
-        </form>
-
-        <div id="booking-confirmation" class="hidden">
-          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-outline-variant shadow-sm p-8 text-center">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 mb-5">
-              <svg
-                class="w-7 h-7 text-green-600 dark:text-green-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">
-              You're booked in!
-            </h2>
-            <p id="confirmation-detail" class="text-on-surface-variant dark:text-slate-300 mb-6" />
-            <a
-              id="calendar-link"
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-block rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary-fixed/20 transition-colors"
+    {
+      expired && (
+        <div class="text-center py-10">
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 mb-4">
+            <svg
+              class="w-7 h-7 text-amber-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
             >
-              Add to Google Calendar
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              />
+            </svg>
+          </div>
+          <h1 class="text-xl font-headline font-bold text-on-surface mb-2">
+            This link has expired
+          </h1>
+          <p class="text-on-surface-variant max-w-sm mx-auto">
+            This booking link has expired or has already been used. Please contact us and we can
+            send you a new one.
+          </p>
+          <p class="mt-4">
+            <a href={`mailto:${adminEmail}`} class="text-primary underline text-sm">
+              {adminEmail}
             </a>
-            <p class="mt-6 text-sm text-on-surface-variant dark:text-slate-400">
-              A confirmation email is on its way to you. See you there!
-            </p>
+          </p>
+        </div>
+      )
+    }
+
+    {
+      alreadyBooked && (
+        <div class="text-center py-10">
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 mb-4">
+            <svg
+              class="w-7 h-7 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h1 class="text-xl font-headline font-bold text-on-surface mb-2">
+            You're already booked in
+          </h1>
+          <p class="text-on-surface-variant max-w-sm mx-auto">
+            This booking link has already been used. Check your email for your session confirmation.
+          </p>
+          <p class="mt-4">
+            <a href={`mailto:${adminEmail}`} class="text-primary underline text-sm">
+              Contact us if you need to make changes
+            </a>
+          </p>
+        </div>
+      )
+    }
+
+    {
+      !expired && !alreadyBooked && (
+        <div>
+          <h1 class="text-2xl font-headline font-bold text-primary mb-1">
+            Book your taster session
+          </h1>
+          <p class="text-on-surface-variant mb-2">
+            Hi <strong class="text-on-surface">{enquiryName}</strong> — choose a date below to book
+            your
+            <strong class="text-on-surface">{ageGroupLabel}</strong> taster session
+            {sessionTime ? ` (${sessionTime})` : ''}.
+          </p>
+          <p class="text-sm text-on-surface-variant mb-8">Sessions are held at {venueName}.</p>
+
+          <div
+            id="booking-error"
+            class="hidden bg-error-container border border-error/30 rounded-lg p-4 mb-6 text-sm text-on-error-container"
+            role="alert"
+            aria-live="assertive"
+          />
+
+          <form id="booking-form" class="space-y-3" novalidate>
+            <fieldset>
+              <legend class="text-sm font-semibold text-on-surface mb-3">Choose a date</legend>
+
+              {availableDates.length === 0 && (
+                <p class="text-on-surface-variant text-sm">
+                  No upcoming sessions found. Please contact us at
+                  <a href={`mailto:${adminEmail}`} class="text-primary underline">
+                    {adminEmail}
+                  </a>
+                  .
+                </p>
+              )}
+
+              {availableDates.map((slot) => (
+                <label
+                  class={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors ${
+                    slot.full
+                      ? 'border-outline-variant bg-surface-container opacity-60 cursor-not-allowed'
+                      : 'border-outline bg-surface-container-lowest hover:border-primary/50 hover:bg-primary-fixed/20 has-[:checked]:border-primary has-[:checked]:bg-primary-fixed/20'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="session_date"
+                    value={slot.date}
+                    disabled={slot.full}
+                    class="accent-primary mt-0.5"
+                    required
+                  />
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class={`font-medium text-sm ${slot.full ? 'text-on-surface-variant' : 'text-on-surface'}`}
+                    >
+                      {slot.displayDate}
+                    </p>
+                  </div>
+                  <div class="text-xs shrink-0">
+                    {slot.full ? (
+                      <span class="text-error font-medium">Full</span>
+                    ) : (
+                      <span class="text-green-700 font-medium">
+                        {slot.capacity - slot.booked} place
+                        {slot.capacity - slot.booked === 1 ? '' : 's'} left
+                      </span>
+                    )}
+                  </div>
+                </label>
+              ))}
+            </fieldset>
+
+            {availableDates.some((s) => !s.full) && (
+              <div class="pt-2">
+                <button
+                  id="book-btn"
+                  type="submit"
+                  class="w-full rounded-lg bg-primary-container px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-95"
+                >
+                  Book this session
+                </button>
+              </div>
+            )}
+          </form>
+
+          <div id="booking-confirmation" class="hidden">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-outline-variant shadow-sm p-8 text-center">
+              <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 mb-5">
+                <svg
+                  class="w-7 h-7 text-green-600 dark:text-green-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">
+                You're booked in!
+              </h2>
+              <p
+                id="confirmation-detail"
+                class="text-on-surface-variant dark:text-slate-300 mb-6"
+              />
+              <a
+                id="calendar-link"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-block rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary-fixed/20 transition-colors"
+              >
+                Add to Google Calendar
+              </a>
+              <p class="mt-6 text-sm text-on-surface-variant dark:text-slate-400">
+                A confirmation email is on its way to you. See you there!
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
   </div>
 </Base>
 

@@ -18,10 +18,7 @@ interface ScheduledController {
 }
 
 export default {
-  async scheduled(
-    controller: ScheduledController,
-    env: Env
-  ): Promise<void> {
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     try {
       await handleScheduledEvent(env, controller.cron);
     } catch (error) {

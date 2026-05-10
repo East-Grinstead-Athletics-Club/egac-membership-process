@@ -202,6 +202,9 @@ const mockConfig = {
   venue_name: 'East Grinstead Leisure Centre',
   venue_address: '1 Station Road',
   admin_email: 'admin@egac.co.uk',
+  location_tuesday: '',
+  location_thursday: '',
+  location_saturday: '',
 };
 
 // ============================================================

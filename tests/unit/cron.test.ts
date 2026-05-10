@@ -176,6 +176,9 @@ const mockConfig = {
   admin_email: 'admin@egac.co.uk',
   academy_max_age: '10',
   capacity_per_slot: '2',
+  location_tuesday: '',
+  location_thursday: '',
+  location_saturday: '',
 };
 
 // ============================================================
