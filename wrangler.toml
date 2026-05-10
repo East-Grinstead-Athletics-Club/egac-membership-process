@@ -2,7 +2,7 @@
 # Project: eastgrinsteadac.co.uk
 # Pages build output
 # ----------------------------------------------------------------
-name = "secretary-c13"
+name = "egac-membership"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "dist"
 
