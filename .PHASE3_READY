@@ -1,0 +1,53 @@
+PHASE 3: CLOUDFLARE CONFIGURATION — READY TO EXECUTE
+════════════════════════════════════════════════════════════
+
+✅ All prerequisites met:
+   • Phase 1: Secrets configured (ADMIN_TOKEN, CRON_SECRET, RESEND_API_KEY)
+   • Phase 2: CI passing, staging branch ready
+
+📋 Documentation prepared:
+   1. PHASE3_CLOUDFLARE_CONFIG.md — Detailed checklist for all 5 tasks
+   2. PHASE3_INSTRUCTIONS.txt — Executive summary with timeline
+   3. phase3-verify.sh — Automated verification script
+
+⏱️  Estimated duration: 20–30 minutes (mostly dashboard operations + DNS waiting)
+
+5 TASKS TO COMPLETE:
+────────────────────────────────────────────────────────────
+
+1. Cloudflare Access (Coach App Zero Trust)
+   Location: Zero Trust → Access → Applications
+   Time: ~3 min
+
+2. DNS for Coach Subdomain (coach.eastgrinsteadac.co.uk)
+   Location: Your DNS provider
+   Time: ~2 min + ~5 min propagation
+
+3. Cron Triggers (4 jobs)
+   Location: Pages → egac → Settings → Functions
+   Time: ~5 min
+
+4. Custom Domain (eastgrinsteadac.co.uk)
+   Location: Pages → egac → Settings → Domains
+   Time: ~2 min + ~5 min SSL provision
+
+5. Email Domain (updates.eastgrinsteadac.co.uk)
+   Location: Resend dashboard
+   Time: ~3 min + ~5 min propagation
+
+🎯 NEXT STEP:
+────────────────────────────────────────────────────────────
+
+1. Open: PHASE3_CLOUDFLARE_CONFIG.md
+2. Start with TASK 1 (Cloudflare Access)
+3. Follow checklist for each task
+4. Report completion: ✅ All 5 tasks done
+
+Claude will then:
+   • Run phase3-verify.sh to check DNS/HTTPS/SPF
+   • Verify all configurations
+   • Proceed to Phase 4 (Production Deployment)
+
+════════════════════════════════════════════════════════════
+Prepared: 2026-05-10 17:25 UTC
+Status: Ready for your execution
