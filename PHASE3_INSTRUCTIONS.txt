@@ -1,0 +1,187 @@
+═══════════════════════════════════════════════════════════════════════════════
+  PHASE 3: CLOUDFLARE CONFIGURATION
+  Duration: 20–30 minutes (mostly dashboard operations)
+═══════════════════════════════════════════════════════════════════════════════
+
+PREREQUISITES MET ✅
+  ✅ Phase 1: Secrets configured (ADMIN_TOKEN, CRON_SECRET, RESEND_API_KEY)
+  ✅ Phase 2: CI/CD pipeline passing (251 tests), staging branch ready
+
+═══════════════════════════════════════════════════════════════════════════════
+  YOUR TASK: Execute 5 dashboard operations
+═══════════════════════════════════════════════════════════════════════════════
+
+WHAT YOU NEED TO DO:
+  1. Open Cloudflare Dashboard (https://dash.cloudflare.com)
+  2. Follow PHASE3_CLOUDFLARE_CONFIG.md for step-by-step instructions
+  3. Complete all 5 tasks (15–20 minutes of actual work)
+  4. Wait for DNS propagation (~5 minutes)
+  5. Report back which tasks are complete
+
+WHAT CLAUDE WILL DO:
+  ✓ Verify DNS records resolve
+  ✓ Verify HTTPS on custom domain
+  ✓ Verify email SPF records
+  ✓ Check Cloudflare Access is configured (you'll confirm via dashboard)
+  ✓ Check cron triggers are listed (you'll confirm via dashboard)
+
+═══════════════════════════════════════════════════════════════════════════════
+  5 TASKS (in order)
+═══════════════════════════════════════════════════════════════════════════════
+
+TASK 1: Cloudflare Access (Coach App Zero Trust)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Dashboard: https://dash.cloudflare.com → Zero Trust → Access → Applications
+
+  Actions:
+    1. Click "Add an application" → Choose "Self-hosted"
+    2. Fill form:
+       Application name: EGAC Coach App
+       Subdomain: coach
+       Application domain: coach.eastgrinsteadac.co.uk
+    3. Click "Next"
+    4. Add policy:
+       Policy name: Coach Email Domain
+       Action: Allow
+       Email ends with: eastgrinsteadac.co.uk
+    5. Save application
+
+  Verify: Access URL displayed = https://coach.eastgrinsteadac.co.uk
+  ⏱  Time: ~3 minutes
+
+TASK 2: DNS for Coach Subdomain
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Where: Your DNS provider (GoDaddy, Namecheap, Cloudflare, etc.)
+
+  Actions:
+    1. Log in to DNS provider
+    2. Find domain: eastgrinsteadac.co.uk
+    3. Add CNAME record:
+       Name: coach
+       Value: egac.pages.dev
+    4. Save
+    5. Wait 5 minutes for DNS propagation
+
+  Verify: nslookup coach.eastgrinsteadac.co.uk (should resolve)
+  ⏱  Time: ~2 minutes + ~5 minutes propagation
+
+TASK 3: Cron Triggers (4 jobs)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Dashboard: https://dash.cloudflare.com → Pages → egac → Settings → Functions → Cron Triggers
+
+  Add 4 triggers (each takes ~1 minute):
+
+    1. Expire old invites
+       Cron: 0 9 * * *
+       URL: /api/cron/expire-invites
+
+    2. Retry pending invites
+       Cron: */30 * * * *
+       URL: /api/cron/retry-invites
+
+    3. Send booking reminders
+       Cron: 0 18 * * 2
+       URL: /api/cron/send-reminders
+
+    4. Academy season rollover
+       Cron: 0 9 1 * *
+       URL: /api/cron/academy-rollover
+
+  Verify: All 4 triggers listed in dashboard
+  ⏱  Time: ~5 minutes
+
+TASK 4: Custom Domain
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Dashboard: https://dash.cloudflare.com → Pages → egac → Settings → Domains
+
+  Actions:
+    1. Click "Add custom domain"
+    2. Enter: eastgrinsteadac.co.uk
+    3. If prompted for DNS: add records to your provider
+    4. Wait for SSL/TLS certificate (usually <5 minutes)
+
+  Verify: Domain shows "Active" with green checkmark
+  ⏱  Time: ~2 minutes + ~5 minutes SSL provision
+
+TASK 5: Email Domain (Resend)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Dashboard: https://resend.com/dashboard → Domains
+
+  Actions:
+    1. Click "Add Domain"
+    2. Enter: updates.eastgrinsteadac.co.uk
+    3. Resend displays 3 DNS records (DKIM, SPF, DMARC)
+    4. Copy each record and add to your DNS provider
+    5. Return to Resend → Click "Verify"
+    6. Wait for verification (~5 minutes)
+
+  Verify: Domain shows "Verified" in Resend
+  ⏱  Time: ~3 minutes + ~5 minutes propagation
+
+═══════════════════════════════════════════════════════════════════════════════
+  EXECUTION TIMELINE
+═══════════════════════════════════════════════════════════════════════════════
+
+  Timeline (if done sequentially):
+    0:00   Start Task 1 (Cloudflare Access)
+    3:00   Start Task 2 (Coach DNS) + wait for propagation
+    8:00   Start Task 3 (Cron Triggers) while Task 2 propagates
+    13:00  Start Task 4 (Custom Domain) + wait for SSL
+    15:00  Start Task 5 (Email Domain) while Task 4 provisions SSL
+    20:00  All tasks submitted; waiting for DNS/SSL
+    25:00  DNS/SSL done; verify all
+    30:00  ✅ Complete
+
+  Better approach: Parallel execution
+    0:00   Do Task 1 (Cloudflare Access) — 3 min
+    3:00   Do Task 2 (Coach DNS) — starts propagating
+    5:00   Do Task 3 (Cron Triggers) — 5 min
+    10:00  Do Task 4 (Custom Domain) — starts SSL provisioning
+    12:00  Do Task 5 (Email Domain) — starts propagating
+    15:00  All tasks submitted; DNS/SSL/propagation happening
+    20:00  Everything ready ✅
+
+═══════════════════════════════════════════════════════════════════════════════
+  AFTER COMPLETING ALL TASKS
+═══════════════════════════════════════════════════════════════════════════════
+
+  Reply with:
+    ✅ Task 1 complete (Cloudflare Access configured)
+    ✅ Task 2 complete (Coach DNS record added)
+    ✅ Task 3 complete (4 cron triggers added)
+    ✅ Task 4 complete (Custom domain active)
+    ✅ Task 5 complete (Email domain verified in Resend)
+
+  Claude will then:
+    1. Run verification script: phase3-verify.sh
+    2. Check DNS resolution for coach.eastgrinsteadac.co.uk
+    3. Check HTTPS on eastgrinsteadac.co.uk
+    4. Check SPF records for updates.eastgrinsteadac.co.uk
+    5. Provide summary and proceed to Phase 4
+
+═══════════════════════════════════════════════════════════════════════════════
+  KEY POINTS
+═══════════════════════════════════════════════════════════════════════════════
+
+  ⚠️  DNS PROPAGATION: Can take 5–10 minutes. Be patient; it's normal.
+  ⚠️  SSL CERTIFICATE: Usually <5 minutes. Don't panic if not instant.
+  ⚠️  EMAIL DOMAIN: Must add DKIM/SPF/DMARC records to your DNS provider.
+  ⚠️  CRON TRIGGERS: Won't show "Last Run" until they actually run (no manual test).
+
+  ✅ Use detailed PHASE3_CLOUDFLARE_CONFIG.md for step-by-step instructions.
+  ✅ If you get stuck, Claude can help troubleshoot.
+  ✅ Most of this is waiting; actual work is ~15 minutes.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Ready to start? Open PHASE3_CLOUDFLARE_CONFIG.md and begin with Task 1.
+
+When all tasks are done, reply:
+  "✅ Phase 3 complete:
+   - Task 1: Cloudflare Access configured
+   - Task 2: Coach DNS record added
+   - Task 3: 4 cron triggers configured
+   - Task 4: Custom domain active
+   - Task 5: Email domain verified"
+
+Then Claude will verify everything and move to Phase 4.
