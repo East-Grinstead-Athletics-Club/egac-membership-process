@@ -12,7 +12,7 @@ import {
   updateEnquiry,
 } from '../lib/repositories/enquiries.js';
 import { createInviteForEnquiry, markInviteSent } from '../lib/repositories/invites.js';
-import { addToWaitlist, markWaitlistInviteSent } from '../lib/repositories/academy.js';
+import { addToWaitlist } from '../lib/repositories/academy.js';
 import { sendBookingInvite, sendAcademyWaitlist, sendAcademyRejection } from '../lib/email/templates.js';
 import { getConfig } from '../lib/config.js';
 import { generateId } from '../lib/db/client.js';

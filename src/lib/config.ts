@@ -34,7 +34,7 @@ const CONFIG_DEFAULTS: SystemConfig = {
 
 // Cache key and TTL constants
 const CONFIG_CACHE_KEY = 'config:system';
-const CONFIG_TTL_SECONDS = 300; // 5 minutes
+const _CONFIG_TTL_SECONDS = 300; // 5 minutes
 
 // ------------------------------------------------------------
 // getSystemConfig
