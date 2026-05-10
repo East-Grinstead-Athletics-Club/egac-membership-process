@@ -1,0 +1,58 @@
+# ================================================================
+# EGAC Scheduled Worker Configuration
+# wrangler-cron.toml
+#
+# Deploys the scheduled Worker that handles cron triggers.
+# Deploy separately from the main Pages project:
+#
+#   wrangler deploy --config wrangler-cron.toml
+#
+# This worker shares database bindings and config with the main
+# Pages project but runs on a separate Worker subdomain.
+# ================================================================
+
+name = "egac-scheduled"
+type = "javascript"
+compatibility_date = "2024-09-23"
+main = "src/workers/scheduled.ts"
+
+# ================================================================
+# Environment variables (shared with Pages project)
+# ================================================================
+[vars]
+APP_ENV = "production"
+EMAIL_FROM = "no-reply@updates.eastgrinsteadac.co.uk"
+
+# ================================================================
+# D1 Database (same as Pages project)
+# ================================================================
+[[d1_databases]]
+binding = "DB"
+database_name = "egac"
+database_id = "6a053384-20ee-4fee-bf73-aa29c1779fe3"
+
+# ================================================================
+# KV Namespace (same as Pages project)
+# ================================================================
+[[kv_namespaces]]
+binding = "KV"
+id = "28ecc4df31b44e5e92cc4730c1870829"
+
+# ================================================================
+# Cron Triggers
+# ================================================================
+# Four scheduled jobs, all idempotent and timezone-aware (UTC).
+[triggers]
+crons = [
+  "0 9 * * *",      # Daily 09:00 UTC: expire stale booking invites (14+ days old)
+  "*/30 * * * *",   # Every 30 min: retry pending invite sends (up to 3 attempts)
+  "0 18 * * 2",     # Tue 18:00 UTC: send booking reminders (7 days before session)
+  "0 9 1 * *",      # 1st of month 09:00 UTC: roll unplaced Academy waitlist, close season
+]
+
+# ================================================================
+# Secrets
+# Set via: wrangler secret put --config wrangler-cron.toml <NAME>
+# ================================================================
+# RESEND_API_KEY     - Resend email service API key
+# ADMIN_TOKEN        - Admin portal authentication token (shared with Pages)

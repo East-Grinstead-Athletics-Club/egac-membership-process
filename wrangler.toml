@@ -38,12 +38,17 @@ database_id = "6a053384-20ee-4fee-bf73-aa29c1779fe3"
 binding = "KV"
 id = "28ecc4df31b44e5e92cc4730c1870829"
 
-# ----------------------------------------------------------------
-# Cron Triggers
-# Must be configured in the Cloudflare Pages dashboard:
-# egac project → Settings → Functions → Cron Triggers
+# ================================================================
+# Cron Triggers — Configured via wrangler-cron.toml
+# ================================================================
+# Native Cloudflare Cron Triggers are configured in a separate
+# wrangler-cron.toml file that deploys the scheduled worker.
+# See wrangler-cron.toml for trigger definitions:
 #   0 9 * * *      Daily 09:00 UTC: expire stale invites
 #   0 18 * * 2     Tue 18:00 UTC: booking reminders
 #   */30 * * * *   Every 30 min: retry pending invite sends
 #   0 9 1 * *      1st of month 09:00 UTC: academy season rollover
-# ----------------------------------------------------------------
+#
+# Deploy with:
+#   wrangler deploy --config wrangler-cron.toml
+# ================================================================

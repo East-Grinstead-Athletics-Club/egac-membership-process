@@ -292,16 +292,22 @@ npm test -- age.test.ts    # exact filename
 
 ## Cron Jobs
 
-Four scheduled jobs configured in Cloudflare Pages dashboard (Settings → Functions → Cron Triggers):
+Four scheduled jobs configured as native **Cloudflare Cron Triggers** via `wrangler-cron.toml`:
 
-| Schedule | Job | Endpoint | Purpose |
+| Schedule | Job | Handler | Purpose |
 |---|---|---|---|
-| `0 9 * * *` | Daily 09:00 UTC | `/api/cron/expire-invites` | Mark invites older than 14 days as expired |
-| `*/30 * * * *` | Every 30 min | `/api/cron/retry-invites` | Retry pending invite sends (idempotent) |
-| `0 18 * * 2` | Tue 18:00 UTC | `/api/cron/send-reminders` | Send session reminders (~7 days before) |
-| `0 9 1 * *` | 1st of month 09:00 UTC | `/api/cron/academy-rollover` | Roll over unplaced waitlist, close season |
+| `0 9 * * *` | Daily 09:00 UTC | `runExpireInvites` | Mark invites older than 14 days as expired |
+| `*/30 * * * *` | Every 30 min | `runRetryInvites` | Retry pending invite sends (idempotent) |
+| `0 18 * * 2` | Tue 18:00 UTC | `runSendReminders` | Send session reminders (~7 days before) |
+| `0 9 1 * *` | 1st of month 09:00 UTC | `runAcademyRollover` | Roll over unplaced waitlist, close season |
 
-All protected by `Authorization: Bearer CRON_SECRET` header. Logic in `src/api/cron/`.
+**Setup:**
+- Core logic: `src/api/cron/*.ts` (exports `run*` functions, called by both HTTP and scheduled handlers)
+- Scheduler dispatcher: `src/api/cron-scheduler.ts` (routes cron events to handlers)
+- Scheduled worker: `src/workers/scheduled.ts` (Cloudflare Cron Trigger entry point)
+- Config: `wrangler-cron.toml` (defines triggers)
+
+All handlers are **idempotent by design** — safe to run multiple times. Database operations are protected by `environment` column isolation.
 
 ---
 
@@ -311,6 +317,19 @@ All protected by `Authorization: Bearer CRON_SECRET` header. Logic in `src/api/c
 - Push to `main` branch
 - GitHub Actions CI runs: tests, lint, build
 - Cloudflare Pages deploys automatically
+- Handles all HTTP requests (enquiries, bookings, admin portal, etc.)
+
+### Scheduled Worker (manual — first time only)
+```bash
+# Deploy the cron trigger worker to handle scheduled events
+wrangler deploy --config wrangler-cron.toml
+
+# Set secrets (one-time)
+wrangler secret put RESEND_API_KEY --config wrangler-cron.toml
+wrangler secret put ADMIN_TOKEN --config wrangler-cron.toml
+```
+
+After first deploy, cron triggers run automatically on schedule. No further deployment needed unless you modify `src/workers/scheduled.ts` or `wrangler-cron.toml`.
 
 ### Coach app (manual)
 ```bash
