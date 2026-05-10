@@ -241,8 +241,8 @@ describe('Security headers', () => {
     const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com",
-      "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com",
-      "font-src 'self'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com",
+      "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data:",
       "connect-src 'self'",
       "frame-ancestors 'none'",

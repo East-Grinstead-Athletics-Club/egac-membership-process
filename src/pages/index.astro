@@ -25,183 +25,200 @@ import Base from '../layouts/PublicLayout.astro';
     </div>
   </section>
 
-  <div class="max-w-2xl mx-auto px-6 py-12">
-    <div id="form-section">
-      <!-- Error summary (shown on validation failure) -->
-      <div
-        id="error-summary"
-        class="hidden bg-error-container border border-error/30 rounded-lg p-4 mb-6"
-        role="alert"
-        aria-live="assertive"
-      >
-        <p class="font-semibold text-on-error-container mb-1">Please fix the following:</p>
-        <ul id="error-list" class="list-disc list-inside text-on-error-container text-sm space-y-1">
-        </ul>
+  <div class="bg-surface">
+    <div class="max-w-2xl mx-auto px-6 py-12">
+      <div id="form-section">
+        <!-- Error summary (shown on validation failure) -->
+        <div
+          id="error-summary"
+          class="hidden bg-error-container border border-error/30 rounded-lg p-4 mb-6"
+          role="alert"
+          aria-live="assertive"
+        >
+          <p class="font-semibold text-on-error-container mb-1">Please fix the following:</p>
+          <ul
+            id="error-list"
+            class="list-disc list-inside text-on-error-container text-sm space-y-1"
+          >
+          </ul>
+        </div>
+
+        <form id="enquiry-form" method="POST" action="/api/enquiry" novalidate class="space-y-5">
+          <fieldset>
+            <legend class="block text-sm font-medium text-on-surface mb-2"
+              >Who is this enquiry for?</legend
+            >
+            <div class="grid gap-2 sm:grid-cols-2">
+              <label
+                class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
+              >
+                <input
+                  type="radio"
+                  name="enquiry_for"
+                  value="self"
+                  checked
+                  class="mt-0.5 accent-primary"
+                />
+                <span>I'm enquiring for myself</span>
+              </label>
+              <label
+                class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
+              >
+                <input
+                  type="radio"
+                  name="enquiry_for"
+                  value="other"
+                  class="mt-0.5 accent-primary"
+                />
+                <span>I'm enquiring on behalf of someone else</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Full name -->
+          <div>
+            <label
+              id="name-label"
+              for="name"
+              class="block text-sm font-medium text-on-surface mb-1"
+            >
+              Full name <span class="text-error" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              autocomplete="name"
+              aria-describedby="name-error"
+              class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              placeholder="Parent or guardian name"
+            />
+            <p id="name-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-sm font-medium text-on-surface mb-1">
+              Email address <span class="text-error" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autocomplete="email"
+              aria-describedby="email-error"
+              class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              placeholder="you@example.com"
+            />
+            <p id="email-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
+          </div>
+
+          <!-- Phone -->
+          <div>
+            <label
+              id="phone-label"
+              for="phone"
+              class="block text-sm font-medium text-on-surface mb-1"
+            >
+              Phone number
+              <span class="text-on-surface-variant font-normal">(optional)</span>
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              autocomplete="tel"
+              class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              placeholder="07700 900000"
+            />
+          </div>
+
+          <div id="athlete-name-wrap" class="hidden">
+            <label
+              id="athlete-name-label"
+              for="athlete_name"
+              class="block text-sm font-medium text-on-surface mb-1"
+            >
+              Athlete's name <span class="text-error" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="athlete_name"
+              name="athlete_name"
+              type="text"
+              aria-describedby="athlete_name-error"
+              class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              placeholder="Name of the person you are enquiring about"
+            />
+            <p id="athlete_name-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
+          </div>
+
+          <!-- Date of birth -->
+          <div>
+            <label id="dob-label" for="dob" class="block text-sm font-medium text-on-surface mb-1">
+              Date of birth <span class="text-error" aria-hidden="true">*</span>
+            </label>
+            <input
+              id="dob"
+              name="dob"
+              type="date"
+              autocomplete="bday"
+              aria-describedby="dob-error"
+              class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+            />
+            <p id="dob-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
+          </div>
+
+          <div class="pt-2">
+            <button
+              id="submit-btn"
+              type="submit"
+              class="w-full rounded-lg bg-primary-container px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-95"
+            >
+              Send enquiry
+            </button>
+          </div>
+        </form>
       </div>
 
-      <form id="enquiry-form" method="POST" action="/api/enquiry" novalidate class="space-y-5">
-        <fieldset>
-          <legend class="block text-sm font-medium text-on-surface mb-2"
-            >Who is this enquiry for?</legend
-          >
-          <div class="grid gap-2 sm:grid-cols-2">
-            <label
-              class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
-            >
-              <input
-                type="radio"
-                name="enquiry_for"
-                value="self"
-                checked
-                class="mt-0.5 accent-primary"
-              />
-              <span>I'm enquiring for myself</span>
-            </label>
-            <label
-              class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
-            >
-              <input type="radio" name="enquiry_for" value="other" class="mt-0.5 accent-primary" />
-              <span>I'm enquiring on behalf of someone else</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <!-- Full name -->
-        <div>
-          <label id="name-label" for="name" class="block text-sm font-medium text-on-surface mb-1">
-            Full name <span class="text-error" aria-hidden="true">*</span>
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            autocomplete="name"
-            aria-describedby="name-error"
-            class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-            placeholder="Parent or guardian name"
-          />
-          <p id="name-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
-        </div>
-
-        <!-- Email -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-on-surface mb-1">
-            Email address <span class="text-error" aria-hidden="true">*</span>
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autocomplete="email"
-            aria-describedby="email-error"
-            class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-            placeholder="you@example.com"
-          />
-          <p id="email-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
-        </div>
-
-        <!-- Phone -->
-        <div>
-          <label
-            id="phone-label"
-            for="phone"
-            class="block text-sm font-medium text-on-surface mb-1"
-          >
-            Phone number
-            <span class="text-on-surface-variant font-normal">(optional)</span>
-          </label>
-          <input
-            id="phone"
-            name="phone"
-            type="tel"
-            autocomplete="tel"
-            class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-            placeholder="07700 900000"
-          />
-        </div>
-
-        <div id="athlete-name-wrap" class="hidden">
-          <label
-            id="athlete-name-label"
-            for="athlete_name"
-            class="block text-sm font-medium text-on-surface mb-1"
-          >
-            Athlete's name <span class="text-error" aria-hidden="true">*</span>
-          </label>
-          <input
-            id="athlete_name"
-            name="athlete_name"
-            type="text"
-            aria-describedby="athlete_name-error"
-            class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-            placeholder="Name of the person you are enquiring about"
-          />
-          <p id="athlete_name-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
-        </div>
-
-        <!-- Date of birth -->
-        <div>
-          <label id="dob-label" for="dob" class="block text-sm font-medium text-on-surface mb-1">
-            Date of birth <span class="text-error" aria-hidden="true">*</span>
-          </label>
-          <input
-            id="dob"
-            name="dob"
-            type="date"
-            autocomplete="bday"
-            aria-describedby="dob-error"
-            class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-          />
-          <p id="dob-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
-        </div>
-
-        <div class="pt-2">
-          <button
-            id="submit-btn"
-            type="submit"
-            class="w-full rounded-lg bg-primary-container px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-95"
-          >
-            Send enquiry
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Confirmation (shown after successful submission) -->
-    <div id="confirmation" class="hidden">
-      <div
-        class="bg-white dark:bg-slate-800 rounded-2xl border border-outline-variant shadow-sm p-8 text-center"
-      >
+      <!-- Confirmation (shown after successful submission) -->
+      <div id="confirmation" class="hidden">
         <div
-          class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 mb-5"
+          class="bg-white dark:bg-slate-800 rounded-2xl border border-outline-variant shadow-sm p-8 text-center"
         >
-          <svg
-            class="w-7 h-7 text-green-600 dark:text-green-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
+          <div
+            class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/40 mb-5"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
-            ></path>
-          </svg>
+            <svg
+              class="w-7 h-7 text-green-600 dark:text-green-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">
+            Enquiry received
+          </h2>
+          <p
+            id="confirmation-message"
+            class="text-on-surface-variant dark:text-slate-300 max-w-sm mx-auto mb-6"
+          >
+          </p>
+          <p class="text-sm text-on-surface-variant dark:text-slate-400">
+            Can't find our email? Check your spam folder or contact us at
+            <a href="mailto:secretary@eastgrinsteadac.co.uk" class="text-primary underline">
+              secretary@eastgrinsteadac.co.uk
+            </a>.
+          </p>
         </div>
-        <h2 class="text-xl font-headline font-bold text-on-surface dark:text-white mb-2">
-          Enquiry received
-        </h2>
-        <p
-          id="confirmation-message"
-          class="text-on-surface-variant dark:text-slate-300 max-w-sm mx-auto mb-6"
-        >
-        </p>
-        <p class="text-sm text-on-surface-variant dark:text-slate-400">
-          Can't find our email? Check your spam folder or contact us at
-          <a href="mailto:secretary@eastgrinsteadac.co.uk" class="text-primary underline">
-            secretary@eastgrinsteadac.co.uk
-          </a>.
-        </p>
       </div>
     </div>
   </div>
