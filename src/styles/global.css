@@ -212,8 +212,8 @@ body {
 }
 
 .form-input::placeholder {
-  color: var(--muted);
-  opacity: 1;
+  color: var(--navy);
+  opacity: 0.6;
 }
 
 .form-input:focus {
