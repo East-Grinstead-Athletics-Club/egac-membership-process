@@ -1,0 +1,604 @@
+---
+// src/pages/admin/records/import.astro
+// CSV import form for bulk record uploads
+// Format: event_name | gender | status | uka_age_group_key | athlete_name | performance | date_set | competition_venue
+// Auth: Requires valid egac_admin_token cookie
+
+import { checkAdminToken } from '../../../lib/auth/admin';
+import { parseToRaw } from '../../../lib/records-util';
+import { UKA_AGE_GROUPS } from '../../../../egac-website/src/config/uka-age-groups';
+
+const env = Astro.locals.runtime.env;
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+
+// Auth check
+if (!checkAdminToken(token, env)) {
+  return Astro.redirect('/admin/login');
+}
+
+const db = env.DB;
+const adminId = 'csv-import';
+
+// ============================================================================
+// STATE
+// ============================================================================
+
+let message = { type: '', text: '' };
+let preview: any[] = [];
+let previewError = '';
+let csvContent = '';
+
+// ============================================================================
+// FORM SUBMISSION
+// ============================================================================
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const file = formData.get('csv_file');
+    const action = formData.get('action')?.toString();
+
+    if (!file || !(file instanceof File)) {
+      throw new Error('CSV file is required');
+    }
+
+    if (file.size === 0) {
+      throw new Error('File is empty');
+    }
+
+    const csvText = await file.text();
+    csvContent = csvText;
+
+    if (action === 'preview') {
+      // Parse and show preview
+      const records = parseCSV(csvText);
+
+      if (records.length === 0) {
+        throw new Error('CSV has no data rows');
+      }
+
+      // Validate and enrich first 5 rows
+      preview = records.slice(0, 5).map((rec, idx) => {
+        const validation = validateRow(rec);
+        return { ...rec, ...validation, rowNum: idx + 2 };
+      });
+
+      message = { type: 'info', text: `Preview: ${records.length} rows found (showing first 5)` };
+    } else if (action === 'import') {
+      // Full import
+      const records = parseCSV(csvText);
+
+      if (records.length === 0) {
+        throw new Error('CSV has no data rows');
+      }
+
+      let imported = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (let i = 0; i < records.length; i++) {
+        const rec = records[i];
+        const rowNum = i + 2;
+
+        try {
+          const validation = validateRow(rec);
+          if (!validation.valid) {
+            throw new Error(validation.error || 'Unknown validation error');
+          }
+
+          // Look up category by key
+          const categoryId = await lookupCategoryByKey(rec.uka_age_group_key, db);
+          if (!categoryId) {
+            throw new Error(`Category key not found: ${rec.uka_age_group_key}`);
+          }
+
+          // Look up event
+          const event = await db
+            .prepare('SELECT id, unit_type FROM event_definitions WHERE name = ? AND is_active = TRUE')
+            .bind(rec.event_name)
+            .first<{ id: string; unit_type: string }>();
+
+          if (!event) {
+            throw new Error(`Event not found: ${rec.event_name}`);
+          }
+
+          // Parse performance
+          const resultRaw = parseToRaw(rec.performance, event.unit_type as any);
+
+          // Look up athlete
+          let athleteId: string | null = null;
+          // (EA number not provided in CSV, but could be added)
+
+          // Create achievement
+          const achievementId = crypto.randomUUID();
+          const now = new Date().toISOString();
+
+          // For imports, assume they're new records (will be updated if not)
+          await db
+            .prepare(
+              `
+              INSERT INTO achievements (
+                id, event_id, category_id, athlete_id, athlete_name_raw,
+                ea_number_raw, result_raw, gender, achieved_at, status,
+                is_current_record, created_by, created_at, approved_by,
+                approved_at, source_verified, notes
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `
+            )
+            .bind(
+              achievementId,
+              event.id,
+              categoryId,
+              athleteId,
+              rec.athlete_name,
+              null,
+              resultRaw,
+              rec.gender,
+              rec.date_set,
+              'approved',
+              true, // Mark as current record (can be updated later if not)
+              adminId,
+              now,
+              adminId, // Approved by same admin who imported
+              now,
+              true, // Mark as verified since it's from import
+              rec.competition_venue || null
+            )
+            .run();
+
+          imported++;
+        } catch (err) {
+          failed++;
+          const errMsg = err instanceof Error ? err.message : 'Unknown error';
+          errors.push(`Row ${rowNum}: ${errMsg}`);
+        }
+      }
+
+      const summary = `Imported ${imported} records. ${failed} failed.`;
+      message = {
+        type: failed === 0 ? 'success' : 'warning',
+        text: summary,
+      };
+
+      if (errors.length > 0 && errors.length <= 10) {
+        message.text += '\n' + errors.join('\n');
+      } else if (errors.length > 10) {
+        message.text += `\nFirst 10 errors:\n${errors.slice(0, 10).join('\n')}`;
+      }
+
+      csvContent = '';
+    }
+  } catch (error) {
+    message = {
+      type: 'error',
+      text: error instanceof Error ? error.message : 'Unknown error',
+    };
+    csvContent = '';
+  }
+}
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function parseCSV(csv: string): any[] {
+  const lines = csv.trim().split('\n');
+  if (lines.length < 1) return [];
+
+  const headers = lines[0].split('\t').map((h) => h.trim().toLowerCase());
+  const records = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+
+    const values = lines[i].split('\t').map((v) => v.trim());
+    const record: any = {};
+
+    headers.forEach((header, idx) => {
+      record[header] = values[idx] || '';
+    });
+
+    records.push(record);
+  }
+
+  return records;
+}
+
+function validateRow(rec: any): { valid: boolean; error?: string } {
+  const required = ['event_name', 'gender', 'uka_age_group_key', 'athlete_name', 'performance', 'date_set'];
+
+  for (const field of required) {
+    if (!rec[field]) {
+      return { valid: false, error: `Missing required field: ${field}` };
+    }
+  }
+
+  // Validate gender
+  if (!['M', 'F', 'X', 'Mixed'].includes(rec.gender)) {
+    return { valid: false, error: `Invalid gender: ${rec.gender}` };
+  }
+
+  // Validate date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date_set)) {
+    return { valid: false, error: `Invalid date format (use YYYY-MM-DD): ${rec.date_set}` };
+  }
+
+  const date = new Date(rec.date_set);
+  if (date > new Date()) {
+    return { valid: false, error: `Date cannot be in future: ${rec.date_set}` };
+  }
+
+  return { valid: true };
+}
+
+async function lookupCategoryByKey(key: string, db: any): Promise<string | null> {
+  // Map UKA key to database category name
+  // Supports both old (odd) and new (even) age group systems
+  // Old: U11, U13, U15, U17 (historical records)
+  // New: U12, U14, U16, U18 (from April 1, 2026)
+  const keyToCategoryName: Record<string, string> = {
+    // Old odd-numbered groups (pre-April 2026) → new even-numbered categories
+    u11: 'Under 12',
+    u12: 'Under 12', // New system
+    u13: 'Under 14',
+    u14: 'Under 14', // New system
+    u15: 'Under 16',
+    u16: 'Under 16', // New system
+    u17: 'Under 18',
+    u18: 'Under 18', // New system
+    u20: 'Under 20',
+    senior: 'Senior',
+    v35: 'Veteran 35+',
+    v40: 'Veteran 50+', // No v40 in DB
+    v45: 'Veteran 50+', // No v45 in DB
+    v50: 'Veteran 50+',
+    v55: 'Veteran 50+', // No v55 in DB
+    v60: 'Veteran 50+', // No v60 in DB
+    v65: 'Veteran 50+', // No v65 in DB
+    v70: 'Veteran 50+', // No v70 in DB
+  };
+
+  const categoryName = keyToCategoryName[key];
+  if (!categoryName) return null;
+
+  const category = await db
+    .prepare('SELECT id FROM categories WHERE name = ? AND is_active = TRUE LIMIT 1')
+    .bind(categoryName)
+    .first<{ id: string }>();
+
+  return category?.id ?? null;
+}
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Import Club Records</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #f5f5f5;
+        padding: 1rem;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 1rem;
+      }
+
+      .breadcrumb {
+        font-size: 0.875rem;
+        color: #666;
+        margin-bottom: 1.5rem;
+      }
+
+      .breadcrumb a {
+        color: #0066cc;
+        text-decoration: none;
+      }
+
+      .message {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid;
+      }
+
+      .message.info {
+        background: #e3f2fd;
+        border-color: #2196f3;
+        color: #1565c0;
+      }
+
+      .message.success {
+        background: #e8f5e9;
+        border-color: #66bb6a;
+        color: #2e7d32;
+      }
+
+      .message.warning {
+        background: #fff3e0;
+        border-color: #ffb74d;
+        color: #e65100;
+      }
+
+      .message.error {
+        background: #fde8e8;
+        border-color: #ef5350;
+        color: #c62828;
+      }
+
+      .card {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #333;
+      }
+
+      input[type='file'],
+      textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+      }
+
+      input[type='file']:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #0066cc;
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+      }
+
+      .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 1rem;
+      }
+
+      button,
+      a.button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: #0066cc;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #0052a3;
+      }
+
+      .btn-secondary {
+        background: #e0e0e0;
+        color: #333;
+      }
+
+      .btn-secondary:hover {
+        background: #d0d0d0;
+      }
+
+      .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .preview-table thead {
+        background: #f5f5f5;
+        border-bottom: 2px solid #ddd;
+      }
+
+      .preview-table th,
+      .preview-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      .preview-table th {
+        font-weight: 600;
+        color: #333;
+      }
+
+      .row-valid {
+        background: #f1f8e9;
+      }
+
+      .row-error {
+        background: #ffebee;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .status-ok {
+        background: #c8e6c9;
+        color: #2e7d32;
+      }
+
+      .status-error {
+        background: #ffcdd2;
+        color: #c62828;
+      }
+
+      .format-info {
+        background: #e3f2fd;
+        border-left: 4px solid #0066cc;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 4px;
+      }
+
+      .format-info h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.95rem;
+        color: #0052a3;
+      }
+
+      .format-info code {
+        background: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 2px;
+        font-family: monospace;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="/admin">Admin</a> / <a href="/admin/records">Records</a> / Import
+      </div>
+
+      <h1>📥 Import Club Records</h1>
+
+      {
+        message.text && (
+          <div class={`message ${message.type}`}>
+            {message.text.split('\n').map((line) => (
+              <>
+                {line}
+                <br />
+              </>
+            ))}
+          </div>
+        )
+      }
+
+      <div class="card">
+        <div class="format-info">
+          <h3>📋 CSV Format</h3>
+          <p>
+            Tab-separated file with columns:
+            <code>event_name</code> | <code>gender</code> | <code>status</code> | <code>uka_age_group_key</code> | <code>athlete_name</code> | <code>performance</code> | <code>date_set</code> | <code>competition_venue</code>
+          </p>
+          <p style="margin-top: 0.5rem; font-size: 0.85rem;">
+            • <strong>gender:</strong> M, F, X, or Mixed<br />
+            • <strong>uka_age_group_key:</strong> Old system (pre-Apr 2026): u11, u13, u15, u17 | New system: u12, u14, u16, u18 | Other: u20, senior, v35, v40, v45, v50, v55, v60, v65, v70<br />
+            • <strong>performance:</strong> MM:SS.hh for times, M.cc for distances (e.g., 12:34.56 or 5.45)<br />
+            • <strong>date_set:</strong> YYYY-MM-DD format (cannot be future date)
+          </p>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="csv_file">Select CSV File</label>
+            <input
+              id="csv_file"
+              type="file"
+              name="csv_file"
+              accept=".csv,.txt"
+              required
+            />
+            <div class="help-text">Tab-separated values (.csv or .txt)</div>
+          </div>
+
+          <div class="button-group">
+            <button
+              type="submit"
+              name="action"
+              value="preview"
+              class="btn-primary"
+            >
+              👁️ Preview
+            </button>
+            {preview.length > 0 && (
+              <button
+                type="submit"
+                name="action"
+                value="import"
+                class="btn-primary"
+              >
+                ✅ Import All
+              </button>
+            )}
+            <a href="/admin/records" class="button btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+
+      {preview.length > 0 && (
+        <div class="card">
+          <h2 style="margin-bottom: 1rem;">Preview (First 5 Rows)</h2>
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>Row</th>
+                <th>Event</th>
+                <th>Category</th>
+                <th>Gender</th>
+                <th>Athlete</th>
+                <th>Performance</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {preview.map((row) => (
+                <tr class={row.valid ? 'row-valid' : 'row-error'}>
+                  <td>{row.rowNum}</td>
+                  <td>{row.event_name}</td>
+                  <td>{row.uka_age_group_key}</td>
+                  <td>{row.gender}</td>
+                  <td>{row.athlete_name}</td>
+                  <td>{row.performance}</td>
+                  <td>{row.date_set}</td>
+                  <td>
+                    <span class={row.valid ? 'status-badge status-ok' : 'status-badge status-error'}>
+                      {row.valid ? '✓ Valid' : '✗ ' + (row.error || 'Error')}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </body>
+</html>

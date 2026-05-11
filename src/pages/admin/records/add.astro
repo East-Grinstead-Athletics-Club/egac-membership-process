@@ -1,0 +1,526 @@
+---
+// src/pages/admin/records/add.astro
+// Admin form for entering new club records
+// Auth: Requires valid egac_admin_token cookie
+
+import { checkAdminToken } from '../../../lib/auth/admin';
+import { parseToRaw, validateValue } from '../../../lib/records-util';
+
+const env = Astro.locals.runtime.env;
+const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
+
+// Auth check
+if (!checkAdminToken(token, env)) {
+  return Astro.redirect('/admin/login');
+}
+
+const db = env.DB;
+const adminId = 'admin'; // Fixed identifier for manual entry
+
+// ============================================================================
+// FORM SUBMISSION HANDLER
+// ============================================================================
+
+let formError = '';
+let formSuccess = '';
+
+if (Astro.request.method === 'POST') {
+  try {
+    const data = await Astro.request.formData();
+    const eventId = data.get('event_id')?.toString();
+    const categoryId = data.get('category_id')?.toString();
+    const athleteName = data.get('athlete_name')?.toString();
+    const eaNumber = data.get('ea_number')?.toString();
+    const gender = data.get('gender')?.toString();
+    const result = data.get('result')?.toString();
+    const achievedAt = data.get('achieved_at')?.toString();
+    const notes = data.get('notes')?.toString();
+
+    // Validation
+    if (!eventId) throw new Error('Event is required');
+    if (!categoryId) throw new Error('Category is required');
+    if (!athleteName) throw new Error('Athlete name is required');
+    if (!gender) throw new Error('Gender is required');
+    if (!result) throw new Error('Result is required');
+    if (!achievedAt) throw new Error('Date achieved is required');
+
+    // Get event details to validate result format
+    const event = await db
+      .prepare('SELECT unit_type FROM event_definitions WHERE id = ?')
+      .bind(eventId)
+      .first<{ unit_type: string }>();
+
+    if (!event) throw new Error('Invalid event');
+
+    // Parse result to raw value
+    const parseResult = validateValue(result, event.unit_type as any);
+    if (!parseResult.valid) {
+      throw new Error(`Invalid result: ${parseResult.error}`);
+    }
+
+    const resultRaw = parseResult.parsed!;
+
+    // Check if athlete exists
+    let athleteId: string | null = null;
+    if (eaNumber) {
+      const athlete = await db
+        .prepare(
+          'SELECT id FROM athletes WHERE EA_reg_number = ? OR id = ?'
+        )
+        .bind(eaNumber, eaNumber)
+        .first<{ id: string }>();
+
+      athleteId = athlete?.id ?? null;
+    }
+
+    // Create achievement
+    const achievementId = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await db
+      .prepare(
+        `
+        INSERT INTO achievements (
+          id,
+          event_id,
+          category_id,
+          athlete_id,
+          athlete_name_raw,
+          ea_number_raw,
+          result_raw,
+          gender,
+          achieved_at,
+          status,
+          created_by,
+          created_at,
+          source_verified,
+          notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+      )
+      .bind(
+        achievementId,
+        eventId,
+        categoryId,
+        athleteId,
+        athleteName,
+        eaNumber || null,
+        resultRaw,
+        gender,
+        achievedAt,
+        'pending', // Always start as pending for approval
+        adminId,
+        now,
+        false, // Will be verified during approval
+        notes || null
+      )
+      .run();
+
+    // If EA number was provided but athlete not found, log this for follow-up
+    if (eaNumber && !athleteId) {
+      console.warn(
+        `Achievement ${achievementId}: EA number ${eaNumber} not found in athletes table. Flag for manual review.`
+      );
+    }
+
+    formSuccess = `Record added successfully! Achievement ID: ${achievementId}. Status: Pending approval.`;
+
+    // Could redirect here if desired
+    // return Astro.redirect('/admin/records/pending');
+  } catch (error) {
+    formError = error instanceof Error ? error.message : 'Unknown error occurred';
+  }
+}
+
+// ============================================================================
+// FETCH DATA FOR FORM
+// ============================================================================
+
+// Get active events
+const events = await db
+  .prepare(
+    `
+    SELECT id, name, event_type, unit_type, sort_order
+    FROM event_definitions
+    WHERE is_active = TRUE
+    ORDER BY name
+  `
+  )
+  .all<{
+    id: string;
+    name: string;
+    event_type: string;
+    unit_type: string;
+    sort_order: string;
+  }>();
+
+// Get active categories
+const categories = await db
+  .prepare(
+    `
+    SELECT id, name, min_age, max_age
+    FROM categories
+    WHERE is_active = TRUE
+    ORDER BY sort_order, min_age
+  `
+  )
+  .all<{ id: string; name: string; min_age: number; max_age: number }>();
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Club Record</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        background: #f5f5f5;
+      }
+
+      .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        margin-top: 0;
+        color: #333;
+      }
+
+      .breadcrumb {
+        font-size: 0.875rem;
+        color: #666;
+        margin-bottom: 1.5rem;
+      }
+
+      .breadcrumb a {
+        color: #0066cc;
+        text-decoration: none;
+      }
+
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #333;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-family: inherit;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #0066cc;
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+      }
+
+      .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+      }
+
+      .required {
+        color: #d32f2f;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      @media (max-width: 600px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      button,
+      a.button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: #0066cc;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #0052a3;
+      }
+
+      .btn-secondary {
+        background: #e0e0e0;
+        color: #333;
+      }
+
+      .btn-secondary:hover {
+        background: #d0d0d0;
+      }
+
+      .alert {
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+      }
+
+      .alert-error {
+        background: #fde8e8;
+        color: #c62828;
+        border: 1px solid #ef5350;
+      }
+
+      .alert-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #66bb6a;
+      }
+
+      .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #0066cc;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 4px;
+      }
+
+      .info-box h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.95rem;
+        color: #0052a3;
+      }
+
+      .info-box p {
+        margin: 0.25rem 0;
+        font-size: 0.875rem;
+        color: #1565c0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="/admin">Admin</a> / <a href="/admin/records">Records</a> / Add
+      </div>
+
+      <h1>Add Club Record</h1>
+
+      {
+        formError && (
+          <div class="alert alert-error">
+            <strong>Error:</strong> {formError}
+          </div>
+        )
+      }
+
+      {
+        formSuccess && (
+          <div class="alert alert-success">
+            <strong>Success!</strong> {formSuccess}
+          </div>
+        )
+      }
+
+      <div class="info-box">
+        <h3>📌 About This Form</h3>
+        <p>
+          • All records start as <strong>Pending</strong> and require approval
+        </p>
+        <p>• Time format: MM:SS.hh (e.g., 12:34.56)</p>
+        <p>• Distance format: M.cc (e.g., 5.45 for 5.45m)</p>
+        <p>
+          • If the athlete is already in the system, provide their EA number
+        </p>
+      </div>
+
+      <form method="POST">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="event_id">
+              Event <span class="required">*</span>
+            </label>
+            <select id="event_id" name="event_id" required>
+              <option value="">-- Select an event --</option>
+              {
+                events.results.map((event) => (
+                  <option value={event.id}>
+                    {event.name} ({event.unit_type})
+                  </option>
+                ))
+              }
+            </select>
+            <div class="help-text">
+              Choose the event. The format depends on whether it's a time or
+              distance event.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="category_id">
+              Category <span class="required">*</span>
+            </label>
+            <select id="category_id" name="category_id" required>
+              <option value="">-- Select a category --</option>
+              {
+                categories.results.map((cat) => (
+                  <option value={cat.id}>
+                    {cat.name} (Ages {cat.min_age}–{cat.max_age})
+                  </option>
+                ))
+              }
+            </select>
+            <div class="help-text">Choose the age category for this record.</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="athlete_name">
+              Athlete Name <span class="required">*</span>
+            </label>
+            <input
+              id="athlete_name"
+              type="text"
+              name="athlete_name"
+              placeholder="John Smith"
+              required
+            />
+            <div class="help-text">Full name of the athlete.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="ea_number">EA Number (Optional)</label>
+            <input
+              id="ea_number"
+              type="text"
+              name="ea_number"
+              placeholder="e.g., 12345"
+            />
+            <div class="help-text">
+              If the athlete is in our system, their EA number links the record.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="gender">
+              Gender <span class="required">*</span>
+            </label>
+            <select id="gender" name="gender" required>
+              <option value="">-- Select --</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+              <option value="X">Other</option>
+              <option value="Mixed">Mixed</option>
+            </select>
+            <div class="help-text">Gender of athlete or mixed team.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="result">
+              Result <span class="required">*</span>
+            </label>
+            <input
+              id="result"
+              type="text"
+              name="result"
+              placeholder="12:34.56"
+              required
+            />
+            <div class="help-text">
+              Format depends on event type. Check the info box above.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="achieved_at">
+              Date Achieved <span class="required">*</span>
+            </label>
+            <input
+              id="achieved_at"
+              type="date"
+              name="achieved_at"
+              required
+            />
+            <div class="help-text">When was this record set?</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notes (Optional)</label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows="4"
+            placeholder="e.g., 'Set at Regional Championships', 'Verified by Coach Sarah'"
+          ></textarea>
+          <div class="help-text">
+            Any additional context or source information.
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="btn-primary">Submit Record</button>
+          <a href="/admin/records" class="button btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      // Update placeholder based on selected event type
+      const eventSelect = document.getElementById('event_id') as unknown as HTMLSelectElement;
+      eventSelect?.addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        const unitType = selectedOption.textContent?.includes('time')
+          ? 'time'
+          : 'distance';
+        const resultInput = document.getElementById('result') as HTMLInputElement;
+
+        if (resultInput) {
+          resultInput.placeholder =
+            unitType === 'time' ? '12:34.56' : '5.45';
+        }
+      });
+    </script>
+  </body>
+</html>
