@@ -211,6 +211,11 @@ body {
   appearance: none;
 }
 
+.form-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
 .form-input:focus {
   outline: none;
   border-color: var(--navy-mid);

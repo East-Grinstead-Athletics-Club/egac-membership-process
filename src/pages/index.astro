@@ -25,7 +25,7 @@ import Base from '../layouts/PublicLayout.astro';
     </div>
   </section>
 
-  <div class="bg-surface">
+  <div class="bg-surface-container-low">
     <div class="max-w-2xl mx-auto px-6 py-12">
       <div id="form-section">
         <!-- Error summary (shown on validation failure) -->
@@ -50,7 +50,7 @@ import Base from '../layouts/PublicLayout.astro';
             >
             <div class="grid gap-2 sm:grid-cols-2">
               <label
-                class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
+                class="flex items-start gap-2 rounded-lg border border-outline bg-white text-on-surface px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
               >
                 <input
                   type="radio"
@@ -62,7 +62,7 @@ import Base from '../layouts/PublicLayout.astro';
                 <span>I'm enquiring for myself</span>
               </label>
               <label
-                class="flex items-start gap-2 rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
+                class="flex items-start gap-2 rounded-lg border border-outline bg-white text-on-surface px-3 py-2 text-sm cursor-pointer hover:border-primary/50 transition-colors"
               >
                 <input
                   type="radio"
@@ -91,7 +91,7 @@ import Base from '../layouts/PublicLayout.astro';
               required
               autocomplete="name"
               aria-describedby="name-error"
-              class="w-full rounded-lg border border-outline bg-surface-container-lowest px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+              class="w-full rounded-lg border border-outline bg-white text-on-surface px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors placeholder:text-on-surface-variant"
               placeholder="Parent or guardian name"
             />
             <p id="name-error" class="hidden mt-1 text-xs text-error" role="alert"></p>
