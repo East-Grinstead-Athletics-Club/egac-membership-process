@@ -21,7 +21,7 @@ pages_build_output_dir = "dist"
 # ----------------------------------------------------------------
 [vars]
 APP_ENV = "production"
-EMAIL_FROM = "no-reply@updates.eastgrinsteadac.co.uk"
+EMAIL_FROM = "secretary@eastgrinsteadac.co.uk"
 
 # ----------------------------------------------------------------
 # D1 Database
