@@ -92,7 +92,9 @@ if (Astro.request.method === 'POST') {
 
           // Look up event
           const event = await db
-            .prepare('SELECT id, unit_type FROM event_definitions WHERE name = ? AND is_active = TRUE')
+            .prepare(
+              'SELECT id, unit_type FROM event_definitions WHERE name = ? AND is_active = TRUE'
+            )
             .bind(rec.event_name)
             .first<{ id: string; unit_type: string }>();
 
@@ -164,7 +166,6 @@ if (Astro.request.method === 'POST') {
       } else if (errors.length > 10) {
         message.text += `\nFirst 10 errors:\n${errors.slice(0, 10).join('\n')}`;
       }
-
     }
   } catch (error) {
     message = {
@@ -202,7 +203,14 @@ function parseCSV(csv: string): Array<Record<string, string>> {
 }
 
 function validateRow(rec: Record<string, string>): { valid: boolean; error?: string } {
-  const required = ['event_name', 'gender', 'uka_age_group_key', 'athlete_name', 'performance', 'date_set'];
+  const required = [
+    'event_name',
+    'gender',
+    'uka_age_group_key',
+    'athlete_name',
+    'performance',
+    'date_set',
+  ];
 
   for (const field of required) {
     if (!rec[field]) {
@@ -280,7 +288,10 @@ async function lookupCategoryByKey(key: string, db: D1Database): Promise<string 
       }
 
       body {
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
         background: #f5f5f5;
         padding: 1rem;
       }
@@ -511,12 +522,19 @@ async function lookupCategoryByKey(key: string, db: D1Database): Promise<string 
           <h3>📋 CSV Format</h3>
           <p>
             Tab-separated file with columns:
-            <code>event_name</code> | <code>gender</code> | <code>status</code> | <code>uka_age_group_key</code> | <code>athlete_name</code> | <code>performance</code> | <code>date_set</code> | <code>competition_venue</code>
+            <code>event_name</code> | <code>gender</code> | <code>status</code> | <code
+              >uka_age_group_key</code
+            > | <code>athlete_name</code> | <code>performance</code> | <code>date_set</code> | <code
+              >competition_venue</code
+            >
           </p>
           <p style="margin-top: 0.5rem; font-size: 0.85rem;">
             • <strong>gender:</strong> M, F, X, or Mixed<br />
-            • <strong>uka_age_group_key:</strong> Old system (pre-Apr 2026): u11, u13, u15, u17 | New system: u12, u14, u16, u18 | Other: u20, senior, v35, v40, v45, v50, v55, v60, v65, v70<br />
-            • <strong>performance:</strong> MM:SS.hh for times, M.cc for distances (e.g., 12:34.56 or 5.45)<br />
+            • <strong>uka_age_group_key:</strong> Old system (pre-Apr 2026): u11, u13, u15, u17 | New
+            system: u12, u14, u16, u18 | Other: u20, senior, v35, v40, v45, v50, v55, v60, v65, v70<br
+            />
+            • <strong>performance:</strong> MM:SS.hh for times, M.cc for distances (e.g., 12:34.56 or
+            5.45)<br />
             • <strong>date_set:</strong> YYYY-MM-DD format (cannot be future date)
           </p>
         </div>
@@ -524,77 +542,67 @@ async function lookupCategoryByKey(key: string, db: D1Database): Promise<string 
         <form method="POST" enctype="multipart/form-data">
           <div class="form-group">
             <label for="csv_file">Select CSV File</label>
-            <input
-              id="csv_file"
-              type="file"
-              name="csv_file"
-              accept=".csv,.txt"
-              required
-            />
+            <input id="csv_file" type="file" name="csv_file" accept=".csv,.txt" required />
             <div class="help-text">Tab-separated values (.csv or .txt)</div>
           </div>
 
           <div class="button-group">
-            <button
-              type="submit"
-              name="action"
-              value="preview"
-              class="btn-primary"
-            >
+            <button type="submit" name="action" value="preview" class="btn-primary">
               👁️ Preview
             </button>
-            {preview.length > 0 && (
-              <button
-                type="submit"
-                name="action"
-                value="import"
-                class="btn-primary"
-              >
-                ✅ Import All
-              </button>
-            )}
+            {
+              preview.length > 0 && (
+                <button type="submit" name="action" value="import" class="btn-primary">
+                  ✅ Import All
+                </button>
+              )
+            }
             <a href="/admin/records" class="button btn-secondary">Cancel</a>
           </div>
         </form>
       </div>
 
-      {preview.length > 0 && (
-        <div class="card">
-          <h2 style="margin-bottom: 1rem;">Preview (First 5 Rows)</h2>
-          <table class="preview-table">
-            <thead>
-              <tr>
-                <th>Row</th>
-                <th>Event</th>
-                <th>Category</th>
-                <th>Gender</th>
-                <th>Athlete</th>
-                <th>Performance</th>
-                <th>Date</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.map((row) => (
-                <tr class={row.valid ? 'row-valid' : 'row-error'}>
-                  <td>{row.rowNum}</td>
-                  <td>{row.event_name}</td>
-                  <td>{row.uka_age_group_key}</td>
-                  <td>{row.gender}</td>
-                  <td>{row.athlete_name}</td>
-                  <td>{row.performance}</td>
-                  <td>{row.date_set}</td>
-                  <td>
-                    <span class={row.valid ? 'status-badge status-ok' : 'status-badge status-error'}>
-                      {row.valid ? '✓ Valid' : '✗ ' + (row.error || 'Error')}
-                    </span>
-                  </td>
+      {
+        preview.length > 0 && (
+          <div class="card">
+            <h2 style="margin-bottom: 1rem;">Preview (First 5 Rows)</h2>
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th>Row</th>
+                  <th>Event</th>
+                  <th>Category</th>
+                  <th>Gender</th>
+                  <th>Athlete</th>
+                  <th>Performance</th>
+                  <th>Date</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {preview.map((row) => (
+                  <tr class={row.valid ? 'row-valid' : 'row-error'}>
+                    <td>{row.rowNum}</td>
+                    <td>{row.event_name}</td>
+                    <td>{row.uka_age_group_key}</td>
+                    <td>{row.gender}</td>
+                    <td>{row.athlete_name}</td>
+                    <td>{row.performance}</td>
+                    <td>{row.date_set}</td>
+                    <td>
+                      <span
+                        class={row.valid ? 'status-badge status-ok' : 'status-badge status-error'}
+                      >
+                        {row.valid ? '✓ Valid' : '✗ ' + (row.error || 'Error')}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      }
     </div>
   </body>
 </html>
