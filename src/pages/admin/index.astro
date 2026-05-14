@@ -1,0 +1,594 @@
+---
+// src/pages/admin/index.astro
+// Admin club records display with filtering
+
+import { D1Database } from '@cloudflare/workers-types';
+import { formatFromRaw } from '../../lib/records-util';
+
+interface Props {
+  db: D1Database;
+}
+
+const { db } = Astro.props;
+
+// ============================================================================
+// FILTER PARAMETERS
+// ============================================================================
+
+const url = new URL(Astro.request.url);
+const filterEvent = url.searchParams.get('event') || '';
+const filterCategory = url.searchParams.get('category') || '';
+const filterGender = url.searchParams.get('gender') || '';
+
+// ============================================================================
+// FETCH DATA
+// ============================================================================
+
+// Get all active events for dropdown
+const allEvents = await db
+  .prepare(
+    `
+    SELECT id, name, unit_type, sort_order
+    FROM event_definitions
+    WHERE is_active = TRUE
+    ORDER BY name
+  `
+  )
+  .all<{ id: string; name: string; unit_type: string; sort_order: string }>();
+
+// Get all active categories for dropdown
+const allCategories = await db
+  .prepare(
+    `
+    SELECT id, name, min_age, max_age
+    FROM categories
+    WHERE is_active = TRUE
+    ORDER BY sort_order, min_age
+  `
+  )
+  .all<{ id: string; name: string; min_age: number | null; max_age: number | null }>();
+
+// Build WHERE clause based on filters
+let whereClause = 'WHERE ach.status = "approved" AND ach.is_current_record = TRUE';
+const params = [];
+
+if (filterEvent) {
+  whereClause += ' AND ach.event_id = ?';
+  params.push(filterEvent);
+}
+if (filterCategory) {
+  whereClause += ' AND ach.category_id = ?';
+  params.push(filterCategory);
+}
+if (filterGender) {
+  whereClause += ' AND ach.gender = ?';
+  params.push(filterGender);
+}
+
+// Fetch records
+let query = db.prepare(
+  `
+  SELECT
+    ach.id,
+    ach.event_id,
+    e.name AS event_name,
+    e.unit_type,
+    e.sort_order,
+    ach.category_id,
+    c.name AS category_name,
+    c.min_age,
+    c.max_age,
+    ach.gender,
+    ach.athlete_id,
+    COALESCE(a.name, ach.athlete_name_raw) AS athlete_name,
+    COALESCE(a.EA_reg_number, ach.ea_number_raw) AS ea_number,
+    ach.result_raw,
+    ach.achieved_at
+  FROM achievements ach
+  JOIN event_definitions e ON ach.event_id = e.id
+  JOIN categories c ON ach.category_id = c.id
+  LEFT JOIN athletes a ON ach.athlete_id = a.id
+  ${whereClause}
+  ORDER BY e.name, c.sort_order, ach.gender
+`
+);
+
+if (params.length > 0) {
+  query = query.bind(...params);
+}
+
+const records = await query.all<Record<string, unknown>>();
+
+// Group records for display
+const groupedByEvent: Record<string, Array<Record<string, unknown>>> = {};
+for (const record of records.results) {
+  if (!groupedByEvent[record.event_name as string]) {
+    groupedByEvent[record.event_name as string] = [];
+  }
+  groupedByEvent[record.event_name as string].push(record);
+}
+
+// Get stats
+const stats = {
+  totalRecords: records.results.length,
+  totalEvents: new Set(records.results.map((r) => r.event_id)).size,
+  totalAthletes: new Set(records.results.map((r) => r.athlete_id).filter(Boolean)).size,
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Club Records</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 2rem 1rem;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        color: white;
+        margin-bottom: 3rem;
+      }
+
+      header h1 {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      header p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-card .number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+      }
+
+      .stat-card .label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+      }
+
+      .filters {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .filters h2 {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+        color: #333;
+      }
+
+      .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+      }
+
+      select {
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        background: white;
+        cursor: pointer;
+      }
+
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .filter-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+      }
+
+      button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-filter {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-filter:hover {
+        background: #5568d3;
+      }
+
+      .btn-clear {
+        background: #f0f0f0;
+        color: #333;
+      }
+
+      .btn-clear:hover {
+        background: #e0e0e0;
+      }
+
+      .records-container {
+        display: grid;
+        gap: 2rem;
+      }
+
+      .event-section {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .event-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-bottom: 4px solid #667eea;
+      }
+
+      .event-header h3 {
+        font-size: 1.4rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .event-type {
+        font-size: 0.85rem;
+        opacity: 0.9;
+      }
+
+      .records-table {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        background: #f5f5f5;
+        border-bottom: 2px solid #ddd;
+      }
+
+      th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+      }
+
+      td {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+      }
+
+      tbody tr:hover {
+        background: #f9f9f9;
+      }
+
+      .result-cell {
+        font-weight: 600;
+        color: #667eea;
+        font-size: 1.1rem;
+      }
+
+      .gender-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .gender-male {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .gender-female {
+        background: #fce4ec;
+        color: #c2185b;
+      }
+
+      .gender-mixed {
+        background: #f3e5f5;
+        color: #7b1fa2;
+      }
+
+      .athlete-name {
+        font-weight: 500;
+        color: #333;
+      }
+
+      .athlete-name a {
+        color: #667eea;
+        text-decoration: none;
+      }
+
+      .athlete-name a:hover {
+        text-decoration: underline;
+      }
+
+      .category-tag {
+        display: inline-block;
+        background: #e8f4f8;
+        color: #0277bd;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+      }
+
+      .date-cell {
+        color: #999;
+        font-size: 0.95rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: white;
+      }
+
+      .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .empty-state p {
+        opacity: 0.9;
+      }
+
+      @media (max-width: 768px) {
+        header h1 {
+          font-size: 2rem;
+        }
+
+        .filter-row {
+          grid-template-columns: 1fr;
+        }
+
+        .filter-actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        table {
+          font-size: 0.9rem;
+        }
+
+        th,
+        td {
+          padding: 0.75rem;
+        }
+
+        .event-header h3 {
+          font-size: 1.1rem;
+        }
+
+        .result-cell {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🏆 Club Records</h1>
+        <p>All-time club best performances</p>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="number">{stats.totalRecords}</div>
+          <div class="label">Records</div>
+        </div>
+        <div class="stat-card">
+          <div class="number">{stats.totalEvents}</div>
+          <div class="label">Events</div>
+        </div>
+        <div class="stat-card">
+          <div class="number">{stats.totalAthletes}</div>
+          <div class="label">Athletes</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <h2>Filter Records</h2>
+        <form method="GET" action="/records">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="event">Event</label>
+              <select id="event" name="event">
+                <option value="">All Events</option>
+                {
+                  allEvents.results.map((event) => (
+                    <option value={event.id} selected={filterEvent === event.id}>
+                      {event.name}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="category">Category</label>
+              <select id="category" name="category">
+                <option value="">All Categories</option>
+                {
+                  allCategories.results.map((cat) => (
+                    <option value={cat.id} selected={filterCategory === cat.id}>
+                      {cat.name}
+                      {cat.min_age && cat.max_age && ` (${cat.min_age}–${cat.max_age})`}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="gender">Gender</label>
+              <select id="gender" name="gender">
+                <option value="">All Genders</option>
+                <option value="M" selected={filterGender === 'M'}>Male</option>
+                <option value="F" selected={filterGender === 'F'}>Female</option>
+                <option value="X" selected={filterGender === 'X'}>Other</option>
+                <option value="Mixed" selected={filterGender === 'Mixed'}>Mixed</option>
+              </select>
+            </div>
+
+            <div class="filter-actions">
+              <button type="submit" class="btn-filter">🔍 Filter</button>
+              <a href="/records" class="btn-clear" style="text-decoration: none; text-align: center;"
+                >Clear All</a
+              >
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {records.results.length === 0 ? (
+        <div class="empty-state">
+          <h3>No records found</h3>
+          <p>Try adjusting your filters</p>
+        </div>
+      ) : (
+        <div class="records-container">
+          {
+            Object.entries(groupedByEvent).map(([eventName, eventRecords]) => (
+              <div class="event-section">
+                <div class="event-header">
+                  <h3>{eventName}</h3>
+                  <div class="event-type">
+                    {eventRecords[0].unit_type} • Best:{' '}
+                    {eventRecords[0].sort_order === 'ASC' ? 'Lowest' : 'Highest'}
+                  </div>
+                </div>
+                <div class="records-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Category</th>
+                        <th>Gender</th>
+                        <th>Result</th>
+                        <th>Athlete</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eventRecords.map((record) => (
+                        <tr>
+                          <td>
+                            <span class="category-tag">{record.category_name}</span>
+                          </td>
+                          <td>
+                            <span
+                              class={`gender-badge gender-${record.gender === 'M' ? 'male' : record.gender === 'F' ? 'female' : 'mixed'}`}
+                            >
+                              {record.gender === 'M'
+                                ? '♂ Male'
+                                : record.gender === 'F'
+                                  ? '♀ Female'
+                                  : record.gender === 'X'
+                                    ? 'Other'
+                                    : 'Mixed'}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="result-cell">
+                              {formatFromRaw(record.result_raw, record.unit_type)}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="athlete-name">
+                              {record.ea_number ? (
+                                <a
+                                  href={`https://www.powerof10.info/athletes/profile.aspx?uarn=${record.ea_number}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {record.athlete_name} →
+                                </a>
+                              ) : (
+                                record.athlete_name
+                              )}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="date-cell">
+                              {new Date(record.achieved_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      )}
+    </div>
+  </body>
+</html>

@@ -3,6 +3,7 @@
 // Admin approval dashboard for pending records
 // Auth: Requires valid egac_admin_token cookie
 
+import { D1Database } from '@cloudflare/workers-types';
 import { checkAdminToken } from '../../../lib/auth/admin';
 
 const env = Astro.locals.runtime.env;
@@ -34,7 +35,7 @@ if (Astro.request.method === 'POST') {
     const achievement = await db
       .prepare('SELECT * FROM achievements WHERE id = ?')
       .bind(achievementId)
-      .first<any>();
+      .first<Record<string, unknown>>();
 
     if (!achievement) throw new Error('Achievement not found');
 
@@ -56,7 +57,7 @@ if (Astro.request.method === 'POST') {
         `
         )
         .bind(achievement.event_id, achievement.category_id, achievement.gender)
-        .first<any>();
+        .first<{ id: string; result_raw: number; sort_order: string }>();
 
       let isNewRecord = false;
       let previousRecordId = null;
@@ -179,7 +180,7 @@ async function updateRecordHolder(
     `
     )
     .bind(eventId, categoryId, gender || null)
-    .first<any>();
+    .first<{ id: string; athlete_id: string | null; athlete_name: string; ea_number: string | null; result_raw: number; achieved_at: string }>();
 
   if (!best) return;
 
@@ -237,7 +238,7 @@ const pending = await db
     ORDER BY ach.created_at DESC
   `
   )
-  .all<any>();
+  .all<Record<string, unknown>>();
 
 // Import utility to format results
 const { formatFromRaw } = await import('../../../lib/records-util');
@@ -533,7 +534,7 @@ const { formatFromRaw } = await import('../../../lib/records-util');
         </div>
       ) : (
         <div class="records-grid">
-          {pending.results.map((record: any) => (
+          {pending.results.map((record) => (
             <div class="record-card" data-id={record.id}>
               <div class="record-header">
                 <div class="event-info">
@@ -554,19 +555,19 @@ const { formatFromRaw } = await import('../../../lib/records-util');
 
                 <div class="record-field">
                   <label>Athlete:</label>
-                  <value>{record.athlete_name_raw}</value>
+                  <span class="value">{record.athlete_name_raw}</span>
                 </div>
 
                 {record.ea_number_raw && (
                   <div class="record-field">
                     <label>EA Number:</label>
-                    <value>{record.ea_number_raw}</value>
+                    <span class="value">{record.ea_number_raw}</span>
                   </div>
                 )}
 
                 <div class="record-field">
                   <label>Date:</label>
-                  <value>{new Date(record.achieved_at).toLocaleDateString()}</value>
+                  <span class="value">{new Date(record.achieved_at).toLocaleDateString()}</span>
                 </div>
 
                 {record.notes && <div class="record-notes">{record.notes}</div>}

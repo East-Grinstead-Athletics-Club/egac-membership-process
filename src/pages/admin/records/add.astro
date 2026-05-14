@@ -4,7 +4,7 @@
 // Auth: Requires valid egac_admin_token cookie
 
 import { checkAdminToken } from '../../../lib/auth/admin';
-import { parseToRaw, validateValue } from '../../../lib/records-util';
+import { validateValue } from '../../../lib/records-util';
 
 const env = Astro.locals.runtime.env;
 const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
@@ -53,12 +53,15 @@ if (Astro.request.method === 'POST') {
     if (!event) throw new Error('Invalid event');
 
     // Parse result to raw value
-    const parseResult = validateValue(result, event.unit_type as any);
+    const parseResult = validateValue(result, event.unit_type);
     if (!parseResult.valid) {
       throw new Error(`Invalid result: ${parseResult.error}`);
     }
 
-    const resultRaw = parseResult.parsed!;
+    const resultRaw = parseResult.parsed ?? '';
+    if (!resultRaw) {
+      throw new Error('Failed to parse result');
+    }
 
     // Check if athlete exists
     let athleteId: string | null = null;

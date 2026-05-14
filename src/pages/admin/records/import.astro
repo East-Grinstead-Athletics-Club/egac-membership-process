@@ -4,9 +4,9 @@
 // Format: event_name | gender | status | uka_age_group_key | athlete_name | performance | date_set | competition_venue
 // Auth: Requires valid egac_admin_token cookie
 
+import { D1Database } from '@cloudflare/workers-types';
 import { checkAdminToken } from '../../../lib/auth/admin';
 import { parseToRaw } from '../../../lib/records-util';
-import { UKA_AGE_GROUPS } from '../../../../egac-website/src/config/uka-age-groups';
 
 const env = Astro.locals.runtime.env;
 const token = Astro.cookies.get('egac_admin_token')?.value ?? '';
@@ -24,9 +24,8 @@ const adminId = 'csv-import';
 // ============================================================================
 
 let message = { type: '', text: '' };
-let preview: any[] = [];
-let previewError = '';
-let csvContent = '';
+let preview: Array<Record<string, unknown>> = [];
+const _previewError = '';
 
 // ============================================================================
 // FORM SUBMISSION
@@ -47,7 +46,6 @@ if (Astro.request.method === 'POST') {
     }
 
     const csvText = await file.text();
-    csvContent = csvText;
 
     if (action === 'preview') {
       // Parse and show preview
@@ -103,10 +101,10 @@ if (Astro.request.method === 'POST') {
           }
 
           // Parse performance
-          const resultRaw = parseToRaw(rec.performance, event.unit_type as any);
+          const resultRaw = parseToRaw(rec.performance, event.unit_type);
 
           // Look up athlete
-          let athleteId: string | null = null;
+          const athleteId: string | null = null;
           // (EA number not provided in CSV, but could be added)
 
           // Create achievement
@@ -167,14 +165,12 @@ if (Astro.request.method === 'POST') {
         message.text += `\nFirst 10 errors:\n${errors.slice(0, 10).join('\n')}`;
       }
 
-      csvContent = '';
     }
   } catch (error) {
     message = {
       type: 'error',
       text: error instanceof Error ? error.message : 'Unknown error',
     };
-    csvContent = '';
   }
 }
 
@@ -182,18 +178,18 @@ if (Astro.request.method === 'POST') {
 // HELPERS
 // ============================================================================
 
-function parseCSV(csv: string): any[] {
+function parseCSV(csv: string): Array<Record<string, string>> {
   const lines = csv.trim().split('\n');
   if (lines.length < 1) return [];
 
   const headers = lines[0].split('\t').map((h) => h.trim().toLowerCase());
-  const records = [];
+  const records: Array<Record<string, string>> = [];
 
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
 
     const values = lines[i].split('\t').map((v) => v.trim());
-    const record: any = {};
+    const record: Record<string, string> = {};
 
     headers.forEach((header, idx) => {
       record[header] = values[idx] || '';
@@ -205,7 +201,7 @@ function parseCSV(csv: string): any[] {
   return records;
 }
 
-function validateRow(rec: any): { valid: boolean; error?: string } {
+function validateRow(rec: Record<string, string>): { valid: boolean; error?: string } {
   const required = ['event_name', 'gender', 'uka_age_group_key', 'athlete_name', 'performance', 'date_set'];
 
   for (const field of required) {
@@ -232,7 +228,7 @@ function validateRow(rec: any): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
-async function lookupCategoryByKey(key: string, db: any): Promise<string | null> {
+async function lookupCategoryByKey(key: string, db: D1Database): Promise<string | null> {
   // Map UKA key to database category name
   // Supports both old (odd) and new (even) age group systems
   // Old: U11, U13, U15, U17 (historical records)
