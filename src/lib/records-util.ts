@@ -9,7 +9,7 @@ export type UnitType = 'time' | 'distance' | 'height' | 'count';
 
 /**
  * Parse a display string to raw value (single source of formatting logic)
- * 
+ *
  * @param value - Display string (e.g., "12:34.56" for time, "5.45" for distance)
  * @param unitType - The unit type: 'time', 'distance', 'height'
  * @returns Raw value (milliseconds for time, centimeters for distance/height)
@@ -44,7 +44,7 @@ export function parseToRaw(value: string | number, unitType: UnitType): number {
 
 /**
  * Format a raw value to display string (single source of formatting logic)
- * 
+ *
  * @param value - Raw value (milliseconds for time, centimeters for distance)
  * @param unitType - The unit type
  * @returns Formatted display string (e.g., "12:34.56", "5.45m")
@@ -86,9 +86,7 @@ function parseTimeToMilliseconds(timeStr: string): number {
   const match = timeStr.match(timeRegex);
 
   if (!match) {
-    throw new Error(
-      `Invalid time format: "${timeStr}". Expected format: MM:SS.hh or M:SS.hh`
-    );
+    throw new Error(`Invalid time format: "${timeStr}". Expected format: MM:SS.hh or M:SS.hh`);
   }
 
   const [, minutesStr, secondsStr, centisecondsStr] = match;
@@ -178,7 +176,10 @@ function formatDistanceFromCentimeters(cm: number): string {
  * Validate that a value matches a unit type
  * Useful for form validation before submission
  */
-export function validateValue(value: string, unitType: UnitType): {
+export function validateValue(
+  value: string,
+  unitType: UnitType
+): {
   valid: boolean;
   error?: string;
   parsed?: number;

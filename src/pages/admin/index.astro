@@ -129,7 +129,10 @@ const stats = {
       }
 
       body {
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
         padding: 2rem 1rem;
@@ -495,23 +498,25 @@ const stats = {
 
             <div class="filter-actions">
               <button type="submit" class="btn-filter">🔍 Filter</button>
-              <a href="/records" class="btn-clear" style="text-decoration: none; text-align: center;"
-                >Clear All</a
+              <a
+                href="/records"
+                class="btn-clear"
+                style="text-decoration: none; text-align: center;">Clear All</a
               >
             </div>
           </div>
         </form>
       </div>
 
-      {records.results.length === 0 ? (
-        <div class="empty-state">
-          <h3>No records found</h3>
-          <p>Try adjusting your filters</p>
-        </div>
-      ) : (
-        <div class="records-container">
-          {
-            Object.entries(groupedByEvent).map(([eventName, eventRecords]) => (
+      {
+        records.results.length === 0 ? (
+          <div class="empty-state">
+            <h3>No records found</h3>
+            <p>Try adjusting your filters</p>
+          </div>
+        ) : (
+          <div class="records-container">
+            {Object.entries(groupedByEvent).map(([eventName, eventRecords]) => (
               <div class="event-section">
                 <div class="event-header">
                   <h3>{eventName}</h3>
@@ -585,10 +590,10 @@ const stats = {
                   </table>
                 </div>
               </div>
-            ))
-          }
-        </div>
-      )}
+            ))}
+          </div>
+        )
+      }
     </div>
   </body>
 </html>

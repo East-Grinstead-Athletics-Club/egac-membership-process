@@ -19,10 +19,7 @@ import { sendMembershipInvite } from '../../lib/email/templates.js';
 import { getDB, getEnv, generateId, generateToken, now } from '../../lib/db/client.js';
 import type { Env } from '../../lib/db/schema.js';
 
-export async function handleSendMembershipInvite(
-  request: Request,
-  env: Env
-): Promise<Response> {
+export async function handleSendMembershipInvite(request: Request, env: Env): Promise<Response> {
   // Accept both ADMIN_TOKEN and CRON_SECRET for flexibility
   const authHeader = request.headers.get('authorization') || '';
   const token = authHeader.replace(/^Bearer\s+/i, '');

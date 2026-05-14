@@ -108,7 +108,12 @@ if (Astro.request.method === 'POST') {
         .run();
 
       // Update record_holders table
-      await updateRecordHolder(db, achievement.event_id, achievement.category_id, achievement.gender);
+      await updateRecordHolder(
+        db,
+        achievement.event_id,
+        achievement.category_id,
+        achievement.gender
+      );
 
       message = {
         type: 'success',
@@ -180,7 +185,14 @@ async function updateRecordHolder(
     `
     )
     .bind(eventId, categoryId, gender || null)
-    .first<{ id: string; athlete_id: string | null; athlete_name: string; ea_number: string | null; result_raw: number; achieved_at: string }>();
+    .first<{
+      id: string;
+      athlete_id: string | null;
+      athlete_name: string;
+      ea_number: string | null;
+      result_raw: number;
+      achieved_at: string;
+    }>();
 
   if (!best) return;
 
@@ -257,7 +269,10 @@ const { formatFromRaw } = await import('../../../lib/records-util');
       }
 
       body {
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
         background: #f5f5f5;
         padding: 1rem;
       }
@@ -507,95 +522,81 @@ const { formatFromRaw } = await import('../../../lib/records-util');
 
       <h1>🔍 Pending Records Review</h1>
 
+      {message.text && <div class={`message ${message.type}`}>{message.text}</div>}
+
       {
-        message.text && (
-          <div class={`message ${message.type}`}>{message.text}</div>
+        pending.results.length === 0 ? (
+          <div class="empty-state">
+            <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+              <path
+                fill-rule="evenodd"
+                d="M4 5a2 2 0 012-2 1 1 0 000 2H6a1 1 0 100-2h-.5A2.5 2.5 0 013 7.5V17a2 2 0 002 2h10a2 2 0 002-2v-9.5A2.5 2.5 0 0013.5 5H13a1 1 0 100 2h.5A1 1 0 0015 5v9.5a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <p>No pending records to review</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+              Check back later or <a href="/admin/records/add">add a new record</a>
+            </p>
+          </div>
+        ) : (
+          <div class="records-grid">
+            {pending.results.map((record) => (
+              <div class="record-card" data-id={record.id}>
+                <div class="record-header">
+                  <div class="event-info">
+                    <h3>{record.event_name}</h3>
+                    <div>
+                      <span class="category-badge">{record.category_name}</span>
+                      {record.gender && <span class="gender-badge">{record.gender}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="record-body">
+                  <div class="result-highlight">
+                    {formatFromRaw(record.result_raw, record.unit_type)}
+                  </div>
+
+                  <div class="record-field">
+                    <label>Athlete:</label>
+                    <span class="value">{record.athlete_name_raw}</span>
+                  </div>
+
+                  {record.ea_number_raw && (
+                    <div class="record-field">
+                      <label>EA Number:</label>
+                      <span class="value">{record.ea_number_raw}</span>
+                    </div>
+                  )}
+
+                  <div class="record-field">
+                    <label>Date:</label>
+                    <span class="value">{new Date(record.achieved_at).toLocaleDateString()}</span>
+                  </div>
+
+                  {record.notes && <div class="record-notes">{record.notes}</div>}
+
+                  <div class="metadata">
+                    <div>Submitted: {new Date(record.created_at).toLocaleString()}</div>
+                    <div>By: {record.created_by}</div>
+                  </div>
+                </div>
+
+                <div class="actions">
+                  <button class="btn-approve" onclick={`approveRecord('${record.id}')`}>
+                    ✅ Approve
+                  </button>
+                  <button class="btn-reject" onclick={`openRejectModal('${record.id}')`}>
+                    ❌ Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )
       }
-
-      {pending.results.length === 0 ? (
-        <div class="empty-state">
-          <svg
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-            <path
-              fill-rule="evenodd"
-              d="M4 5a2 2 0 012-2 1 1 0 000 2H6a1 1 0 100-2h-.5A2.5 2.5 0 013 7.5V17a2 2 0 002 2h10a2 2 0 002-2v-9.5A2.5 2.5 0 0013.5 5H13a1 1 0 100 2h.5A1 1 0 0015 5v9.5a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"
-              clip-rule="evenodd"
-            ></path>
-          </svg>
-          <p>No pending records to review</p>
-          <p style="font-size: 0.9rem; margin-top: 0.5rem;">
-            Check back later or <a href="/admin/records/add">add a new record</a>
-          </p>
-        </div>
-      ) : (
-        <div class="records-grid">
-          {pending.results.map((record) => (
-            <div class="record-card" data-id={record.id}>
-              <div class="record-header">
-                <div class="event-info">
-                  <h3>{record.event_name}</h3>
-                  <div>
-                    <span class="category-badge">{record.category_name}</span>
-                    {record.gender && (
-                      <span class="gender-badge">{record.gender}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div class="record-body">
-                <div class="result-highlight">
-                  {formatFromRaw(record.result_raw, record.unit_type)}
-                </div>
-
-                <div class="record-field">
-                  <label>Athlete:</label>
-                  <span class="value">{record.athlete_name_raw}</span>
-                </div>
-
-                {record.ea_number_raw && (
-                  <div class="record-field">
-                    <label>EA Number:</label>
-                    <span class="value">{record.ea_number_raw}</span>
-                  </div>
-                )}
-
-                <div class="record-field">
-                  <label>Date:</label>
-                  <span class="value">{new Date(record.achieved_at).toLocaleDateString()}</span>
-                </div>
-
-                {record.notes && <div class="record-notes">{record.notes}</div>}
-
-                <div class="metadata">
-                  <div>Submitted: {new Date(record.created_at).toLocaleString()}</div>
-                  <div>By: {record.created_by}</div>
-                </div>
-              </div>
-
-              <div class="actions">
-                <button
-                  class="btn-approve"
-                  onclick={`approveRecord('${record.id}')`}
-                >
-                  ✅ Approve
-                </button>
-                <button
-                  class="btn-reject"
-                  onclick={`openRejectModal('${record.id}')`}
-                >
-                  ❌ Reject
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
 
     <!-- Reject Confirmation Modal -->
@@ -609,10 +610,7 @@ const { formatFromRaw } = await import('../../../lib/records-util');
         ></textarea>
         <div class="modal-actions">
           <button onclick="submitReject()" class="btn-reject">Reject</button>
-          <button
-            onclick="closeRejectModal()"
-            style="background: #ccc; color: #333;"
-          >
+          <button onclick="closeRejectModal()" style="background: #ccc; color: #333;">
             Cancel
           </button>
         </div>

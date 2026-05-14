@@ -67,9 +67,7 @@ if (Astro.request.method === 'POST') {
     let athleteId: string | null = null;
     if (eaNumber) {
       const athlete = await db
-        .prepare(
-          'SELECT id FROM athletes WHERE EA_reg_number = ? OR id = ?'
-        )
+        .prepare('SELECT id FROM athletes WHERE EA_reg_number = ? OR id = ?')
         .bind(eaNumber, eaNumber)
         .first<{ id: string }>();
 
@@ -178,7 +176,10 @@ const categories = await db
     <title>Add Club Record</title>
     <style>
       body {
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
         max-width: 600px;
         margin: 2rem auto;
         padding: 0 1rem;
@@ -370,9 +371,7 @@ const categories = await db
         </p>
         <p>• Time format: MM:SS.hh (e.g., 12:34.56)</p>
         <p>• Distance format: M.cc (e.g., 5.45 for 5.45m)</p>
-        <p>
-          • If the athlete is already in the system, provide their EA number
-        </p>
+        <p>• If the athlete is already in the system, provide their EA number</p>
       </div>
 
       <form method="POST">
@@ -392,8 +391,7 @@ const categories = await db
               }
             </select>
             <div class="help-text">
-              Choose the event. The format depends on whether it's a time or
-              distance event.
+              Choose the event. The format depends on whether it's a time or distance event.
             </div>
           </div>
 
@@ -432,12 +430,7 @@ const categories = await db
 
           <div class="form-group">
             <label for="ea_number">EA Number (Optional)</label>
-            <input
-              id="ea_number"
-              type="text"
-              name="ea_number"
-              placeholder="e.g., 12345"
-            />
+            <input id="ea_number" type="text" name="ea_number" placeholder="e.g., 12345" />
             <div class="help-text">
               If the athlete is in our system, their EA number links the record.
             </div>
@@ -463,28 +456,15 @@ const categories = await db
             <label for="result">
               Result <span class="required">*</span>
             </label>
-            <input
-              id="result"
-              type="text"
-              name="result"
-              placeholder="12:34.56"
-              required
-            />
-            <div class="help-text">
-              Format depends on event type. Check the info box above.
-            </div>
+            <input id="result" type="text" name="result" placeholder="12:34.56" required />
+            <div class="help-text">Format depends on event type. Check the info box above.</div>
           </div>
 
           <div class="form-group">
             <label for="achieved_at">
               Date Achieved <span class="required">*</span>
             </label>
-            <input
-              id="achieved_at"
-              type="date"
-              name="achieved_at"
-              required
-            />
+            <input id="achieved_at" type="date" name="achieved_at" required />
             <div class="help-text">When was this record set?</div>
           </div>
         </div>
@@ -497,9 +477,7 @@ const categories = await db
             rows="4"
             placeholder="e.g., 'Set at Regional Championships', 'Verified by Coach Sarah'"
           ></textarea>
-          <div class="help-text">
-            Any additional context or source information.
-          </div>
+          <div class="help-text">Any additional context or source information.</div>
         </div>
 
         <div class="button-group">
@@ -514,14 +492,11 @@ const categories = await db
       const eventSelect = document.getElementById('event_id') as unknown as HTMLSelectElement;
       eventSelect?.addEventListener('change', function () {
         const selectedOption = this.options[this.selectedIndex];
-        const unitType = selectedOption.textContent?.includes('time')
-          ? 'time'
-          : 'distance';
+        const unitType = selectedOption.textContent?.includes('time') ? 'time' : 'distance';
         const resultInput = document.getElementById('result') as HTMLInputElement;
 
         if (resultInput) {
-          resultInput.placeholder =
-            unitType === 'time' ? '12:34.56' : '5.45';
+          resultInput.placeholder = unitType === 'time' ? '12:34.56' : '5.45';
         }
       });
     </script>
