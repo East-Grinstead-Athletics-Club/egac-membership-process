@@ -161,6 +161,42 @@ export default {
           }
 
           await env.DB.batch(queries);
+
+          // Send membership invite email if athlete was just checked in
+          if (newCheckedIn && env.CRON_SECRET) {
+            try {
+              const siteUrl = (env.SITE_URL || 'https://egac-cl9.pages.dev').replace(/\/$/, '');
+              const response = await fetch(`${siteUrl}/api/admin/send-membership-invite`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${env.CRON_SECRET}`,
+                },
+                body: JSON.stringify({ enquiry_id: id }),
+              });
+
+              if (!response.ok) {
+                console.warn(
+                  JSON.stringify({
+                    level: 'warn',
+                    event: 'membership_invite_request_failed',
+                    enquiry_id: id,
+                    status: response.status,
+                  })
+                );
+              }
+            } catch (emailError) {
+              console.warn(
+                JSON.stringify({
+                  level: 'warn',
+                  event: 'membership_invite_request_error',
+                  enquiry_id: id,
+                  error: emailError instanceof Error ? emailError.message : String(emailError),
+                })
+              );
+            }
+          }
+
           return Response.json({ ok: true, checked_in: newCheckedIn });
         }
 

@@ -37,6 +37,7 @@ import {
   handleAdminTemplatePreview,
   handleAdminTemplateTestSend,
 } from './admin/template-detail.js';
+import { handleSendMembershipInvite } from './admin/send-membership-invite.js';
 import { err } from './helpers.js';
 import type { Env } from '../lib/db/schema.js';
 
@@ -62,6 +63,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   if (path === '/api/admin/bookings') return handleAdminBookings(request, env);
   if (path === '/api/admin/reports') return handleAdminReports(request, env);
   if (path === '/api/admin/memberships') return handleAdminMemberships(request, env);
+  if (path === '/api/admin/send-membership-invite') return handleSendMembershipInvite(request, env);
   if (path === '/api/admin/templates') return handleAdminTemplates(request, env);
 
   // Dynamic admin routes — extract ID segments

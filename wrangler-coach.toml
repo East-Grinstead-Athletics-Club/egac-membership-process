@@ -12,7 +12,8 @@
 #   wrangler dev src/workers/coach-app.js --config wrangler-coach.toml
 #
 # Required secrets (set once):
-#   wrangler secret put APP_ENV --config wrangler-coach.toml
+#   wrangler secret put CRON_SECRET --config wrangler-coach.toml
+#   (Must match the CRON_SECRET on the main platform for API access)
 #
 # Cloudflare Access:
 #   Protect this Worker's route in Zero Trust → Access → Applications.
@@ -27,6 +28,7 @@ compatibility_date = "2024-09-23"
 
 [vars]
 APP_ENV = "production"
+SITE_URL = "https://egac-cl9.pages.dev"
 
 # Shares the same D1 database as the main platform
 [[d1_databases]]
