@@ -67,7 +67,16 @@ export async function sendBookingInvite(
         })
       : undefined;
 
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry(
+      {
+        to: enquiry.email,
+        subject: template.subject,
+        html,
+        text,
+        replyTo: 'secretary@eastgrinsteadac.co.uk',
+      },
+      env
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -123,7 +132,16 @@ export async function sendBookingConfirmation(
         })
       : undefined;
 
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry(
+      {
+        to: enquiry.email,
+        subject: template.subject,
+        html,
+        text,
+        replyTo: 'secretary@eastgrinsteadac.co.uk',
+      },
+      env
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -171,7 +189,16 @@ export async function sendAcademyWaitlist(
         })
       : undefined;
 
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry(
+      {
+        to: enquiry.email,
+        subject: template.subject,
+        html,
+        text,
+        replyTo: 'secretary@eastgrinsteadac.co.uk',
+      },
+      env
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -215,7 +242,16 @@ export async function sendAcademyRejection(enquiry: Enquiry, env: Env): Promise<
         })
       : undefined;
 
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry(
+      {
+        to: enquiry.email,
+        subject: template.subject,
+        html,
+        text,
+        replyTo: 'secretary@eastgrinsteadac.co.uk',
+      },
+      env
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -261,7 +297,16 @@ export async function sendMembershipInvite(
         })
       : undefined;
 
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry(
+      {
+        to: enquiry.email,
+        subject: template.subject,
+        html,
+        text,
+        replyTo: 'secretary@eastgrinsteadac.co.uk',
+      },
+      env
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
@@ -313,7 +358,16 @@ export async function sendBookingReminder(
         })
       : undefined;
 
-    return sendEmailWithRetry({ to: enquiry.email, subject: template.subject, html, text }, env);
+    return sendEmailWithRetry(
+      {
+        to: enquiry.email,
+        subject: template.subject,
+        html,
+        text,
+        replyTo: 'secretary@eastgrinsteadac.co.uk',
+      },
+      env
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
