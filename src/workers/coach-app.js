@@ -269,7 +269,7 @@ export default {
         .bind(APP_ENV, viewDate, APP_ENV)
         .all();
 
-      // Members: active athletes
+      // Members: active athletes (show only from their join date onwards)
       const memberRows = await env.DB.prepare(
         `SELECT
            a.id, a.name, a.dob, a.emergency_contact_phone as phone,
@@ -280,10 +280,12 @@ export default {
            ON al.person_id = a.id
            AND al.session_date = ?
            AND al.environment = ?
-         WHERE a.status = 'active' AND a.environment = ?
+         WHERE a.status = 'active'
+           AND a.environment = ?
+           AND DATE(a.created_at) <= ?
          ORDER BY a.name ASC`
       )
-        .bind(viewDate, APP_ENV, APP_ENV)
+        .bind(viewDate, APP_ENV, APP_ENV, viewDate)
         .all();
 
       const tasters = (tasterRows.results ?? []).map((r) => ({
