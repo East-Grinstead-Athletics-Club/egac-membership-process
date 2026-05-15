@@ -28,7 +28,7 @@ compatibility_date = "2024-09-23"
 
 [vars]
 APP_ENV = "production"
-SITE_URL = "https://egac-cl9.pages.dev"
+SITE_URL = "https://egac-membership.pages.dev"
 
 # Shares the same D1 database as the main platform
 [[d1_databases]]
