@@ -330,7 +330,7 @@ if (!successMessage && !pageError) {
                   Consent for governing-body data processing *
                 </label>
                 <div class="flex gap-4 text-sm">
-                  <label>
+                  <label class="text-on-surface">
                     <input
                       type="radio"
                       name="consent_data_processing"
@@ -340,7 +340,7 @@ if (!successMessage && !pageError) {
                     />{' '}
                     Yes
                   </label>
-                  <label>
+                  <label class="text-on-surface">
                     <input
                       type="radio"
                       name="consent_data_processing"
@@ -397,11 +397,16 @@ if (!successMessage && !pageError) {
                   </label>
                   <label class="text-sm text-on-surface">
                     Sex at birth *
-                    <input
+                    <select
                       name="sex_at_birth"
                       value={formData.sex_at_birth}
-                      class="mt-1 w-full rounded-lg border border-outline bg-white text-on-surface px-2.5 py-2 placeholder:text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-                    />
+                      class="mt-1 w-full rounded-lg border border-outline bg-white text-on-surface px-2.5 py-2 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
+                      required
+                    >
+                      <option value="">Select an option</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
                   </label>
                   <label class="text-sm text-on-surface">
                     Address line 1 *
@@ -475,7 +480,7 @@ if (!successMessage && !pageError) {
                     Join club WhatsApp? *
                   </label>
                   <div class="flex gap-4 text-sm">
-                    <label>
+                    <label class="text-on-surface">
                       <input
                         type="radio"
                         name="whatsapp_opt_in"
@@ -485,7 +490,7 @@ if (!successMessage && !pageError) {
                       />{' '}
                       Yes
                     </label>
-                    <label>
+                    <label class="text-on-surface">
                       <input
                         type="radio"
                         name="whatsapp_opt_in"
@@ -512,27 +517,21 @@ if (!successMessage && !pageError) {
                     <textarea
                       name="medication"
                       class="mt-1 w-full rounded-lg border border-outline bg-white text-on-surface px-2.5 py-2 placeholder:text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-                    >
-                      {formData.medication}
-                    </textarea>
+                    >{formData.medication}</textarea>
                   </label>
                   <label class="text-sm text-on-surface">
                     Illnesses & injuries
                     <textarea
                       name="illnesses_injuries"
                       class="mt-1 w-full rounded-lg border border-outline bg-white text-on-surface px-2.5 py-2 placeholder:text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-                    >
-                      {formData.illnesses_injuries}
-                    </textarea>
+                    >{formData.illnesses_injuries}</textarea>
                   </label>
                   <label class="text-sm text-on-surface md:col-span-2">
                     Allergies
                     <textarea
                       name="allergies"
                       class="mt-1 w-full rounded-lg border border-outline bg-white text-on-surface px-2.5 py-2 placeholder:text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-                    >
-                      {formData.allergies}
-                    </textarea>
+                    >{formData.allergies}</textarea>
                   </label>
                 </div>
               </section>
@@ -604,7 +603,7 @@ if (!successMessage && !pageError) {
                       Is there an existing family member in the club? *
                     </label>
                     <div class="flex gap-4">
-                      <label>
+                      <label class="text-on-surface">
                         <input
                           type="radio"
                           name="existing_family_member"
@@ -614,7 +613,7 @@ if (!successMessage && !pageError) {
                         />{' '}
                         Yes
                       </label>
-                      <label>
+                      <label class="text-on-surface">
                         <input
                           type="radio"
                           name="existing_family_member"
@@ -641,7 +640,7 @@ if (!successMessage && !pageError) {
                       I/we have read and agree to abide by the Club policies and codes of conduct *
                     </label>
                     <div class="flex gap-4">
-                      <label>
+                      <label class="text-on-surface">
                         <input
                           type="radio"
                           name="consent_policies"
@@ -651,7 +650,7 @@ if (!successMessage && !pageError) {
                         />{' '}
                         Yes
                       </label>
-                      <label>
+                      <label class="text-on-surface">
                         <input
                           type="radio"
                           name="consent_policies"
