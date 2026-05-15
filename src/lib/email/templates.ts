@@ -24,7 +24,7 @@ function getPublicSiteUrl(env: Env): string {
   if (explicit && explicit.trim()) return explicit.trim().replace(/\/$/, '');
 
   // Production fallback used when SITE_URL is not configured.
-  if (env.APP_ENV === 'production') return 'https://egac-cl9.pages.dev';
+  if (env.APP_ENV === 'production') return 'https://egac-membership.pages.dev';
 
   return 'https://egac.pages.dev';
 }

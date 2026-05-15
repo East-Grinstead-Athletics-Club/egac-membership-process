@@ -22,6 +22,7 @@ pages_build_output_dir = "dist"
 [vars]
 APP_ENV = "production"
 EMAIL_FROM = "noreply@updates.eastgrinsteadac.co.uk"
+SITE_URL = "https://egac-membership.pages.dev"
 
 # ----------------------------------------------------------------
 # D1 Database

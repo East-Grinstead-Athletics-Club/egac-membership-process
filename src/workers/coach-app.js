@@ -165,7 +165,7 @@ export default {
           // Send membership invite email if athlete was just checked in
           if (newCheckedIn && env.CRON_SECRET) {
             try {
-              const siteUrl = (env.SITE_URL || 'https://egac-cl9.pages.dev').replace(/\/$/, '');
+              const siteUrl = (env.SITE_URL || 'https://egac-membership.pages.dev').replace(/\/$/, '');
               const response = await fetch(`${siteUrl}/api/admin/send-membership-invite`, {
                 method: 'POST',
                 headers: {
