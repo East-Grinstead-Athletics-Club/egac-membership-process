@@ -517,21 +517,24 @@ if (!successMessage && !pageError) {
                     <textarea
                       name="medication"
                       class="mt-1 w-full rounded-lg border border-outline bg-white text-on-surface px-2.5 py-2 placeholder:text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-                    >{formData.medication}</textarea>
+                      set:text={formData.medication}
+                    />
                   </label>
                   <label class="text-sm text-on-surface">
                     Illnesses & injuries
                     <textarea
                       name="illnesses_injuries"
                       class="mt-1 w-full rounded-lg border border-outline bg-white text-on-surface px-2.5 py-2 placeholder:text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-                    >{formData.illnesses_injuries}</textarea>
+                      set:text={formData.illnesses_injuries}
+                    />
                   </label>
                   <label class="text-sm text-on-surface md:col-span-2">
                     Allergies
                     <textarea
                       name="allergies"
                       class="mt-1 w-full rounded-lg border border-outline bg-white text-on-surface px-2.5 py-2 placeholder:text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-colors"
-                    >{formData.allergies}</textarea>
+                      set:text={formData.allergies}
+                    />
                   </label>
                 </div>
               </section>
