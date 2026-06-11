@@ -236,6 +236,51 @@ export interface MembershipFormSubmission {
 }
 
 // ------------------------------------------------------------
+// Athlete (active club member, created from membership form)
+// ------------------------------------------------------------
+export interface Athlete {
+  id: string;
+  enquiry_id: string | null;
+  membership_form_id: string | null;
+  name: string;
+  dob: string | null;
+  email: string | null;
+  phone: string | null;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_name_2: string | null;
+  emergency_contact_phone_2: string | null;
+  medical_info: string | null;
+  status: AthleteStatus;
+  last_attended_at: string | null;
+  flagged_absent: number;
+  flagged_absent_at: string | null;
+  EA_reg_number: string | null;
+  environment: Environment;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface AthleteInsert {
+  id: string;
+  enquiry_id: string | null;
+  membership_form_id: string | null;
+  name: string;
+  dob?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_name_2?: string | null;
+  emergency_contact_phone_2?: string | null;
+  medical_info?: string | null;
+  environment: Environment;
+  created_at: string;
+}
+
+export type AthleteStatus = 'active' | 'inactive' | 'suspended';
+
+// ------------------------------------------------------------
 // System Config (KV-backed)
 // ------------------------------------------------------------
 export interface SystemConfig {

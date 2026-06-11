@@ -40,6 +40,8 @@ function formatDateTime(iso: string): string {
     minute: '2-digit',
   });
 }
+
+const pendingCount = submissions.filter((s) => !s.athlete_id).length;
 ---
 
 <AdminBase title="Memberships" activeNav="memberships">
@@ -50,6 +52,11 @@ function formatDateTime(iso: string): string {
         <p class="mt-1 text-sm text-slate-500">
           Submitted join forms captured from the invitation link flow.
         </p>
+        {
+          pendingCount > 0 && (
+            <p class="mt-1 text-sm font-medium text-amber-600">{pendingCount} pending approval</p>
+          )
+        }
       </div>
       <a
         href="/api/admin/memberships?format=csv"
@@ -81,6 +88,7 @@ function formatDateTime(iso: string): string {
                   <th class="px-4 py-3">Mobile</th>
                   <th class="px-4 py-3">Emergency Contact</th>
                   <th class="px-4 py-3">Consent</th>
+                  <th class="px-4 py-3">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,6 +127,20 @@ function formatDateTime(iso: string): string {
                             : 'Review'}
                         </span>
                       </td>
+                      <td class="px-4 py-3">
+                        {s.athlete_id ? (
+                          <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                            Member
+                          </span>
+                        ) : (
+                          <button
+                            class="approve-btn rounded-lg bg-[#2d5ea5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#254f89] disabled:opacity-50"
+                            data-form-id={s.id}
+                          >
+                            Approve
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -129,4 +151,42 @@ function formatDateTime(iso: string): string {
       }
     </section>
   </div>
+
+  <script>
+    document.querySelectorAll<HTMLButtonElement>('.approve-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const formId = btn.dataset.formId;
+        if (!formId) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Approving…';
+
+        try {
+          const resp = await fetch(`/api/admin/memberships/${formId}/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          if (resp.ok) {
+            const cell = btn.parentElement!;
+            cell.innerHTML =
+              '<span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Member</span>';
+            const pendingEl = document.querySelector('.text-amber-600');
+            if (pendingEl) {
+              const remaining = document.querySelectorAll('.approve-btn').length;
+              if (remaining === 0) pendingEl.remove();
+              else pendingEl.textContent = `${remaining} pending approval`;
+            }
+          } else {
+            const data = (await resp.json()) as { error?: string };
+            btn.textContent = data.error ?? 'Failed';
+            btn.disabled = false;
+          }
+        } catch {
+          btn.textContent = 'Error';
+          btn.disabled = false;
+        }
+      });
+    });
+  </script>
 </AdminBase>

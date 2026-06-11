@@ -31,6 +31,7 @@ import { handleAdminBookings } from './admin/bookings.js';
 import { handleAdminAttendance } from './admin/attendance.js';
 import { handleAdminReports } from './admin/reports.js';
 import { handleAdminMemberships } from './admin/memberships.js';
+import { handleApproveMembership } from './admin/approve-membership.js';
 import { handleAdminTemplates } from './admin/templates.js';
 import {
   handleAdminTemplateDetail,
@@ -78,6 +79,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   }
 
   // Template dynamic routes — order matters: most specific first
+  const membershipApproveMatch = path.match(/^\/api\/admin\/memberships\/([^/]+)\/approve$/);
+  if (membershipApproveMatch) {
+    return handleApproveMembership(request, env, membershipApproveMatch[1]);
+  }
+
   const templateTestSendMatch = path.match(/^\/api\/admin\/templates\/([^/]+)\/test-send$/);
   if (templateTestSendMatch) {
     return handleAdminTemplateTestSend(request, env, templateTestSendMatch[1]);

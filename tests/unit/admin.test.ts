@@ -27,6 +27,16 @@ vi.mock('../../src/lib/repositories/enquiries.js', () => ({
   appendEnquiryEvent: vi.fn(),
 }));
 
+vi.mock('../../src/lib/repositories/athletes.js', () => ({
+  createAthlete: vi.fn(),
+  getAthleteByMembershipFormId: vi.fn(),
+}));
+
+vi.mock('../../src/lib/repositories/membership-forms.js', () => ({
+  getMembershipFormById: vi.fn(),
+  listMembershipForms: vi.fn(),
+}));
+
 vi.mock('../../src/lib/repositories/invites.js', () => ({
   getInviteById: vi.fn(),
   getInviteByEnquiryId: vi.fn(),
@@ -53,14 +63,24 @@ vi.mock('../../src/lib/business/age.js', () => ({
 import { handleAdminEnquiries } from '../../src/api/admin/enquiries.js';
 import { handleAdminEnquiryDetail } from '../../src/api/admin/enquiry-detail.js';
 import { handleAdminInviteResend } from '../../src/api/admin/invites.js';
+import { handleApproveMembership } from '../../src/api/admin/approve-membership.js';
 
 import * as enquiryRepo from '../../src/lib/repositories/enquiries.js';
 import * as inviteRepo from '../../src/lib/repositories/invites.js';
 import * as bookingRepo from '../../src/lib/repositories/bookings.js';
 import * as emailTemplates from '../../src/lib/email/templates.js';
+import * as athleteRepo from '../../src/lib/repositories/athletes.js';
+import * as membershipFormsRepo from '../../src/lib/repositories/membership-forms.js';
 import { getSystemConfig } from '../../src/lib/config.js';
 
-import type { Env, Enquiry, Invite, Booking } from '../../src/lib/db/schema.js';
+import type {
+  Env,
+  Enquiry,
+  Invite,
+  Booking,
+  MembershipFormSubmission,
+  Athlete,
+} from '../../src/lib/db/schema.js';
 
 // ============================================================
 // Global reset — clear mock call history before each test
@@ -581,5 +601,146 @@ describe('POST /api/admin/invites/resend', () => {
     });
     const { status } = await parse(await handleAdminInviteResend(req, makeEnv()));
     expect(status).toBe(422);
+  });
+});
+
+// ============================================================
+// POST /api/admin/memberships/:id/approve
+// ============================================================
+
+function makeMembershipForm(
+  overrides: Partial<MembershipFormSubmission> = {}
+): MembershipFormSubmission {
+  return {
+    id: 'mf_test01',
+    enquiry_id: 'enq_test01',
+    membership_otp_id: 'otp_test01',
+    submitted_at: '2026-06-01T10:00:00.000Z',
+    payload_json: JSON.stringify({
+      first_name: 'Alice',
+      last_name: 'Smith',
+      dob: '2014-03-15',
+      email: 'alice@example.com',
+      mobile_phone: '07700900000',
+      medication: 'None',
+      illnesses_injuries: '',
+      allergies: 'Nuts',
+      emergency_contact_name: 'Bob Smith',
+      emergency_contact_mobile: '07700900001',
+      emergency_contact_name_2: '',
+      emergency_contact_mobile_2: '',
+    }),
+    environment: 'development',
+    ...overrides,
+  };
+}
+
+describe('POST /api/admin/memberships/:id/approve', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(athleteRepo.createAthlete).mockResolvedValue(undefined);
+    vi.mocked(enquiryRepo.appendEnquiryEvent).mockResolvedValue(undefined);
+  });
+
+  it('returns 401 without auth', async () => {
+    const req = adminRequest('/api/admin/memberships/mf_test01/approve', 'POST', { token: null });
+    const { status } = await parse(await handleApproveMembership(req, makeEnv(), 'mf_test01'));
+    expect(status).toBe(401);
+  });
+
+  it('returns 405 for GET', async () => {
+    const req = adminRequest('/api/admin/memberships/mf_test01/approve', 'GET');
+    const { status } = await parse(await handleApproveMembership(req, makeEnv(), 'mf_test01'));
+    expect(status).toBe(405);
+  });
+
+  it('returns 404 when form not found', async () => {
+    vi.mocked(membershipFormsRepo.getMembershipFormById).mockResolvedValue(null);
+    const req = adminRequest('/api/admin/memberships/mf_missing/approve', 'POST');
+    const { status } = await parse(await handleApproveMembership(req, makeEnv(), 'mf_missing'));
+    expect(status).toBe(404);
+  });
+
+  it('creates athlete and returns created:true on first approval', async () => {
+    vi.mocked(membershipFormsRepo.getMembershipFormById).mockResolvedValue(makeMembershipForm());
+    vi.mocked(athleteRepo.getAthleteByMembershipFormId).mockResolvedValue(null);
+
+    const req = adminRequest('/api/admin/memberships/mf_test01/approve', 'POST');
+    const { status, body } = await parse<{
+      ok: boolean;
+      data: { athlete_id: string; created: boolean };
+    }>(await handleApproveMembership(req, makeEnv(), 'mf_test01'));
+
+    expect(status).toBe(200);
+    expect(body.data.created).toBe(true);
+    expect(body.data.athlete_id).toMatch(/^ath_/);
+
+    expect(athleteRepo.createAthlete).toHaveBeenCalledOnce();
+    const [athleteArg] = vi.mocked(athleteRepo.createAthlete).mock.calls[0];
+    expect(athleteArg.name).toBe('Alice Smith');
+    expect(athleteArg.dob).toBe('2014-03-15');
+    expect(athleteArg.emergency_contact_name).toBe('Bob Smith');
+    expect(athleteArg.medical_info).toContain('Medication: None');
+    expect(athleteArg.medical_info).toContain('Allergies: Nuts');
+
+    expect(enquiryRepo.appendEnquiryEvent).toHaveBeenCalledOnce();
+  });
+
+  it('is idempotent — returns created:false if athlete already exists', async () => {
+    const existingAthlete = {
+      id: 'ath_existing',
+      name: 'Alice Smith',
+    } as unknown as Athlete;
+
+    vi.mocked(membershipFormsRepo.getMembershipFormById).mockResolvedValue(makeMembershipForm());
+    vi.mocked(athleteRepo.getAthleteByMembershipFormId).mockResolvedValue(existingAthlete);
+
+    const req = adminRequest('/api/admin/memberships/mf_test01/approve', 'POST');
+    const { status, body } = await parse<{
+      ok: boolean;
+      data: { athlete_id: string; created: boolean };
+    }>(await handleApproveMembership(req, makeEnv(), 'mf_test01'));
+
+    expect(status).toBe(200);
+    expect(body.data.created).toBe(false);
+    expect(body.data.athlete_id).toBe('ath_existing');
+    expect(athleteRepo.createAthlete).not.toHaveBeenCalled();
+  });
+
+  it('returns 422 when payload has no name', async () => {
+    vi.mocked(membershipFormsRepo.getMembershipFormById).mockResolvedValue(
+      makeMembershipForm({ payload_json: JSON.stringify({ first_name: '', last_name: '' }) })
+    );
+    vi.mocked(athleteRepo.getAthleteByMembershipFormId).mockResolvedValue(null);
+
+    const req = adminRequest('/api/admin/memberships/mf_test01/approve', 'POST');
+    const { status } = await parse(await handleApproveMembership(req, makeEnv(), 'mf_test01'));
+    expect(status).toBe(422);
+  });
+
+  it('returns 422 when emergency contact is missing', async () => {
+    vi.mocked(membershipFormsRepo.getMembershipFormById).mockResolvedValue(
+      makeMembershipForm({
+        payload_json: JSON.stringify({ first_name: 'Alice', last_name: 'Smith' }),
+      })
+    );
+    vi.mocked(athleteRepo.getAthleteByMembershipFormId).mockResolvedValue(null);
+
+    const req = adminRequest('/api/admin/memberships/mf_test01/approve', 'POST');
+    const { status } = await parse(await handleApproveMembership(req, makeEnv(), 'mf_test01'));
+    expect(status).toBe(422);
+  });
+
+  it('does not append enquiry event when enquiry_id is null', async () => {
+    vi.mocked(membershipFormsRepo.getMembershipFormById).mockResolvedValue(
+      makeMembershipForm({ enquiry_id: null as unknown as string })
+    );
+    vi.mocked(athleteRepo.getAthleteByMembershipFormId).mockResolvedValue(null);
+
+    const req = adminRequest('/api/admin/memberships/mf_test01/approve', 'POST');
+    const { status } = await parse(await handleApproveMembership(req, makeEnv(), 'mf_test01'));
+
+    expect(status).toBe(200);
+    expect(enquiryRepo.appendEnquiryEvent).not.toHaveBeenCalled();
   });
 });
