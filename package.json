@@ -20,8 +20,8 @@
     "migrate:staging": "wrangler d1 execute egac-staging --env staging --file=db/migrations/0001_initial_schema.sql"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^10.0.0",
-    "astro": "^4.0.0",
+    "@astrojs/cloudflare": "^14.4.4",
+    "astro": "^7.4.5",
     "date-fns": "^3.6.0"
   },
   "devDependencies": {
@@ -30,7 +30,7 @@
     "@types/node": "^25.5.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "@vitest/coverage-v8": "^2.0.0",
+    "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^8.57.1",
     "eslint-config-recommended": "^4.1.0",
     "eslint-plugin-astro": "^1.2.0",
@@ -39,7 +39,7 @@
     "prettier-plugin-astro": "^0.14.0",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.5.0",
-    "vitest": "^2.0.0",
+    "vitest": "^5.1.0",
     "wrangler": "^3.67.0"
   },
   "engines": {
